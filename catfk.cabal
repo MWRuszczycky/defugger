@@ -1,0 +1,28 @@
+name:                   catfk
+version:                0.1.0.0
+homepage:               https://github.com/MWRuszczycky/catfk#readme
+license:                BSD3
+license-file:           LICENSE
+author:                 Mark W. Ruszczycky
+maintainer:             mwruszczycky@gmail.com
+copyright:              2019 Mark W. Ruszczycky
+build-type:             Simple
+cabal-version:          >=1.10
+extra-source-files:     README.md
+
+executable catfk
+  hs-source-dirs:       app
+  main-is:              Main.hs
+  default-language:     Haskell2010
+  build-depends:        base >= 4.7 && < 5
+                      , catfk-internal
+
+library catfk-internal
+  exposed-modules:      Types
+                      , Parser
+                      , Compiler
+  hs-source-dirs:       src
+  build-depends:        base >=4.7 && <5
+                      , bytestring
+                      , containers
+                      , text
