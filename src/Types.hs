@@ -1,18 +1,16 @@
 module Types
-    ( Tape        (..)
-    , Parser      (..)
-    , Statement   (..)
-    , Token       (..)
-    , Computer    (..)
-    , ErrString   (..)
-    , Program     (..)
+    ( BFParser    (..)
     , BFScript    (..)
     , Computation (..)
-    , Dictionary
-    , BFParser    (..)
-    , toDictionary
-    , tokens
-    , isShort
+    , Computer    (..)
+    , Dictionary  (..)
+    , ErrString   (..)
+    , Parser      (..)
+    , Program     (..)
+    , Statement   (..)
+    , Tape        (..)
+    , Token       (..)
+    , dictionary
     ) where
 
 import qualified Data.ByteString as B
@@ -22,15 +20,15 @@ import Control.Monad.Reader             ( ReaderT       )
 import Data.Text                        ( Text          )
 import Data.Word                        ( Word8         )
 import Control.Applicative              ( Alternative
-                                        , empty
-                                        , (<|>)         )
+                                        , (<|>), empty  )
 
 ---------------------------------------------------------------------
 
-data Tape a = Tape { back  :: [a]
-                   , focus :: a
-                   , front :: [a]
-                   } deriving ( Show )
+data Tape a = Tape {
+      back  :: [a]
+    , focus ::  a
+    , front :: [a]
+    } deriving ( Show )
 
 instance Functor Tape where
     fmap f (Tape xs u ys) = Tape (fmap f xs) (f u) (fmap f ys)
@@ -40,38 +38,42 @@ instance Foldable Tape where
 
 ---------------------------------------------------------------------
 
-data Computer = Computer { input  :: B.ByteString
-                         , output :: B.ByteString
-                         , memory :: Tape Word8
-                         } deriving ( Show )
+data Computer = Computer {
+      input  :: B.ByteString
+    , output :: B.ByteString
+    , memory :: Tape Word8
+    } deriving ( Show )
 
-data Statement = Increment
-               | Decrement
-               | Advance
-               | Backup
-               | ReadIn
-               | WriteOut
-               | WhileLoop Program
-               | DoNothing
-                 deriving ( Show )
+data Statement =
+      Increment
+    | Decrement
+    | Advance
+    | Backup
+    | ReadIn
+    | WriteOut
+    | WhileLoop Program
+    | DoNothing
+      deriving ( Show )
 
-data Token = BFGT
-           | BFLT
-           | BFPlus
-           | BFMinus
-           | BFComma
-           | BFDot
-           | BFStart
-           | BFStop
-           | BFHash
-             deriving ( Ord, Eq, Show )
+data Token =
+      BFPlus
+    | BFMinus
+    | BFGT
+    | BFLT
+    | BFComma
+    | BFDot
+    | BFStart
+    | BFStop
+    | BFHash
+      deriving ( Ord, Eq, Show )
 
-data Dictionary = Dictionary { tokens  :: [ (Token, [Text]) ]
-                             , isShort :: Bool
-                             }
+data Dictionary = Dictionary {
+      tokens  :: [ (Token, [Text]) ]
+    , isShort :: Bool
+    } deriving ( Show )
 
-toDictionary :: [(Token, [Text])] -> Dictionary
-toDictionary ts = Dictionary ts $ all ( (== 1) . Tx.length ) $ xs
+dictionary :: [(Token, [Text])] -> Dictionary
+dictionary ts = Dictionary ts $ all ( (== 1) . Tx.length ) $ xs
     where xs = concat . snd . unzip $ ts
 
 type Program     = [Statement]
@@ -80,7 +82,7 @@ type Computation = Computer -> Either ErrString Computer
 type BFScript    = [Token]
 
 -- | Parser a   = StateT ( Text -> Maybe (a, Text) )
-type Parser      = StateT Text Maybe
+type Parser   = StateT Text (Either String)
 
 -- | BFParser a = ReaderT ( Dictionary -> Parser a )
-type BFParser    = ReaderT Dictionary Parser
+type BFParser = ReaderT Dictionary Parser

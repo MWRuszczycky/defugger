@@ -6,39 +6,53 @@ module Parser
 
 import qualified Data.Text  as Tx
 import qualified Data.Char  as C
-import Data.Foldable                ( asum          )
-import Control.Monad.State.Lazy     ( StateT  (..)
-                                    , get, put
-                                    , guard
-                                    , evalStateT    )
-import Control.Monad.Reader         ( ReaderT (..)
-                                    , ask
-                                    , runReaderT
-                                    , lift          )
-import Types
-import Data.List                    ( maximumBy
-                                    , minimumBy
-                                    , find          )
-import Data.Text                    ( Text          )
-import Control.Applicative          ( Alternative
-                                    , (<|>)
-                                    , liftA2
-                                    , many, empty   )
+import Data.List                  ( find            )
+import Data.Text                  ( Text, unpack    )
+import Data.Foldable              ( asum            )
+import Control.Monad.State.Lazy   ( StateT (..)
+                                  , evalStateT
+                                  , get, guard
+                                  , lift, put       )
+import Control.Monad.Reader       ( ReaderT (..)
+                                  , ask
+                                  , runReaderT      )
+import Control.Applicative        ( Alternative
+                                  , (<|>)
+                                  , empty
+                                  , many            )
+import Types                      ( Dictionary (..)
+                                  , BFParser   (..)
+                                  , Program    (..)
+                                  , Statement  (..)
+                                  , Token      (..)
+                                  , dictionary      )
 
 ---------------------------------------------------------------------
 -- Entry point
 
-parse :: Dictionary -> Text -> Maybe Program
+parse :: Dictionary -> Text -> Either String Program
 parse d = evalStateT ( runReaderT program d )
 
+parseFail :: Text -> Text -> Dictionary -> BFParser a
+parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
+    where (tk, _)          = splitNext d t1
+          charNo           = 1 + Tx.length t0 - Tx.length t1
+          lineNo           = "Line " ++ show ( findLineNumber charNo t0 )
+          go Nothing       = lineNo ++ ": Unrecognized token: " ++ unpack tk
+          go (Just BFStop) = lineNo ++ ": Unpaired close-brace for while-loop"
+          go _             = lineNo ++ ": Cannot parse while-loop"
+
 ---------------------------------------------------------------------
--- Parsers
+-- BF-Parsers
 
 program :: BFParser Program
 program = do
-    p <- many statement
-    endOfInput
-    pure p
+    t0 <- get
+    p  <- many statement
+    t1 <- get
+    if Tx.null t1
+       then pure p
+       else ask >>= parseFail t0 t1
 
 subProgram :: BFParser Program
 subProgram = do
@@ -51,8 +65,8 @@ statement = do
     many ( satisfy C.isSpace )
     kw <- opening
     case kw of
-         BFStart -> subProgram >>= pure . WhileLoop
-         BFHash  -> skipLine >> pure DoNothing
+         BFStart   -> subProgram >>= pure . WhileLoop
+         BFHash    -> skipLine   >>  pure DoNothing
          otherwise -> pure . toStatement $ kw
 
 opening :: BFParser Token
@@ -60,23 +74,20 @@ opening = asum . map token $ [ BFGT,  BFLT,    BFPlus,  BFMinus
                              , BFDot, BFComma, BFStart, BFHash
                              ]
 
-endOfInput :: BFParser ()
-endOfInput = get >>= guard . Tx.null
-
 ---------------------------------------------------------------------
 -- Base parsers
 
 token :: Token -> BFParser Token
 token tok = do
     dict         <- ask
-    possMatches  <- lift . lift . lookup tok . tokens $ dict
+    possMatches  <- tryMaybe ( lookup tok ) . tokens $ dict
     (next, rest) <- splitNext dict <$> get
     guard $ elem next possMatches
     put rest >> pure tok
 
 satisfy :: (Char -> Bool) -> BFParser Char
 satisfy f = do
-    (c, s) <- get >>= lift . lift . Tx.uncons
+    (c, s) <- get >>= tryMaybe Tx.uncons
     guard $ f c
     put s >> pure c
 
@@ -86,6 +97,9 @@ skipLine = do
     case Tx.uncons . Tx.dropWhile (/= '\n') $ s of
          Nothing      -> put Tx.empty
          Just (_, s') -> put s'
+
+tryMaybe :: (a -> Maybe b) -> a -> BFParser b
+tryMaybe f = maybe empty pure . f
 
 ---------------------------------------------------------------------
 -- Helpers
@@ -104,22 +118,28 @@ splitNext d
     | isShort d = Tx.splitAt 1
     | otherwise = Tx.break C.isSpace
 
+findToken :: Text -> Dictionary -> Maybe Token
+findToken t d = fmap fst . find ( elem t . snd ) . tokens $ d
+
+findLineNumber :: Int -> Text -> Int
+findLineNumber n = (+1) . Tx.length . Tx.filter (== '\n') . Tx.take n
+
 ---------------------------------------------------------------------
 -- For testing
 
 runTest = parse bfDict testProg
 
 bfDict :: Dictionary
-bfDict =  toDictionary [ ( BFGT,    [">"] )
-                       , ( BFLT,    ["<"] )
-                       , ( BFPlus,  ["+"] )
-                       , ( BFMinus, ["-"] )
-                       , ( BFDot,   ["."] )
-                       , ( BFComma, [","] )
-                       , ( BFStart, ["["] )
-                       , ( BFStop,  ["]"] )
-                       , ( BFHash,  ["#"] )
-                       ]
+bfDict =  dictionary [ ( BFGT,    [">"] )
+                     , ( BFLT,    ["<"] )
+                     , ( BFPlus,  ["+"] )
+                     , ( BFMinus, ["-"] )
+                     , ( BFDot,   ["."] )
+                     , ( BFComma, [","] )
+                     , ( BFStart, ["["] )
+                     , ( BFStop,  ["]"] )
+                     , ( BFHash,  ["#"] )
+                     ]
 
 testProg :: Text
-testProg = "++> ++[<+>-]-->> # a comment \n <<[<>--++[+<->+]]->+"
+testProg = "++> ++[<+>-]-->> # a comment \n <<[<>- -++[+<->+]]->+"
