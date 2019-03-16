@@ -35,8 +35,9 @@ parse d = evalStateT ( runReaderT program d )
 
 parseFail :: Text -> Text -> Dictionary -> BFParser a
 parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
-    where (tk, _)          = splitNext d t1
-          charNo           = 1 + Tx.length t0 - Tx.length t1
+    where t1'              = Tx.dropWhile C.isSpace t1
+          (tk, _)          = splitNext d t1'
+          charNo           = 1 + Tx.length t0 - Tx.length t1'
           lineNo           = "Line " ++ show ( findLineNumber charNo t0 )
           go Nothing       = lineNo ++ ": Unrecognized token: " ++ unpack tk
           go (Just BFStop) = lineNo ++ ": Unpaired close-brace for while-loop"
@@ -123,23 +124,3 @@ findToken t d = fmap fst . find ( elem t . snd ) . tokens $ d
 
 findLineNumber :: Int -> Text -> Int
 findLineNumber n = (+1) . Tx.length . Tx.filter (== '\n') . Tx.take n
-
----------------------------------------------------------------------
--- For testing
-
-runTest = parse bfDict testProg
-
-bfDict :: Dictionary
-bfDict =  dictionary [ ( BFGT,    [">"] )
-                     , ( BFLT,    ["<"] )
-                     , ( BFPlus,  ["+"] )
-                     , ( BFMinus, ["-"] )
-                     , ( BFDot,   ["."] )
-                     , ( BFComma, [","] )
-                     , ( BFStart, ["["] )
-                     , ( BFStop,  ["]"] )
-                     , ( BFHash,  ["#"] )
-                     ]
-
-testProg :: Text
-testProg = "++> ++[<+>-]-->> # a comment \n <<[<>- -++[+<->+]]->+"
