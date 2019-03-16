@@ -53,7 +53,16 @@ data Statement =
     | WriteOut
     | WhileLoop Program
     | DoNothing
-      deriving ( Show )
+
+instance Show Statement where
+    show Increment     = "+"
+    show Decrement     = "-"
+    show Advance       = ">"
+    show Backup        = "<"
+    show ReadIn        = ","
+    show WriteOut      = "."
+    show (WhileLoop p) = "[" ++ concatMap show p ++ "]"
+    show DoNothing     = "#\\n"
 
 data Token =
       BFPlus
