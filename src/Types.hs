@@ -28,7 +28,14 @@ data Tape a = Tape {
       back  :: [a]
     , focus ::  a
     , front :: [a]
-    } deriving ( Show )
+    }
+
+instance Show a => Show (Tape a) where
+    show (Tape xs u ys) = unwords . concat $ t
+        where t = [ map show . reverse $ xs
+                  , ["[" ++ show u ++ "]"]
+                  , map show ys
+                  ]
 
 instance Functor Tape where
     fmap f (Tape xs u ys) = Tape (fmap f xs) (f u) (fmap f ys)
