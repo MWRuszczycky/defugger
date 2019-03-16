@@ -25,9 +25,9 @@ import Control.Applicative              ( Alternative
 ---------------------------------------------------------------------
 
 data Tape a = Tape {
-      back  :: [a]
-    , focus ::  a
-    , front :: [a]
+      back  :: ![a]
+    , focus :: !a
+    , front :: ![a]
     }
 
 instance Show a => Show (Tape a) where
@@ -46,9 +46,9 @@ instance Foldable Tape where
 ---------------------------------------------------------------------
 
 data Computer = Computer {
-      input  :: B.ByteString
-    , output :: B.ByteString
-    , memory :: Tape Word8
+      input  :: !B.ByteString
+    , output :: !B.ByteString
+    , memory :: !(Tape Word8)
     } deriving ( Show )
 
 data Statement =
