@@ -51,6 +51,7 @@ program :: BFParser Program
 program = do
     t0 <- get
     p  <- many statement
+    spaces
     t1 <- get
     if Tx.null t1
        then pure p
@@ -59,12 +60,13 @@ program = do
 subProgram :: BFParser Program
 subProgram = do
     p <- many statement
+    spaces
     token BFStop
     pure p
 
 statement :: BFParser Statement
 statement = do
-    many ( satisfy C.isSpace )
+    spaces
     kw <- opening
     case kw of
          BFStart   -> subProgram >>= pure . WhileLoop
@@ -75,6 +77,9 @@ opening :: BFParser Token
 opening = asum . map token $ [ BFGT,  BFLT,    BFPlus,  BFMinus
                              , BFDot, BFComma, BFStart, BFHash
                              ]
+
+spaces :: BFParser ()
+spaces = many ( satisfy C.isSpace ) >> pure ()
 
 ---------------------------------------------------------------------
 -- Base parsers

@@ -23,6 +23,8 @@ main = hspec $ do
         it "Correctly parses valid programs with dictionary 1" $ do
             testValid bfDict1 testProgV101In testProgV101Out
             testValid bfDict1 testProgV102In testProgV102Out
+            testValid bfDict1 testProgV103In testProgV103Out
+            testValid bfDict1 testProgV104In testProgV104Out
         it "Correctly handles invalid programs with dictionary 1" $ do
             testInvalid bfDict1 testProgI101In testProgI101Out
             testInvalid bfDict1 testProgI102In testProgI102Out
@@ -73,6 +75,14 @@ testProgV101Out = "++>++[<+>-]-->>#\\n<<[<>--++[+<->+]]->+"
 testProgV102In, testProgV102Out :: Text
 testProgV102In  = "[++> \t\t. ,++[[<+>-]-->]> # ..<>+ \n\n . <<[# xx \n <>- -++[+<->+]]->+]"
 testProgV102Out = "[++>.,++[[<+>-]-->]>#\\n.<<[#\\n<>--++[+<->+]]->+]"
+
+testProgV103In, testProgV103Out :: Text
+testProgV103In  = "[++> \t\t. ,++[[<+>-]-->]> # ..<>+ \n\n . <<[# xx \n <>- -++[+<->+]]->+]\n\n"
+testProgV103Out = "[++>.,++[[<+>-]-->]>#\\n.<<[#\\n<>--++[+<->+]]->+]"
+
+testProgV104In, testProgV104Out :: Text
+testProgV104In  = "[++> \t\t. ,++[[<+>-\n]-->]> # ..<>+ \n\n . <<[# xx \n <>- -++[+<->+]]->+]"
+testProgV104Out = "[++>.,++[[<+>-]-->]>#\\n.<<[#\\n<>--++[+<->+]]->+]"
 
 -- Invalid Scripts
 
