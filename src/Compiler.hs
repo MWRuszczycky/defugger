@@ -1,9 +1,23 @@
 module Compiler
-    (
+    ( runProgram
     ) where
 
 import qualified Data.ByteString as B
 import qualified Types           as T
+import Control.Monad                    ( foldM )
+
+runProgram :: T.Computer -> T.Program -> Either T.ErrString T.Computer
+runProgram = foldM compile
+
+compile :: T.Computer -> T.Statement -> Either T.ErrString T.Computer
+compile c (T.Increment  ) = increment c
+compile c (T.Decrement  ) = decrement c
+compile c (T.Advance    ) = advance   c
+compile c (T.Backup     ) = backup    c
+compile c (T.ReadIn     ) = readIn    c
+compile c (T.WriteOut   ) = writeOut  c
+compile c (T.WhileLoop p) = whileLoop p c
+compile c (T.DoNothing  ) = pure c
 
 advance :: T.Computation
 advance c = case T.memory c of
@@ -38,15 +52,4 @@ writeOut c = let (T.Tape _ u _) = T.memory c
 whileLoop :: T.Program -> T.Computation
 whileLoop p c = case T.memory c of
                      T.Tape _ 0 _ -> pure c
-                     otherwise    -> compile p c >>= whileLoop p
-
-compile :: T.Program -> T.Computation
-compile []                   c = pure c
-compile ((T.Increment  ):ps) c = increment c   >>= compile ps
-compile ((T.Decrement  ):ps) c = decrement c   >>= compile ps
-compile ((T.Advance    ):ps) c = advance   c   >>= compile ps
-compile ((T.Backup     ):ps) c = backup    c   >>= compile ps
-compile ((T.ReadIn     ):ps) c = readIn    c   >>= compile ps
-compile ((T.WriteOut   ):ps) c = writeOut  c   >>= compile ps
-compile ((T.WhileLoop p):ps) c = whileLoop p c >>= compile ps
-compile ((T.DoNothing  ):ps) c = compile ps c
+                     otherwise    -> runProgram c p >>= whileLoop p

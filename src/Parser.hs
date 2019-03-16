@@ -21,6 +21,7 @@ import Control.Applicative        ( Alternative
                                   , empty
                                   , many            )
 import Types                      ( Dictionary (..)
+                                  , ErrString  (..)
                                   , BFParser   (..)
                                   , Program    (..)
                                   , Statement  (..)
@@ -30,7 +31,7 @@ import Types                      ( Dictionary (..)
 ---------------------------------------------------------------------
 -- Entry point
 
-parse :: Dictionary -> Text -> Either String Program
+parse :: Dictionary -> Text -> Either ErrString Program
 parse d = evalStateT ( runReaderT program d )
 
 parseFail :: Text -> Text -> Dictionary -> BFParser a
