@@ -2,7 +2,6 @@ module Main where
 
 import qualified Data.ByteString as B
 import qualified Types           as T
-import Data.Text                        ( Text          )
 import System.Environment               ( getArgs       )
 import Controller                       ( execute
                                         , formatOutput

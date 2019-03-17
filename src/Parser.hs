@@ -9,24 +9,19 @@ import qualified Data.Char  as C
 import Data.List                  ( find            )
 import Data.Text                  ( Text, unpack    )
 import Data.Foldable              ( asum            )
-import Control.Monad.State.Lazy   ( StateT (..)
-                                  , evalStateT
+import Control.Monad.State.Lazy   ( evalStateT
                                   , get, guard
                                   , lift, put       )
 import Control.Monad.Reader       ( ReaderT (..)
                                   , ask
                                   , runReaderT      )
-import Control.Applicative        ( Alternative
-                                  , (<|>)
-                                  , empty
-                                  , many            )
+import Control.Applicative        ( empty, many     )
 import Types                      ( Dictionary (..)
-                                  , ErrString  (..)
-                                  , BFParser   (..)
-                                  , Program    (..)
+                                  , ErrString
+                                  , BFParser
+                                  , Program
                                   , Statement  (..)
-                                  , Token      (..)
-                                  , dictionary      )
+                                  , Token      (..) )
 
 ---------------------------------------------------------------------
 -- Entry point
@@ -69,9 +64,9 @@ statement = do
     spaces
     kw <- opening
     case kw of
-         BFStart   -> subProgram >>= pure . WhileLoop
-         BFHash    -> skipLine   >>  pure DoNothing
-         otherwise -> pure . toStatement $ kw
+         BFStart -> subProgram >>= pure . WhileLoop
+         BFHash  -> skipLine   >>  pure DoNothing
+         _       -> pure . toStatement $ kw
 
 opening :: BFParser Token
 opening = asum . map token $ [ BFGT,  BFLT,    BFPlus,  BFMinus

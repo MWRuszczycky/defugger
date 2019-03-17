@@ -1,12 +1,12 @@
 module Types
-    ( BFParser    (..)
-    , BFScript    (..)
-    , Computation (..)
+    ( BFParser
+    , BFScript
+    , Computation
     , Computer    (..)
     , Dictionary  (..)
-    , ErrString   (..)
-    , Parser      (..)
-    , Program     (..)
+    , ErrString
+    , Parser
+    , Program
     , Statement   (..)
     , Tape        (..)
     , Token       (..)
@@ -19,8 +19,6 @@ import Control.Monad.State.Lazy         ( StateT        )
 import Control.Monad.Reader             ( ReaderT       )
 import Data.Text                        ( Text          )
 import Data.Word                        ( Word8         )
-import Control.Applicative              ( Alternative
-                                        , (<|>), empty  )
 
 ---------------------------------------------------------------------
 

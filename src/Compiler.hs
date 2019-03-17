@@ -52,4 +52,4 @@ writeOut c = let (T.Tape _ u _) = T.memory c
 whileLoop :: T.Program -> T.Computation
 whileLoop p c = case T.memory c of
                      T.Tape _ 0 _ -> pure c
-                     otherwise    -> runProgram c p >>= whileLoop p
+                     _            -> runProgram c p >>= whileLoop p

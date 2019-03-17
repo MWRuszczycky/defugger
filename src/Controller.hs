@@ -6,10 +6,8 @@ module Controller
     , formatOutput
     ) where
 
-import qualified Data.Word       as W
 import qualified Data.ByteString as B
 import qualified Data.Text.IO    as Tx
-import qualified Data.Text       as Tx
 import qualified Types           as T
 import System.Directory                 ( doesFileExist )
 import Data.Text                        ( Text       )
@@ -30,6 +28,7 @@ getScript (x:_) = do
 formatOutput :: B.ByteString -> String
 formatOutput = map ( toEnum . fromIntegral ) . B.unpack
 
+initComputer :: B.ByteString -> T.Computer
 initComputer b = T.Computer { T.input  = b
                             , T.output = B.empty
                             , T.memory = T.Tape [] 0 []
