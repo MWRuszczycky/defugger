@@ -26,7 +26,8 @@ advance c = case T.memory c of
 
 backup :: T.Computation
 backup c = case T.memory c of
-                T.Tape []     _ _  -> Left "Invalid access ahead of start."
+                T.Tape []     _ _  -> Left "Invalid access ahead of start"
+                T.Tape (x:xs) 0 [] -> Right c { T.memory = T.Tape xs x []     }
                 T.Tape (x:xs) u ys -> Right c { T.memory = T.Tape xs x (u:ys) }
 
 increment :: T.Computation
@@ -40,7 +41,7 @@ decrement c = let (T.Tape xs u ys) = T.memory c
 readIn :: T.Computation
 readIn c = let (T.Tape xs _ ys) = T.memory c
            in  case B.uncons . T.input $ c of
-                    Nothing      -> Left "At end of T.input"
+                    Nothing      -> Left "Attempt to read past end of input"
                     Just (b, bs) -> Right c { T.memory = T.Tape xs b ys
                                             , T.input  = bs
                                             }
