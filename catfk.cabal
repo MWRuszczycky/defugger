@@ -15,15 +15,19 @@ executable catfk
   main-is:              Main.hs
   default-language:     Haskell2010
   build-depends:        base >= 4.7 && < 5
+                      , bytestring
+                      , text
                       , catfk-internal
 
 library catfk-internal
-  exposed-modules:      Types
+  exposed-modules:      Compiler
+                      , Controller
                       , Parser
-                      , Compiler
+                      , Types
   hs-source-dirs:       src
   build-depends:        base >=4.7 && <5
                       , bytestring
+                      , directory
                       , mtl
                       , text
 
