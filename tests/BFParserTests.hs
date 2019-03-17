@@ -7,10 +7,10 @@
 -- defined in the Parser module.
 -- =============================================================== --
 
-import qualified Data.Text  as Tx
-import qualified Types      as T
+import qualified Data.Text   as Tx
+import qualified Model.Types as T
 import Data.Text                    ( Text      )
-import Parser                       ( parse     )
+import Model.Parser                 ( parse     )
 import Test.Hspec                   ( Spec (..)
                                     , describe
                                     , hspec

@@ -8,11 +8,11 @@ module Controller
 
 import qualified Data.ByteString as B
 import qualified Data.Text.IO    as Tx
-import qualified Types           as T
+import qualified Model.Types     as T
 import System.Directory                 ( doesFileExist )
-import Data.Text                        ( Text       )
-import Compiler                         ( runProgram )
-import Parser                           ( parse      )
+import Data.Text                        ( Text          )
+import Model.Compiler                   ( runProgram    )
+import Model.Parser                     ( parse         )
 
 execute :: B.ByteString -> Text -> Either T.ErrString T.Computer
 execute b t = parse bfDict t >>= runProgram ( initComputer b )

@@ -21,10 +21,10 @@ executable catfk
                       , catfk-internal
 
 library catfk-internal
-  exposed-modules:      Compiler
-                      , Controller
-                      , Parser
-                      , Types
+  exposed-modules:      Controller
+                      , Model.Compiler
+                      , Model.Parser
+                      , Model.Types
   hs-source-dirs:       src
   ghc-options:          -O2 -W
   build-depends:        base >=4.7 && <5

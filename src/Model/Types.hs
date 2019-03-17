@@ -1,4 +1,4 @@
-module Types
+module Model.Types
     ( BFParser
     , BFScript
     , Computation

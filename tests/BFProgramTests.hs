@@ -9,10 +9,10 @@
 
 import qualified Data.Text       as Tx
 import qualified Data.ByteString as B
-import qualified Types           as T
+import qualified Model.Types     as T
 import qualified Controller      as C
 import Data.Text                        ( Text      )
-import Parser                           ( parse     )
+import Model.Parser                     ( parse     )
 import Test.Hspec                       ( Spec (..)
                                         , describe
                                         , hspec

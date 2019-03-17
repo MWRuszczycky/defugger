@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser
+module Model.Parser
     ( parse
     ) where
 
@@ -16,7 +16,7 @@ import Control.Monad.Reader       ( ReaderT (..)
                                   , ask
                                   , runReaderT      )
 import Control.Applicative        ( empty, many     )
-import Types                      ( Dictionary (..)
+import Model.Types                ( Dictionary (..)
                                   , ErrString
                                   , BFParser
                                   , Program

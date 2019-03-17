@@ -1,9 +1,9 @@
-module Compiler
+module Model.Compiler
     ( runProgram
     ) where
 
 import qualified Data.ByteString as B
-import qualified Types           as T
+import qualified Model.Types     as T
 import Control.Monad                    ( foldM )
 
 runProgram :: T.Computer -> T.Program -> Either T.ErrString T.Computer

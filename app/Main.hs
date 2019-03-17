@@ -1,7 +1,7 @@
 module Main where
 
 import qualified Data.ByteString as B
-import qualified Types           as T
+import qualified Model.Types     as T
 import System.Environment               ( getArgs       )
 import Controller                       ( execute
                                         , formatOutput
