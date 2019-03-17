@@ -12,5 +12,4 @@ main = do
     script <- getArgs >>= getScript
     case script >>= execute B.empty of
          Left e  -> putStrLn $ "Error: " ++ e
-         Right c -> let result = formatOutput . T.output $ c
-                    in  putStrLn result
+         Right c -> putStrLn . formatOutput . T.output $ c
