@@ -11,6 +11,7 @@ import qualified Data.Text       as Tx
 import qualified Data.ByteString as B
 import qualified Model.Types     as T
 import qualified Controller      as C
+import qualified Loader          as L
 import Data.Text                        ( Text      )
 import Model.Parser                     ( parse     )
 import Test.Hspec                       ( Spec (..)
@@ -28,9 +29,9 @@ main = hspec $ do
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
 scriptNoInput s t = do
-    script   <- C.getScript [s]
+    script   <- L.getScript [s]
     expected <- readFile t
     case script >>= C.execute B.empty of
          Left e  -> error e
-         Right c -> let result = C.formatOutput . T.output $ c
+         Right c -> let result = L.formatOutput . T.output $ c
                     in  result `shouldBe` expected

@@ -3,8 +3,8 @@ module Main where
 import qualified Data.ByteString as B
 import qualified Model.Types     as T
 import System.Environment               ( getArgs       )
-import Controller                       ( execute
-                                        , formatOutput
+import Controller                       ( execute       )
+import Loader                           ( formatOutput
                                         , getScript     )
 
 main :: IO ()

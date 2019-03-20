@@ -22,6 +22,7 @@ executable catfk
 
 library catfk-internal
   exposed-modules:      Controller
+                      , Loader
                       , Model.Compiler
                       , Model.Parser
                       , Model.Types
