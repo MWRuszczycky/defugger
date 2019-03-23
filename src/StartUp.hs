@@ -4,6 +4,7 @@ module StartUp
     , debugger
     , endInterpreter
     , endDebugger
+    , formatOutput
     ) where
 
 import qualified Data.ByteString as BS

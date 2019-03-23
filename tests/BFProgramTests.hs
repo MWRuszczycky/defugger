@@ -14,13 +14,14 @@ import qualified Model.Parser    as P
 import qualified Controller      as C
 import qualified Loader          as L
 import qualified StartUp         as SU
-import Data.Text                        ( Text      )
-import Model.Parser                     ( parse     )
+import Control.Monad.Except             ( runExceptT )
+import Data.Text                        ( Text       )
+import Model.Parser                     ( parse      )
 import Test.Hspec                       ( Spec (..)
                                         , describe
                                         , hspec
                                         , it
-                                        , shouldBe  )
+                                        , shouldBe   )
 
 main :: IO ()
 main = hspec $ do
@@ -31,10 +32,14 @@ main = hspec $ do
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
 scriptNoInput s t = do
-    start    <- L.initDefugger =<< pure [s]
-    result   <- pure $ C.runAndDone =<< start
+    opts <- pure [s] >>= SU.getOptions
+    case T.mode opts of
+         T.Interpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
+         _             -> error "Test failed: Interpreter mode expected"
+
+checkResult :: FilePath -> Either T.ErrString T.Computer -> IO ()
+checkResult _ (Left err) = error $ "Test failed: " ++ err
+checkResult t (Right c)  = do
+    let output = SU.formatOutput . T.output $ c
     expected <- readFile t
-    case result of
-         Left e  -> error e
-         Right x -> let output = SU.formatOutput . T.output . T.computer $ x
-                    in  output `shouldBe` expected
+    output `shouldBe` expected
