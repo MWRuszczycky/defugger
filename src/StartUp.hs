@@ -62,11 +62,20 @@ endDebugger (Right _) = putStrLn "Defugger completed with no errors."
 -- Command line arguments parsing
 
 getOptions :: [String] -> IO T.DefuggerOptions
+getOptions ("--run":xs) = pure $
+    defOptions { T.mode = T.Interpreter
+               , T.args = xs }
 getOptions xs = pure $
-    T.DefuggerOptions { T.mode     = T.Interpreter
-                      , T.args     = xs
-                      , T.terminal = "xterm-256color"
-                      }
+    defOptions { T.mode = T.DebugMode
+               , T.args = xs
+               }
+
+defOptions :: T.DefuggerOptions
+defOptions = T.DefuggerOptions {
+      T.mode     = T.Interpreter
+    , T.args     = []
+    , T.terminal = "xterm-256color"
+    }
 
 ---------------------------------------------------------------------
 -- Brick app initialization

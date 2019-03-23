@@ -32,7 +32,7 @@ main = hspec $ do
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
 scriptNoInput s t = do
-    opts <- pure [s] >>= SU.getOptions
+    opts <- pure ["--run", s] >>= SU.getOptions
     case T.mode opts of
          T.Interpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
          _             -> error "Test failed: Interpreter mode expected"
