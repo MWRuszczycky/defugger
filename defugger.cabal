@@ -16,12 +16,14 @@ executable defugger
   default-language:     Haskell2010
   ghc-options:          -O2 -threaded -W
   build-depends:        base >= 4.7 && < 5
+                      , mtl
                       , defugger-internal
 
 library defugger-internal
   exposed-modules:      Controller
                       , Loader
                       , StartUp
+                      , View
                       , Model.Compiler
                       , Model.CoreIO
                       , Model.Parser

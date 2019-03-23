@@ -1,18 +1,19 @@
 module Model.Types
     ( BFParser
     , BFScript
-    , Defugger    (..)
+    , Debugger        (..)
     , Computation
-    , Computer    (..)
-    , Dictionary  (..)
+    , Computer        (..)
+    , Dictionary      (..)
     , ErrString
-    , Mode        (..)
-    , EtDefugger
+    , Mode            (..)
     , Parser
     , Program
-    , Statement   (..)
-    , Tape        (..)
-    , Token       (..)
+    , DefuggerOptions (..)
+    , Statement       (..)
+    , Status          (..)
+    , Tape            (..)
+    , Token           (..)
     , toDictionary
     ) where
 
@@ -25,16 +26,30 @@ import Data.Word                        ( Word8         )
 
 ---------------------------------------------------------------------
 
-data Defugger = Defugger {
+data DefuggerOptions = DefuggerOptions {
+      mode     :: Mode
+    , args     :: [String]
+    , terminal :: String
+}
+
+data Mode =
+      Interpreter
+    | DebugMode
+    | OptsError ErrString
+      deriving ( Eq, Show )
+
+---------------------------------------------------------------------
+
+data Debugger = Debugger {
       computer   :: Computer
-    , mode       :: Mode
     , dictionary :: Dictionary
-    , script     :: Text
+    , program    :: Program
+    , status     :: Status
     }
 
-data Mode = RunAndDone | Debugger deriving ( Eq, Show )
-
-type EtDefugger = Either ErrString Defugger
+data Status =
+      Normal
+      deriving ( Eq, Show )
 
 ---------------------------------------------------------------------
 

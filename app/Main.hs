@@ -2,9 +2,19 @@
 
 module Main where
 
-import System.Environment ( getArgs      )
-import Loader             ( initDefugger )
-import StartUp            ( runDefugger  )
+import qualified Model.Types as T
+import Control.Monad.Except        ( runExceptT      )
+import System.Environment          ( getArgs         )
+import StartUp                     ( getOptions
+                                   , interpreter
+                                   , debugger
+                                   , endInterpreter
+                                   , endDebugger     )
 
 main :: IO ()
-main = getArgs >>= initDefugger >>= runDefugger
+main = do
+    opts <- getArgs >>= getOptions
+    case T.mode opts of
+         T.Interpreter -> runExceptT (interpreter opts) >>= endInterpreter
+         T.DebugMode   -> runExceptT (debugger opts)    >>= endDebugger
+         T.OptsError e -> putStrLn $ "Error: " ++ e
