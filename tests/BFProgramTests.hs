@@ -31,7 +31,7 @@ main = hspec $ do
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
 scriptNoInput s t = do
-    start    <- L.initCatfk =<< pure [s]
+    start    <- L.initDefugger =<< pure [s]
     result   <- pure $ C.runAndDone =<< start
     expected <- readFile t
     case result of

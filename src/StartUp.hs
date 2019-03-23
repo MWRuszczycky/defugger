@@ -1,6 +1,6 @@
 module StartUp
     ( initApp
-    , runCatfk
+    , runDefugger
     , formatOutput
     ) where
 
@@ -11,7 +11,7 @@ import qualified Model.Types     as T
 import System.Posix.Env                 ( putEnv        )
 import Controller                       ( routeEvent    )
 
-initApp :: B.App T.OuterState e ()
+initApp :: B.App T.EtDefugger e ()
 initApp = B.App { B.appDraw         = const [ B.str "Welcome to CatFk!" ]
                 , B.appHandleEvent  = routeEvent
                 , B.appChooseCursor = B.neverShowCursor
@@ -19,8 +19,8 @@ initApp = B.App { B.appDraw         = const [ B.str "Welcome to CatFk!" ]
                 , B.appAttrMap      = const (B.attrMap V.defAttr [])
                 }
 
-runCatfk :: T.OuterState -> IO ()
-runCatfk st0 = do
+runDefugger :: T.EtDefugger -> IO ()
+runDefugger st0 = do
     putEnv $ "TERM=xterm-256color"
     result <- B.defaultMain initApp st0
     case result of

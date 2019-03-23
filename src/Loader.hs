@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Loader
-    ( initCatfk
+    ( initDefugger
     , initComputer
     , bfDict
     ) where
@@ -13,15 +13,15 @@ import Model.CoreIO                     ( tryReadFile   )
 import Control.Monad.Except             ( runExceptT    )
 import Data.Text                        ( Text          )
 
-initCatfk :: [String] -> IO T.OuterState
-initCatfk []    = pure . Left $ "A script file is required"
-initCatfk (x:_) = runExceptT $ do
+initDefugger :: [String] -> IO T.EtDefugger
+initDefugger []    = pure . Left $ "A script file is required"
+initDefugger (x:_) = runExceptT $ do
     s <- tryReadFile x
-    pure T.CatfkState { T.computer   = initComputer BS.empty
-                      , T.mode       = T.RunAndDone
-                      , T.dictionary = bfDict
-                      , T.script     = s
-                      }
+    pure T.Defugger { T.computer   = initComputer BS.empty
+                    , T.mode       = T.RunAndDone
+                    , T.dictionary = bfDict
+                    , T.script     = s
+                    }
 
 initComputer :: BS.ByteString -> T.Computer
 initComputer b = T.Computer { T.input  = b

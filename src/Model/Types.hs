@@ -1,13 +1,13 @@
 module Model.Types
     ( BFParser
     , BFScript
-    , CatfkState  (..)
+    , Defugger    (..)
     , Computation
     , Computer    (..)
     , Dictionary  (..)
     , ErrString
     , Mode        (..)
-    , OuterState
+    , EtDefugger
     , Parser
     , Program
     , Statement   (..)
@@ -25,7 +25,7 @@ import Data.Word                        ( Word8         )
 
 ---------------------------------------------------------------------
 
-data CatfkState = CatfkState {
+data Defugger = Defugger {
       computer   :: Computer
     , mode       :: Mode
     , dictionary :: Dictionary
@@ -34,7 +34,7 @@ data CatfkState = CatfkState {
 
 data Mode = RunAndDone | Debugger deriving ( Eq, Show )
 
-type OuterState = Either ErrString CatfkState
+type EtDefugger = Either ErrString Defugger
 
 ---------------------------------------------------------------------
 

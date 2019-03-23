@@ -2,9 +2,9 @@
 
 module Main where
 
-import System.Environment ( getArgs   )
-import Loader             ( initCatfk )
-import StartUp            ( runCatfk  )
+import System.Environment ( getArgs      )
+import Loader             ( initDefugger )
+import StartUp            ( runDefugger  )
 
 main :: IO ()
-main = getArgs >>= initCatfk >>= runCatfk
+main = getArgs >>= initDefugger >>= runDefugger
