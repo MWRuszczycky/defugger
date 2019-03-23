@@ -1,16 +1,19 @@
 module Model.Types
     ( BFParser
     , BFScript
+    , CatfkState  (..)
     , Computation
     , Computer    (..)
     , Dictionary  (..)
     , ErrString
+    , Mode        (..)
+    , OuterState
     , Parser
     , Program
     , Statement   (..)
     , Tape        (..)
     , Token       (..)
-    , dictionary
+    , toDictionary
     ) where
 
 import qualified Data.ByteString as B
@@ -19,6 +22,19 @@ import Control.Monad.State.Lazy         ( StateT        )
 import Control.Monad.Reader             ( ReaderT       )
 import Data.Text                        ( Text          )
 import Data.Word                        ( Word8         )
+
+---------------------------------------------------------------------
+
+data CatfkState = CatfkState {
+      computer   :: Computer
+    , mode       :: Mode
+    , dictionary :: Dictionary
+    , script     :: Text
+    }
+
+data Mode = RunAndDone | Debugger deriving ( Eq, Show )
+
+type OuterState = Either ErrString CatfkState
 
 ---------------------------------------------------------------------
 
@@ -86,8 +102,8 @@ data Dictionary = Dictionary {
     , isShort :: Bool
     } deriving ( Show )
 
-dictionary :: [(Token, [Text])] -> Dictionary
-dictionary ts = Dictionary ts $ all ( (== 1) . Tx.length ) $ xs
+toDictionary :: [(Token, [Text])] -> Dictionary
+toDictionary ts = Dictionary ts $ all ( (== 1) . Tx.length ) $ xs
     where xs = concat . snd . unzip $ ts
 
 type Program     = [Statement]

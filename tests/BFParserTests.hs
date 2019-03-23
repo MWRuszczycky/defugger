@@ -55,16 +55,16 @@ format = concatMap go
 -- Dictionary 1
 
 bfDict1 :: T.Dictionary
-bfDict1 = T.dictionary [ ( T.BFGT,    [">"] )
-                       , ( T.BFLT,    ["<"] )
-                       , ( T.BFPlus,  ["+"] )
-                       , ( T.BFMinus, ["-"] )
-                       , ( T.BFDot,   ["."] )
-                       , ( T.BFComma, [","] )
-                       , ( T.BFStart, ["["] )
-                       , ( T.BFStop,  ["]"] )
-                       , ( T.BFHash,  ["#"] )
-                       ]
+bfDict1 = T.toDictionary [ ( T.BFGT,    [">"] )
+                         , ( T.BFLT,    ["<"] )
+                         , ( T.BFPlus,  ["+"] )
+                         , ( T.BFMinus, ["-"] )
+                         , ( T.BFDot,   ["."] )
+                         , ( T.BFComma, [","] )
+                         , ( T.BFStart, ["["] )
+                         , ( T.BFStop,  ["]"] )
+                         , ( T.BFHash,  ["#"] )
+                         ]
 
 -- Valid Scripts
 

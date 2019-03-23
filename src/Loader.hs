@@ -1,43 +1,42 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Loader
-    ( getScript
-    , formatOutput
+    ( initCatfk
     , initComputer
     , bfDict
     ) where
 
-import qualified Data.ByteString as B
+import qualified Data.ByteString as BS
 import qualified Data.Text.IO    as Tx
 import qualified Model.Types     as T
-import System.Directory                 ( doesFileExist )
+import Model.CoreIO                     ( tryReadFile   )
+import Control.Monad.Except             ( runExceptT    )
 import Data.Text                        ( Text          )
 
-getScript :: [String] -> IO (Either T.ErrString Text)
-getScript []    = pure $ Left "A script file is required"
-getScript (x:_) = do
-    exists <- doesFileExist x
-    if exists
-       then Right <$> Tx.readFile x
-       else pure . Left $ "Cannot find script file " ++ x
+initCatfk :: [String] -> IO T.OuterState
+initCatfk []    = pure . Left $ "A script file is required"
+initCatfk (x:_) = runExceptT $ do
+    s <- tryReadFile x
+    pure T.CatfkState { T.computer   = initComputer BS.empty
+                      , T.mode       = T.RunAndDone
+                      , T.dictionary = bfDict
+                      , T.script     = s
+                      }
 
-formatOutput :: B.ByteString -> String
-formatOutput = map ( toEnum . fromIntegral ) . B.unpack
-
-initComputer :: B.ByteString -> T.Computer
+initComputer :: BS.ByteString -> T.Computer
 initComputer b = T.Computer { T.input  = b
-                            , T.output = B.empty
+                            , T.output = BS.empty
                             , T.memory = T.Tape [] 0 []
                             }
 
 bfDict :: T.Dictionary
-bfDict = T.dictionary [ ( T.BFGT,    [">"] )
-                      , ( T.BFLT,    ["<"] )
-                      , ( T.BFPlus,  ["+"] )
-                      , ( T.BFMinus, ["-"] )
-                      , ( T.BFDot,   ["."] )
-                      , ( T.BFComma, [","] )
-                      , ( T.BFStart, ["["] )
-                      , ( T.BFStop,  ["]"] )
-                      , ( T.BFHash,  ["#"] )
-                      ]
+bfDict = T.toDictionary [ ( T.BFGT,    [">"] )
+                        , ( T.BFLT,    ["<"] )
+                        , ( T.BFPlus,  ["+"] )
+                        , ( T.BFMinus, ["-"] )
+                        , ( T.BFDot,   ["."] )
+                        , ( T.BFComma, [","] )
+                        , ( T.BFStart, ["["] )
+                        , ( T.BFStop,  ["]"] )
+                        , ( T.BFHash,  ["#"] )
+                        ]

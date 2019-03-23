@@ -16,25 +16,25 @@ executable catfk
   default-language:     Haskell2010
   ghc-options:          -O2 -threaded -W
   build-depends:        base >= 4.7 && < 5
-                      , brick
-                      , bytestring
-                      , text
                       , catfk-internal
-                      , vty
 
 library catfk-internal
   exposed-modules:      Controller
                       , Loader
+                      , StartUp
                       , Model.Compiler
+                      , Model.CoreIO
                       , Model.Parser
                       , Model.Types
   hs-source-dirs:       src
   ghc-options:          -O2 -W
   build-depends:        base >=4.7 && <5
+                      , brick
                       , bytestring
-                      , directory
                       , mtl
                       , text
+                      , unix
+                      , vty
 
 test-suite bfparser-tests
   type:                 exitcode-stdio-1.0
