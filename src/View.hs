@@ -5,16 +5,28 @@ module View
     , attributes
     ) where
 
-import qualified Graphics.Vty as V
-import qualified Brick        as B
-import qualified Model.Types  as T
-import qualified Data.Vector  as Vec
-import Model.Compiler                ( getPosition )
-import Data.List                     ( intersperse )
-import Brick.Widgets.Border          ( border      )
+import qualified Data.ByteString        as BS
+import qualified Graphics.Vty           as V
+import qualified Brick                  as B
+import qualified Brick.Widgets.Center   as B
+import qualified Model.Types            as T
+import qualified Data.Vector            as Vec
+import Model.Compiler                           ( getPosition     )
+import Data.List                                ( intersperse     )
 
 drawUI :: T.Debugger -> [ B.Widget () ]
-drawUI db = [ B.vBox [ border $ programUI db, border $ tapeUI db ] ]
+drawUI db = [ B.vCenter . B.vBox $ ws ]
+    where sep = B.padTop (B.Pad 1)
+          ws  = [ titledBox "program" . programUI $ db
+                , sep . titledBox "memory" . tapeUI $ db
+                , sep . titledBox "output" . inputOutputUI
+                      . T.output . T.computer $ db
+                , sep .  titledBox "input" . inputOutputUI
+                      . T.input  . T.computer $ db
+                ]
+
+titledBox :: String -> B.Widget () -> B.Widget ()
+titledBox t w = B.vBox . map B.hCenter $ [ B.str t, w ]
 
 programUI :: T.Debugger -> B.Widget ()
 programUI db = B.hBox . zipWith go [0..] . Vec.toList . T.program $ db
@@ -28,6 +40,14 @@ tapeUI db = B.hBox . intersperse (B.str " ") $ inBack ++ inFocus ++ inFront
           inFocus          = [B.withAttr "focus" . B.str . show $ u]
           inFront          = map ( B.str . show ) $ ys
 
+inputOutputUI :: BS.ByteString -> B.Widget ()
+inputOutputUI bs
+    | BS.null bs = B.str "<no data>"
+    | otherwise  = w
+    where w = B.hBox . intersperse (B.str " ")
+              . map (B.str . show) . BS.unpack
+              $ bs
+
 attributes :: B.AttrMap
 attributes = B.attrMap V.defAttr
-    [ ( "focus", B.fg V.yellow ) ]
+    [ ( "focus", B.on V.black V.yellow ) ]
