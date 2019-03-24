@@ -44,11 +44,11 @@ data Mode =
 ---------------------------------------------------------------------
 
 data Debugger = Debugger {
-      computer   :: Computer
-    , dictionary :: Dictionary
-    , program    :: DBProgram
-    , status     :: Status
-    , position   :: Int
+      computer   :: {-# UNPACK #-} !Computer
+    , dictionary :: {-# UNPACK #-} !Dictionary
+    , program    :: {-# UNPACK #-} !DBProgram
+    , status     :: {-# UNPACK #-} !Status
+    , position   :: {-# UNPACK #-} !Int
     }
 
 data Status =
