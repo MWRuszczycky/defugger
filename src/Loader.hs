@@ -56,7 +56,8 @@ initDebugger opts = do
                     , T.dictionary = d
                     , T.program    = p
                     , T.status     = T.Normal
-                    , T.position   = 0
+                    , T.history    = [0]
+                    , T.readBackup = []
                     }
 
 ---------------------------------------------------------------------

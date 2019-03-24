@@ -9,6 +9,7 @@ import qualified Graphics.Vty as V
 import qualified Brick        as B
 import qualified Model.Types  as T
 import qualified Data.Vector  as Vec
+import Model.Compiler                ( getPosition )
 import Data.List                     ( intersperse )
 import Brick.Widgets.Border          ( border      )
 
@@ -17,8 +18,8 @@ drawUI db = [ B.vBox [ border $ programUI db, border $ tapeUI db ] ]
 
 programUI :: T.Debugger -> B.Widget ()
 programUI db = B.hBox . zipWith go [0..] . Vec.toList . T.program $ db
-    where go n | n == T.position db = B.withAttr "focus" . B.str . show
-               | otherwise          = B.str . show
+    where go n | n == getPosition db = B.withAttr "focus" . B.str . show
+               | otherwise           = B.str . show
 
 tapeUI :: T.Debugger -> B.Widget ()
 tapeUI db = B.hBox . intersperse (B.str " ") $ inBack ++ inFocus ++ inFront

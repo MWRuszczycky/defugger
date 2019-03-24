@@ -48,7 +48,8 @@ data Debugger = Debugger {
     , dictionary :: {-# UNPACK #-} !Dictionary
     , program    :: {-# UNPACK #-} !DBProgram
     , status     :: {-# UNPACK #-} !Status
-    , position   :: {-# UNPACK #-} !Int
+    , readBackup :: ![Word8]
+    , history    :: ![Int]
     }
 
 data Status =
