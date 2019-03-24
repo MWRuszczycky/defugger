@@ -1,5 +1,12 @@
 module Model.Compiler
     ( runProgram
+    , advance
+    , backup
+    , increment
+    , decrement
+    , readIn
+    , writeOut
+    , whileLoop
     ) where
 
 import qualified Data.ByteString as B

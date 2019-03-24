@@ -8,7 +8,6 @@ module StartUp
     ) where
 
 import qualified Data.ByteString as BS
-import qualified Graphics.Vty    as V
 import qualified Brick           as B
 import qualified Model.Types     as T
 import System.Posix.Env                 ( putEnv        )
@@ -23,7 +22,8 @@ import Loader                           ( initComputer
 import Model.Compiler                   ( runProgram    )
 import Model.Parser                     ( parse         )
 import Controller                       ( routeEvent    )
-import View                             ( drawUI        )
+import View                             ( drawUI
+                                        , attributes    )
 
 ---------------------------------------------------------------------
 -- Running the interpreter mode
@@ -85,5 +85,5 @@ initApp = B.App { B.appDraw         = drawUI
                 , B.appHandleEvent  = routeEvent
                 , B.appChooseCursor = B.neverShowCursor
                 , B.appStartEvent   = pure
-                , B.appAttrMap      = const (B.attrMap V.defAttr [])
+                , B.appAttrMap      = const attributes
                 }

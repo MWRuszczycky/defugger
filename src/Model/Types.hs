@@ -1,7 +1,9 @@
 module Model.Types
     ( BFParser
     , BFScript
+    , DBProgram
     , Debugger        (..)
+    , DebugStatement  (..)
     , Computation
     , Computer        (..)
     , Dictionary      (..)
@@ -43,8 +45,9 @@ data Mode =
 data Debugger = Debugger {
       computer   :: Computer
     , dictionary :: Dictionary
-    , program    :: Program
+    , program    :: DBProgram
     , status     :: Status
+    , position   :: Int
     }
 
 data Status =
@@ -100,6 +103,30 @@ instance Show Statement where
     show (WhileLoop p) = "[" ++ concatMap show p ++ "]"
     show DoNothing     = "#\\n"
 
+data DebugStatement =
+      DBStart
+    | DBEnd
+    | DBIncrement
+    | DBDecrement
+    | DBAdvance
+    | DBBackup
+    | DBReadIn
+    | DBWriteOut
+    | DBOpenLoop  Int
+    | DBCloseLoop Int
+
+instance Show DebugStatement where
+    show DBStart         = "0"
+    show DBEnd           = "0"
+    show DBIncrement     = "+"
+    show DBDecrement     = "-"
+    show DBAdvance       = ">"
+    show DBBackup        = "<"
+    show DBReadIn        = ","
+    show DBWriteOut      = "."
+    show (DBOpenLoop  _) = "["
+    show (DBCloseLoop _) = "]"
+
 data Token =
       BFPlus
     | BFMinus
@@ -122,6 +149,7 @@ toDictionary ts = Dictionary ts $ all ( (== 1) . Tx.length ) $ xs
     where xs = concat . snd . unzip $ ts
 
 type Program     = [Statement]
+type DBProgram   = [DebugStatement]
 type ErrString   = String
 type Computation = Computer -> Either ErrString Computer
 type BFScript    = [Token]

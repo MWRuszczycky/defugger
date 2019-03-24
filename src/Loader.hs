@@ -10,6 +10,7 @@ module Loader
 
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
+import Data.List                        ( foldl'        )
 import Control.Monad.Except             ( ExceptT
                                         , throwError
                                         , liftEither    )
@@ -54,9 +55,24 @@ initDebugger opts = do
     p <- liftEither . parse d $ s
     pure T.Debugger { T.computer   = initComputer x
                     , T.dictionary = d
-                    , T.program    = p
+                    , T.program    = toDebug p
                     , T.status     = T.Normal
+                    , T.position   = 0
                     }
+
+toDebug :: T.Program -> T.DBProgram
+toDebug = (++[T.DBEnd]) . (T.DBStart:) . reverse . snd . foldl' go (1,[])
+    where go x      (T.DoNothing  ) = x
+          go (n,dp) (T.Increment  ) = (n+1, T.DBIncrement : dp)
+          go (n,dp) (T.Decrement  ) = (n+1, T.DBDecrement : dp)
+          go (n,dp) (T.Advance    ) = (n+1, T.DBAdvance   : dp)
+          go (n,dp) (T.Backup     ) = (n+1, T.DBBackup    : dp)
+          go (n,dp) (T.ReadIn     ) = (n+1, T.DBReadIn    : dp)
+          go (n,dp) (T.WriteOut   ) = (n+1, T.DBWriteOut  : dp)
+          go (n,dp) (T.WhileLoop p) = let (n',dq) = foldl' go (n+1,[]) p
+                                          xs      = T.DBCloseLoop n : dq
+                                          ys      = T.DBOpenLoop n' : dp
+                                      in (n'+1, xs ++ ys)
 
 ---------------------------------------------------------------------
 -- Computer initialization and resetting
