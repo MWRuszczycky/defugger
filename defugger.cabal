@@ -36,6 +36,7 @@ library defugger-internal
                       , mtl
                       , text
                       , unix
+                      , vector
                       , vty
 
 test-suite bfparser-tests

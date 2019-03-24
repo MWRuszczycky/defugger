@@ -2,32 +2,40 @@
 
 module Model.Parser
     ( parse
+    , parseDebug
+    , toDebug
     ) where
 
-import qualified Data.Text  as Tx
-import qualified Data.Char  as C
-import Data.List                  ( find            )
-import Data.Text                  ( Text, unpack    )
-import Data.Foldable              ( asum            )
-import Control.Monad.State.Lazy   ( evalStateT
-                                  , get, guard
-                                  , lift, put       )
-import Control.Monad.Reader       ( ReaderT (..)
-                                  , ask
-                                  , runReaderT      )
-import Control.Applicative        ( empty, many     )
-import Model.Types                ( Dictionary (..)
-                                  , ErrString
-                                  , BFParser
-                                  , Program
-                                  , Statement  (..)
-                                  , Token      (..) )
+import qualified Data.Text   as Tx
+import qualified Data.Char   as C
+import qualified Data.Vector as V
+import Data.List                    ( find, foldl'        )
+import Data.Text                    ( Text, unpack        )
+import Data.Foldable                ( asum                )
+import Control.Monad.State.Lazy     ( evalStateT
+                                    , get, guard
+                                    , lift, put           )
+import Control.Monad.Reader         ( ReaderT (..)
+                                    , ask
+                                    , runReaderT          )
+import Control.Applicative          ( empty, many         )
+import Model.Types                  ( Dictionary (..)
+                                    , ErrString
+                                    , BFParser
+                                    , Program
+                                    , DBProgram
+                                    , Statement  (..)
+                                    , DebugStatement (..)
+                                    , Token      (..)     )
 
 ---------------------------------------------------------------------
 -- Entry point
 
 parse :: Dictionary -> Text -> Either ErrString Program
 parse d = evalStateT ( runReaderT program d )
+
+parseDebug :: Dictionary -> Text -> Either ErrString DBProgram
+parseDebug d t = toDebug <$> parse d t
 
 parseFail :: Text -> Text -> Dictionary -> BFParser a
 parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
@@ -38,6 +46,21 @@ parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
           go Nothing       = lineNo ++ ": Unrecognized token: " ++ unpack tk
           go (Just BFStop) = lineNo ++ ": Unpaired close-brace for while-loop"
           go _             = lineNo ++ ": Cannot parse while-loop"
+
+toDebug :: Program -> DBProgram
+toDebug = V.fromList . (++[DBEnd]) . (DBStart:) . reverse . snd . foldl' go x0
+    where x0                      = (1,[])
+          go x      (DoNothing  ) = x
+          go (n,dp) (Increment  ) = (n+1, DBIncrement : dp)
+          go (n,dp) (Decrement  ) = (n+1, DBDecrement : dp)
+          go (n,dp) (Advance    ) = (n+1, DBAdvance   : dp)
+          go (n,dp) (Backup     ) = (n+1, DBBackup    : dp)
+          go (n,dp) (ReadIn     ) = (n+1, DBReadIn    : dp)
+          go (n,dp) (WriteOut   ) = (n+1, DBWriteOut  : dp)
+          go (n,dp) (WhileLoop p) = let (n',dq) = foldl' go (n+1,[]) p
+                                        xs      = DBCloseLoop n  : dq
+                                        ys      = DBOpenLoop  n' : dp
+                                    in (n'+1, xs ++ ys)
 
 ---------------------------------------------------------------------
 -- BF-Parsers

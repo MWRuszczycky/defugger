@@ -21,6 +21,7 @@ module Model.Types
 
 import qualified Data.ByteString as B
 import qualified Data.Text       as Tx
+import qualified Data.Vector     as V
 import Control.Monad.State.Lazy         ( StateT        )
 import Control.Monad.Reader             ( ReaderT       )
 import Data.Text                        ( Text          )
@@ -149,7 +150,7 @@ toDictionary ts = Dictionary ts $ all ( (== 1) . Tx.length ) $ xs
     where xs = concat . snd . unzip $ ts
 
 type Program     = [Statement]
-type DBProgram   = [DebugStatement]
+type DBProgram   = V.Vector DebugStatement
 type ErrString   = String
 type Computation = Computer -> Either ErrString Computer
 type BFScript    = [Token]

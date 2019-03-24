@@ -9,6 +9,7 @@ import qualified Graphics.Vty    as V
 import qualified Brick           as B
 import qualified Model.Types     as T
 import qualified Model.Compiler  as C
+import Data.Vector                      ( (!) )
 
 type EventHandler = forall e. B.BrickEvent () e
                               -> B.EventM () (B.Next T.Debugger)
@@ -26,7 +27,7 @@ keyEv _        _ db = db
 stepForward :: T.Debugger -> T.Debugger
 stepForward db =
     let n = T.position db
-    in  case T.program db !! n of
+    in  case T.program db ! n of
              T.DBEnd         -> db
              T.DBStart       -> db { T.position = n + 1 }
              T.DBIncrement   -> stepFwdComputer (n+1) C.increment db

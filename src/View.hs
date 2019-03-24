@@ -8,14 +8,15 @@ module View
 import qualified Graphics.Vty as V
 import qualified Brick        as B
 import qualified Model.Types  as T
-import Data.List                    ( intersperse )
-import Brick.Widgets.Border         ( border      )
+import qualified Data.Vector  as Vec
+import Data.List                     ( intersperse )
+import Brick.Widgets.Border          ( border      )
 
 drawUI :: T.Debugger -> [ B.Widget () ]
 drawUI db = [ B.vBox [ border $ programUI db, border $ tapeUI db ] ]
 
 programUI :: T.Debugger -> B.Widget ()
-programUI db = B.hBox . zipWith go [0..] . T.program $ db
+programUI db = B.hBox . zipWith go [0..] . Vec.toList . T.program $ db
     where go n | n == T.position db = B.withAttr "focus" . B.str . show
                | otherwise          = B.str . show
 
