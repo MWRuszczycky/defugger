@@ -29,10 +29,21 @@ main = hspec $ do
         it "Correctly runs HelloWorld.bf" $ do
             scriptNoInput "tests/files/HelloWorld.bf"
                           "tests/files/HelloWorld.out"
+        it "Correctly runs WriteHelloWorld.bf (input test)" $ do
+            scriptWithInput "tests/files/WriteHelloWorld.bf"
+                            "tests/files/WriteHelloWorld.txt"
+                            "tests/files/HelloWorld.out"
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
 scriptNoInput s t = do
     opts <- pure ["--run", s] >>= SU.getOptions
+    case T.mode opts of
+         T.Interpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
+         _             -> error "Test failed: Interpreter mode expected"
+
+scriptWithInput :: FilePath -> FilePath -> FilePath -> IO ()
+scriptWithInput s i t = do
+    opts <- pure ["--run", s, i] >>= SU.getOptions
     case T.mode opts of
          T.Interpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
          _             -> error "Test failed: Interpreter mode expected"

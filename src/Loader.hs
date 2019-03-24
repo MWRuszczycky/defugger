@@ -14,8 +14,9 @@ import Control.Monad.Except             ( ExceptT
                                         , throwError
                                         , liftEither    )
 import Model.Parser                     ( parseDebug    )
-import Model.CoreIO                     ( tryReadFile   )
 import Data.Text                        ( Text          )
+import Model.CoreIO                     ( tryReadFile
+                                        , tryReadBytes  )
 
 ---------------------------------------------------------------------
 -- Options handling
@@ -26,7 +27,9 @@ getScript opts = case T.args opts of
                       (x:_) -> tryReadFile x
 
 getInput :: T.DefuggerOptions -> ExceptT T.ErrString IO BS.ByteString
-getInput _ = pure BS.empty
+getInput opts = case T.args opts of
+                     (_:x:_) -> tryReadBytes x
+                     _       -> pure BS.empty
 
 getDict :: T.DefuggerOptions -> ExceptT T.ErrString IO T.Dictionary
 getDict _ = pure bfDict
