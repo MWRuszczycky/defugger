@@ -74,10 +74,10 @@ whileLoop p c = case T.memory c of
 -- Running a program via the debugger
 
 stepForward :: T.Debugger -> Either T.ErrString T.Debugger
-stepForward db = updateHistory db >>= updateDebugger >>= updateComputer
+stepForward db = updateHistory db >>= updateBackup >>= updateComputer
 
 stepBackward :: T.Debugger -> Either T.ErrString T.Debugger
-stepBackward db = revertComputer db >>= revertDebugger >>= revertHistory
+stepBackward db = revertComputer db >>= revertBackup >>= revertHistory
 
 ---------------------------------------------------------------------
 -- Helpers
@@ -107,18 +107,18 @@ revertHistory db = case T.history db of
                         (_:h) -> pure $ db { T.history = h }
 
 ---------------------------------------------------------------------
--- Debug state management
+-- Debug backup read-memory management
 
-updateDebugger :: T.Debugger -> Either T.ErrString T.Debugger
-updateDebugger db =
+updateBackup :: T.Debugger -> Either T.ErrString T.Debugger
+updateBackup db =
     let bs = T.readBackup db
         u  = T.focus . T.memory . T.computer $ db
     in  case T.program db ! (getPosition db) of
              T.DBReadIn  -> pure $ db { T.readBackup = u:bs }
              _           -> pure db
 
-revertDebugger :: T.Debugger -> Either T.ErrString T.Debugger
-revertDebugger db =
+revertBackup :: T.Debugger -> Either T.ErrString T.Debugger
+revertBackup db =
     case T.program db ! (getPosition db) of
          T.DBReadIn -> case T.readBackup db of
                             []     -> pure $ db { T.readBackup = [] }
