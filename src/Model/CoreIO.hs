@@ -11,13 +11,13 @@ import Control.Monad.Except             ( ExceptT (..) )
 import Control.Exception                ( IOException
                                         , catch        )
 
-tryReadFile :: FilePath -> ExceptT T.ErrString IO Text
+tryReadFile :: FilePath -> T.ErrorIO Text
 tryReadFile fp = ExceptT $ do
     catch ( Right <$> Tx.readFile fp ) hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString Text )
           hndlErr = pure . Left . show
 
-tryReadBytes :: FilePath -> ExceptT T.ErrString IO BS.ByteString
+tryReadBytes :: FilePath -> T.ErrorIO BS.ByteString
 tryReadBytes fp = ExceptT $ do
     catch ( Right <$> BS.readFile fp ) hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString BS.ByteString )

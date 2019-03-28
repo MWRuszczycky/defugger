@@ -4,6 +4,7 @@ module Model.Types
     , DBProgram
     , Debugger        (..)
     , DebugStatement  (..)
+    , ErrorIO
     , Computation
     , Computer        (..)
     , Dictionary      (..)
@@ -22,6 +23,7 @@ module Model.Types
 import qualified Data.ByteString as B
 import qualified Data.Text       as Tx
 import qualified Data.Vector     as V
+import Control.Monad.Except             ( ExceptT       )
 import Control.Monad.State.Lazy         ( StateT        )
 import Control.Monad.Reader             ( ReaderT       )
 import Data.Text                        ( Text          )
@@ -163,3 +165,5 @@ type Parser   = StateT Text (Either String)
 
 -- | BFParser a = ReaderT ( Dictionary -> Parser a )
 type BFParser = ReaderT Dictionary Parser
+
+type ErrorIO = ExceptT ErrString IO

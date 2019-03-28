@@ -12,8 +12,7 @@ import qualified Data.ByteString as BS
 import qualified Brick           as B
 import qualified Model.Types     as T
 import System.Posix.Env                 ( putEnv        )
-import Control.Monad.Except             ( ExceptT (..)
-                                        , liftEither
+import Control.Monad.Except             ( liftEither
                                         , lift          )
 import Loader                           ( initComputer
                                         , initDebugger
@@ -29,7 +28,7 @@ import View                             ( drawUI
 ---------------------------------------------------------------------
 -- Running the interpreter mode
 
-interpreter :: T.DefuggerOptions -> ExceptT T.ErrString IO T.Computer
+interpreter :: T.DefuggerOptions -> T.ErrorIO T.Computer
 interpreter opts = do
     s <- getScript opts
     d <- getDict   opts
@@ -46,7 +45,7 @@ formatOutput = map ( toEnum . fromIntegral ) . BS.unpack
 ---------------------------------------------------------------------
 -- Running the debugger mode
 
-debugger :: T.DefuggerOptions -> ExceptT T.ErrString IO T.Debugger
+debugger :: T.DefuggerOptions -> T.ErrorIO T.Debugger
 debugger opts = do
     lift . setTerminal $ opts
     st0 <- initDebugger opts =<< lift getTerminalDimensions

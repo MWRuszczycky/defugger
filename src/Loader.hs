@@ -10,8 +10,7 @@ module Loader
 
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
-import Control.Monad.Except             ( ExceptT
-                                        , throwError
+import Control.Monad.Except             ( throwError
                                         , liftEither    )
 import Model.Parser                     ( parseDebug    )
 import Data.Text                        ( Text          )
@@ -21,17 +20,17 @@ import Model.CoreIO                     ( tryReadFile
 ---------------------------------------------------------------------
 -- Options and terminal initialization handling
 
-getScript :: T.DefuggerOptions -> ExceptT T.ErrString IO Text
+getScript :: T.DefuggerOptions -> T.ErrorIO Text
 getScript opts = case T.args opts of
                       []    -> throwError "A script file is required"
                       (x:_) -> tryReadFile x
 
-getInput :: T.DefuggerOptions -> ExceptT T.ErrString IO BS.ByteString
+getInput :: T.DefuggerOptions -> T.ErrorIO BS.ByteString
 getInput opts = case T.args opts of
                      (_:x:_) -> tryReadBytes x
                      _       -> pure BS.empty
 
-getDict :: T.DefuggerOptions -> ExceptT T.ErrString IO T.Dictionary
+getDict :: T.DefuggerOptions -> T.ErrorIO T.Dictionary
 getDict _ = pure bfDict
 
 bfDict :: T.Dictionary
@@ -49,7 +48,7 @@ bfDict = T.toDictionary [ ( T.BFGT,    [">"] )
 ---------------------------------------------------------------------
 -- Debuggeer initialization and resetting
 
-initDebugger :: T.DefuggerOptions -> (Int, Int) -> ExceptT T.ErrString IO T.Debugger
+initDebugger :: T.DefuggerOptions -> (Int, Int) -> T.ErrorIO T.Debugger
 initDebugger opts (width,height) = do
     s <- getScript opts
     d <- getDict   opts
