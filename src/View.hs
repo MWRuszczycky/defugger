@@ -23,6 +23,7 @@ drawUI db = [ B.vCenter . B.vBox $ ws ]
                       . T.output . T.computer $ db
                 , sep .  titledBox "input" . inputOutputUI
                       . T.input  . T.computer $ db
+                , sep . titledBox "status" . statusUI $ db
                 ]
 
 titledBox :: String -> B.Widget () -> B.Widget ()
@@ -47,6 +48,11 @@ inputOutputUI bs
     where w = B.hBox . intersperse (B.str " ")
               . map (B.str . show) . BS.unpack
               $ bs
+
+statusUI :: T.Debugger -> B.Widget ()
+statusUI db = B.hBox [ B.str $ "width = " ++ show (T.termWidth db)
+                     , B.str $ " height = "  ++ show (T.termHeight db)
+                     ]
 
 attributes :: B.AttrMap
 attributes = B.attrMap V.defAttr

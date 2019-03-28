@@ -19,7 +19,7 @@ import Model.CoreIO                     ( tryReadFile
                                         , tryReadBytes  )
 
 ---------------------------------------------------------------------
--- Options handling
+-- Options and terminal initialization handling
 
 getScript :: T.DefuggerOptions -> ExceptT T.ErrString IO Text
 getScript opts = case T.args opts of
@@ -49,8 +49,8 @@ bfDict = T.toDictionary [ ( T.BFGT,    [">"] )
 ---------------------------------------------------------------------
 -- Debuggeer initialization and resetting
 
-initDebugger :: T.DefuggerOptions -> ExceptT T.ErrString IO T.Debugger
-initDebugger opts = do
+initDebugger :: T.DefuggerOptions -> (Int, Int) -> ExceptT T.ErrString IO T.Debugger
+initDebugger opts (width,height) = do
     s <- getScript opts
     d <- getDict   opts
     x <- getInput  opts
@@ -61,6 +61,8 @@ initDebugger opts = do
                     , T.status     = T.Normal
                     , T.history    = [0]
                     , T.readBackup = []
+                    , T.termWidth  = width
+                    , T.termHeight = height
                     }
 
 ---------------------------------------------------------------------

@@ -7,6 +7,7 @@ module StartUp
     , formatOutput
     ) where
 
+import qualified Graphics.Vty    as V
 import qualified Data.ByteString as BS
 import qualified Brick           as B
 import qualified Model.Types     as T
@@ -48,15 +49,18 @@ formatOutput = map ( toEnum . fromIntegral ) . BS.unpack
 debugger :: T.DefuggerOptions -> ExceptT T.ErrString IO T.Debugger
 debugger opts = do
     lift . setTerminal $ opts
-    st0 <- initDebugger  opts
+    st0 <- initDebugger opts =<< lift getTerminalDimensions
     lift . B.defaultMain initApp $ st0
-
-setTerminal :: T.DefuggerOptions -> IO ()
-setTerminal opts = putEnv $ "TERM=" ++ T.terminal opts
 
 endDebugger :: Either T.ErrString T.Debugger -> IO ()
 endDebugger (Left  e) = putStrLn $ "Error: " ++ e
 endDebugger (Right _) = putStrLn "Defugger completed with no errors."
+
+getTerminalDimensions :: IO (Int, Int)
+getTerminalDimensions = V.outputForConfig V.defaultConfig >>= V.displayBounds
+
+setTerminal :: T.DefuggerOptions -> IO ()
+setTerminal opts = putEnv $ "TERM=" ++ T.terminal opts
 
 ---------------------------------------------------------------------
 -- Command line arguments parsing
