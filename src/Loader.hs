@@ -10,6 +10,7 @@ module Loader
 
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
+import qualified Data.Vector     as V
 import Control.Monad.Except             ( throwError
                                         , liftEither    )
 import Model.Parser                     ( parseDebug    )
@@ -59,9 +60,11 @@ initDebugger opts (width,height) = do
                     , T.program    = p
                     , T.status     = T.Normal
                     , T.history    = [0]
+                    , T.breaks     = [ 0, V.length p - 1 ]
                     , T.readBackup = []
                     , T.termWidth  = width
                     , T.termHeight = height
+                    , T.progWidth  = 30
                     }
 
 ---------------------------------------------------------------------

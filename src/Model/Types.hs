@@ -52,8 +52,10 @@ data Debugger = Debugger {
     , status     :: {-# UNPACK #-} !Status
     , readBackup :: ![Word8]
     , history    :: ![Int]
-    , termWidth  :: Int
-    , termHeight :: Int
+    , breaks     :: ![Int]
+    , termWidth  :: !Int
+    , termHeight :: !Int
+    , progWidth  :: !Int
     }
 
 data Status =
