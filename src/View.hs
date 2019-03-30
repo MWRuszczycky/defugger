@@ -9,27 +9,20 @@ import qualified Data.Foldable          as F
 import qualified Data.ByteString        as BS
 import qualified Graphics.Vty           as V
 import qualified Brick                  as B
-import qualified Brick.Widgets.Center   as B
 import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
 import Brick                                    ( (<+>), (<=>)    )
 import Brick.Widgets.Border                     ( borderWithLabel )
+import Numeric                                  ( showHex         )
 import Model.Compiler                           ( getPosition     )
 import Data.List                                ( intersperse     )
 
 drawUI :: T.Debugger -> [ B.Widget () ]
-drawUI db = [ B.vBox ws ]
-    where sep = B.padTop (B.Pad 1)
-          ws  = [ programUI db <+> memoryUI db
-                , sep . titledBox "output" . inputOutputUI
-                      . T.output . T.computer $ db
-                , sep .  titledBox "input" . inputOutputUI
-                      . T.input  . T.computer $ db
-                , sep . titledBox "status" . statusUI $ db
-                ]
-
-titledBox :: String -> B.Widget () -> B.Widget ()
-titledBox t w = B.vBox . map B.hCenter $ [ B.str t, w ]
+drawUI db = [ ws <=> ( statusUI $ db ) ]
+    where ws  = programUI db <+> memoryUI db
+                <+> B.vBox [ dataUI "output" (T.output . T.computer) db
+                           , dataUI "input"  (T.input  . T.computer) db
+                           ]
 
 ---------------------------------------------------------------------
 -- UI for the program code
@@ -74,20 +67,39 @@ formatMemory db = inBack ++ [inFocus] ++ inFront
              inFront          = map ( B.str . show ) $ ys
 
 ---------------------------------------------------------------------
--- UI for memory tape
+-- Input and output UIs
 
-inputOutputUI :: BS.ByteString -> B.Widget ()
-inputOutputUI bs
-    | BS.null bs = B.str "<no data>"
-    | otherwise  = w
-    where w = B.hBox . intersperse (B.str " ")
-              . map (B.str . show) . BS.unpack
-              $ bs
+dataUI :: String -> (T.Debugger -> BS.ByteString) -> T.Debugger -> B.Widget ()
+dataUI t g db = let m = 1
+                in  borderWithLabel ( B.str t )
+                    . B.padBottom B.Max
+                    . B.padRight B.Max
+                    . foldr ( addNumberedRow m ) B.emptyWidget
+                    . zip [1..]
+                    . formatData g $ db
+
+formatData :: (T.Debugger -> BS.ByteString) -> T.Debugger -> [B.Widget ()]
+formatData g db
+    | BS.null . g $ db = [ B.str $ "<no data>" ]
+    | otherwise        = go (T.outFormat db) . BS.unpack . g $ db
+    where go T.Ascii = map B.str . lines . map (toEnum . fromIntegral)
+          go T.Dec   = intersperse (B.str " ") . map (B.str . show)
+          go T.Hex   = intersperse (B.str " ") . map toHex
+          toHex w    = B.str $ showHex w ""
+
+---------------------------------------------------------------------
+-- Status and commandline UI
 
 statusUI :: T.Debugger -> B.Widget ()
-statusUI db = B.hBox [ B.str $ "width = " ++ show (T.termWidth db)
-                     , B.str $ " height = "  ++ show (T.termHeight db)
+statusUI db = B.hBox [ B.str "(width, height) = ("
+                     , B.str . show . T.termWidth $ db
+                     , B.str ","
+                     , B.str . show . T.termHeight $ db
+                     , B.str ")"
                      ]
+
+---------------------------------------------------------------------
+-- Attribute map
 
 attributes :: B.AttrMap
 attributes = B.attrMap V.defAttr

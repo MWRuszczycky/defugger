@@ -1,6 +1,7 @@
 module Model.Types
     ( BFParser
     , BFScript
+    , DataFormat      (..)
     , DBProgram
     , Debugger        (..)
     , DebugStatement  (..)
@@ -56,6 +57,8 @@ data Debugger = Debugger {
     , termWidth  :: !Int
     , termHeight :: !Int
     , progWidth  :: !Int
+    , inFormat   :: !DataFormat
+    , outFormat  :: !DataFormat
     }
 
 data Status =
@@ -146,6 +149,12 @@ data Token =
     | BFStop
     | BFHash
       deriving ( Ord, Eq, Show )
+
+data DataFormat =
+      Ascii
+    | Dec
+    | Hex
+      deriving ( Eq, Show )
 
 data Dictionary = Dictionary {
       tokens  :: [ (Token, [Text]) ]
