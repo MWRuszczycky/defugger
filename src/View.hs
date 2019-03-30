@@ -5,6 +5,7 @@ module View
     , attributes
     ) where
 
+import qualified Data.Foldable          as F
 import qualified Data.ByteString        as BS
 import qualified Graphics.Vty           as V
 import qualified Brick                  as B
@@ -17,10 +18,9 @@ import Model.Compiler                           ( getPosition     )
 import Data.List                                ( intersperse     )
 
 drawUI :: T.Debugger -> [ B.Widget () ]
-drawUI db = [ B.vCenter . B.vBox $ ws ]
+drawUI db = [ B.vBox ws ]
     where sep = B.padTop (B.Pad 1)
-          ws  = [ programUI $ db
-                , sep . titledBox "memory" . tapeUI $ db
+          ws  = [ programUI db <+> memoryUI db
                 , sep . titledBox "output" . inputOutputUI
                       . T.output . T.computer $ db
                 , sep .  titledBox "input" . inputOutputUI
@@ -36,38 +36,45 @@ titledBox t w = B.vBox . map B.hCenter $ [ B.str t, w ]
 
 programUI :: T.Debugger -> B.Widget ()
 -- ^Displays the BF code.
-programUI db =
-    let m  = length . show . Vec.length . T.program $ db
-        ws = zipWith (formatCode db) [0..] . Vec.toList . T.program $ db
-    in  borderWithLabel ( B.str "program" )
-        . foldr (buildProgramUI m) B.emptyWidget
-        . take (T.termHeight db) . chunksOf (T.progWidth db) $ ws
+programUI db = let m = length . show . Vec.length . T.program $ db
+               in  borderWithLabel ( B.str "program" )
+                   . B.padBottom B.Max
+                   . foldr    ( addNumberedRow m ) B.emptyWidget
+                   . zip      [0, T.progWidth db .. ]
+                   . map B.hBox
+                   . take     ( T.termHeight db  )
+                   . chunksOf ( T.progWidth db   )
+                   . zipWith  ( formatCode db    ) [0..]
+                   . Vec.toList . T.program $ db
 
-formatCode :: T.Debugger -> Int -> T.DebugStatement -> (Int, B.Widget ())
--- ^Format each BF statement or control structure for display and tag
--- with its position in the program, which is provided as an argument.
+formatCode :: T.Debugger -> Int -> T.DebugStatement -> B.Widget ()
+-- ^Format each BF statement or control structure for display
 formatCode db pos x
-    | pos == getPosition db  = ( pos, B.withAttr "focus" . B.str . show $ x )
-    | elem pos (T.breaks db) = ( pos, B.withAttr "break" . B.str . show $ x )
-    | otherwise              = ( pos, B.str . show $ x                      )
-
-buildProgramUI :: Int -> [(Int, B.Widget ())] -> B.Widget () -> B.Widget ()
--- ^Build the program UI from each line of formatted BF statement
--- widgets tagged with their position numbers and a number width.
-buildProgramUI _ []     lineWgts = lineWgts
-buildProgramUI m (w:ws) lineWgts = ( nmbrWgt <+> codeWgt ) <=> lineWgts
-    where nmbr    = show . fst $ w
-          nmbrWgt = B.padRight (B.Pad $ m - length nmbr) . B.str $ nmbr
-          codeWgt = B.hBox . snd . unzip $ w : ws
+    | pos == getPosition db  = B.withAttr "focus" . B.str . show $ x
+    | elem pos (T.breaks db) = B.withAttr "break" . B.str . show $ x
+    | otherwise              = B.str . show $ x
 
 ---------------------------------------------------------------------
+-- UI for memory tape
 
-tapeUI :: T.Debugger -> B.Widget ()
-tapeUI db = B.hBox . intersperse (B.str " ") $ inBack ++ inFocus ++ inFront
-    where (T.Tape xs u ys) = T.memory . T.computer $ db
-          inBack           = map ( B.str . show ) . reverse $ xs
-          inFocus          = [B.withAttr "focus" . B.str . show $ u]
-          inFront          = map ( B.str . show ) $ ys
+memoryUI :: T.Debugger -> B.Widget ()
+memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
+              in  borderWithLabel ( B.str "memory" )
+                  . B.padBottom B.Max
+                  . B.hLimit 8 . B.padRight B.Max
+                  . foldr ( addNumberedRow m ) B.emptyWidget
+                  . zip [0..]
+                  . formatMemory $ db
+
+formatMemory :: T.Debugger -> [B.Widget ()]
+formatMemory db = inBack ++ [inFocus] ++ inFront
+       where (T.Tape xs u ys) = T.memory . T.computer $ db
+             inBack           = map ( B.str . show ) . reverse $ xs
+             inFocus          = B.withAttr "focus" . B.str . show $ u
+             inFront          = map ( B.str . show ) $ ys
+
+---------------------------------------------------------------------
+-- UI for memory tape
 
 inputOutputUI :: BS.ByteString -> B.Widget ()
 inputOutputUI bs
@@ -88,6 +95,16 @@ attributes = B.attrMap V.defAttr
     , ( "break", B.on V.red   V.black  ) ]
 
 ---------------------------------------------------------------------
+-- Helpers
+
+addNumberedRow :: Int -> (Int, B.Widget ()) -> B.Widget () -> B.Widget ()
+-- ^Given a label width, numbered widget and accumulated widget of
+-- rows of widgets, tag the numbered widget with its number and add
+-- it as new row to the accumulated widget.
+addNumberedRow m (n,w) rows = ( nmbrWgt <+> spacer <+> w ) <=> rows
+    where nmbrWgt = B.padRight (B.Pad $ m - length nmbr) . B.str $ nmbr
+          spacer  = B.str " "
+          nmbr    = show n
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
