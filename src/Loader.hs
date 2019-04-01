@@ -67,6 +67,8 @@ initDebugger opts (width,height) = do
                     , T.progWidth  = 30
                     , T.inFormat   = T.Asc
                     , T.outFormat  = T.Asc
+                    , T.memView    = (0, height - 4)
+                    , T.progView   = (0, height - 4)
                     }
 
 ---------------------------------------------------------------------

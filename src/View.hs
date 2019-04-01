@@ -11,11 +11,11 @@ import qualified Graphics.Vty           as V
 import qualified Brick                  as B
 import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
+import Model.Compiler                           ( getPosition     )
 import Data.Word                                ( Word8           )
 import Brick                                    ( (<+>), (<=>)    )
 import Brick.Widgets.Border                     ( borderWithLabel )
 import Numeric                                  ( showHex         )
-import Model.Compiler                           ( getPosition     )
 import Data.List                                ( intersperse     )
 
 drawUI :: T.Debugger -> [ B.Widget () ]
@@ -33,12 +33,12 @@ programUI :: T.Debugger -> B.Widget ()
 programUI db = let m = length . show . Vec.length . T.program $ db
                in  borderWithLabel ( B.str "program" )
                    . B.padBottom B.Max
-                   . foldr    ( addNumberedRow m ) B.emptyWidget
-                   . zip      [0, T.progWidth db .. ]
+                   . foldr ( addNumberedRow m ) B.emptyWidget
+                   . slice ( T.progView db )
+                   . zip [0, T.progWidth db .. ]
                    . map B.hBox
-                   . take     ( T.termHeight db  )
-                   . chunksOf ( T.progWidth db   )
-                   . zipWith  ( formatCode db    ) [0..]
+                   . chunksOf ( T.progWidth db )
+                   . zipWith ( formatCode db ) [0..]
                    . Vec.toList . T.program $ db
 
 formatCode :: T.Debugger -> Int -> T.DebugStatement -> B.Widget ()
@@ -57,6 +57,7 @@ memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
                   . B.padBottom B.Max
                   . B.hLimit 8 . B.padRight B.Max
                   . foldr ( addNumberedRow m ) B.emptyWidget
+                  . slice (T.memView db)
                   . zip [0..]
                   . formatMemory $ db
 
@@ -87,24 +88,10 @@ dataUI fmt title bs
                     T.Asc -> wrappedAscii   . BS.unpack $ bs
 
 numbered :: (Word8 -> String) -> [Word8] -> B.Widget ()
-numbered f ws = let xs  = map (B.str . concat) . chunksOf 16
+numbered f ws = let xs = map (B.str . concat) . chunksOf 16
                          . intersperse " " . map f $ ws
-                    m   = length . show . length $ xs
+                    m  = length . show . length $ xs
                  in  foldr ( addNumberedRow m ) B.emptyWidget . zip [0..] $ xs
-
-wrappedAscii :: [Word8] -> B.Widget ()
-wrappedAscii = B.strWrap . concatMap toAscii
-
-toAscii :: Word8 -> String
-toAscii w = [ toEnum . fromIntegral $ w ]
-
-toHex :: Word8 -> String
-toHex w = replicate (2 - length s) '0' ++ s
-    where s = showHex w ""
-
-toDec :: Word8 -> String
-toDec w = replicate (3 - length s) '0' ++ s
-    where s = show w
 
 ---------------------------------------------------------------------
 -- Status and commandline UI
@@ -147,3 +134,20 @@ chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
 chunksOf n xs = chnk : chunksOf n next
     where (chnk, next) = splitAt n xs
+
+slice :: (Int, Int) -> [a] -> [a]
+slice (n0, n1) = take (n1 - n0 + 1) . drop n0
+
+wrappedAscii :: [Word8] -> B.Widget ()
+wrappedAscii = B.strWrap . concatMap toAscii
+
+toAscii :: Word8 -> String
+toAscii w = [ toEnum . fromIntegral $ w ]
+
+toHex :: Word8 -> String
+toHex w = replicate (2 - length s) '0' ++ s
+    where s = showHex w ""
+
+toDec :: Word8 -> String
+toDec w = replicate (3 - length s) '0' ++ s
+    where s = show w

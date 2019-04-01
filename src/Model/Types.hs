@@ -59,6 +59,8 @@ data Debugger = Debugger {
     , progWidth  :: !Int
     , inFormat   :: !DataFormat
     , outFormat  :: !DataFormat
+    , progView   :: !(Int,Int)
+    , memView    :: !(Int,Int)
     }
 
 data Status =

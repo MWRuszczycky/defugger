@@ -10,6 +10,7 @@ module Model.Compiler
     , stepForward
     , stepBackward
     , getPosition
+    , getAddress
     ) where
 
 import qualified Data.ByteString as BS
@@ -86,6 +87,10 @@ getPosition :: T.Debugger -> Int
 getPosition db = case T.history db of
                       []    -> 0
                       (x:_) -> x
+
+getAddress :: T.Debugger -> Int
+getAddress db = let T.Tape xs _ _ = T.memory . T.computer $ db
+                in  length xs
 
 ---------------------------------------------------------------------
 -- Debug history management
