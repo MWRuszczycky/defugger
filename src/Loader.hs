@@ -65,8 +65,8 @@ initDebugger opts (width,height) = do
                     , T.termWidth  = width
                     , T.termHeight = height
                     , T.progWidth  = 30
-                    , T.inFormat   = T.Ascii
-                    , T.outFormat  = T.Ascii
+                    , T.inFormat   = T.Asc
+                    , T.outFormat  = T.Asc
                     }
 
 ---------------------------------------------------------------------

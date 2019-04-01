@@ -11,6 +11,7 @@ import qualified Graphics.Vty           as V
 import qualified Brick                  as B
 import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
+import Data.Word                                ( Word8           )
 import Brick                                    ( (<+>), (<=>)    )
 import Brick.Widgets.Border                     ( borderWithLabel )
 import Numeric                                  ( showHex         )
@@ -20,8 +21,8 @@ import Data.List                                ( intersperse     )
 drawUI :: T.Debugger -> [ B.Widget () ]
 drawUI db = [ ws <=> ( statusUI $ db ) ]
     where ws  = programUI db <+> memoryUI db
-                <+> B.vBox [ dataUI "output" (T.output . T.computer) db
-                           , dataUI "input"  (T.input  . T.computer) db
+                <+> B.vBox [ outputUI db
+                           , inputUI db
                            ]
 
 ---------------------------------------------------------------------
@@ -69,23 +70,41 @@ formatMemory db = inBack ++ [inFocus] ++ inFront
 ---------------------------------------------------------------------
 -- Input and output UIs
 
-dataUI :: String -> (T.Debugger -> BS.ByteString) -> T.Debugger -> B.Widget ()
-dataUI t g db = let m = 1
-                in  borderWithLabel ( B.str t )
-                    . B.padBottom B.Max
-                    . B.padRight B.Max
-                    . foldr ( addNumberedRow m ) B.emptyWidget
-                    . zip [1..]
-                    . formatData g $ db
+inputUI :: T.Debugger -> B.Widget ()
+inputUI db = dataUI (T.inFormat db) "input" . T.input . T.computer $ db
 
-formatData :: (T.Debugger -> BS.ByteString) -> T.Debugger -> [B.Widget ()]
-formatData g db
-    | BS.null . g $ db = [ B.str $ "<no data>" ]
-    | otherwise        = go (T.outFormat db) . BS.unpack . g $ db
-    where go T.Ascii = map B.str . lines . map (toEnum . fromIntegral)
-          go T.Dec   = intersperse (B.str " ") . map (B.str . show)
-          go T.Hex   = intersperse (B.str " ") . map toHex
-          toHex w    = B.str $ showHex w ""
+outputUI :: T.Debugger -> B.Widget ()
+outputUI db = dataUI (T.outFormat db) "output" . T.output . T.computer $ db
+
+dataUI :: T.DataFormat -> String -> BS.ByteString -> B.Widget ()
+dataUI fmt title bs
+    | BS.null bs = go . B.str $ "<no data>"
+    | otherwise  = go w
+    where go = borderWithLabel (B.str title) . padRightBottom B.Max
+          w  = case fmt of
+                    T.Dec -> numbered toDec . BS.unpack $ bs
+                    T.Hex -> numbered toHex . BS.unpack $ bs
+                    T.Asc -> wrappedAscii   . BS.unpack $ bs
+
+numbered :: (Word8 -> String) -> [Word8] -> B.Widget ()
+numbered f ws = let xs  = map (B.str . concat) . chunksOf 16
+                         . intersperse " " . map f $ ws
+                    m   = length . show . length $ xs
+                 in  foldr ( addNumberedRow m ) B.emptyWidget . zip [0..] $ xs
+
+wrappedAscii :: [Word8] -> B.Widget ()
+wrappedAscii = B.strWrap . concatMap toAscii
+
+toAscii :: Word8 -> String
+toAscii w = [ toEnum . fromIntegral $ w ]
+
+toHex :: Word8 -> String
+toHex w = replicate (2 - length s) '0' ++ s
+    where s = showHex w ""
+
+toDec :: Word8 -> String
+toDec w = replicate (3 - length s) '0' ++ s
+    where s = show w
 
 ---------------------------------------------------------------------
 -- Status and commandline UI
@@ -103,20 +122,26 @@ statusUI db = B.hBox [ B.str "(width, height) = ("
 
 attributes :: B.AttrMap
 attributes = B.attrMap V.defAttr
-    [ ( "focus", B.on V.black V.yellow )
-    , ( "break", B.on V.red   V.black  ) ]
+    [ ( "focus",  B.on V.black V.yellow )
+    , ( "lineno", B.fg V.green          )
+    , ( "break",  B.fg V.red            ) ]
 
 ---------------------------------------------------------------------
 -- Helpers
+
+padRightBottom :: B.Padding -> B.Widget () -> B.Widget ()
+padRightBottom p = B.padRight p . B.padBottom p
 
 addNumberedRow :: Int -> (Int, B.Widget ()) -> B.Widget () -> B.Widget ()
 -- ^Given a label width, numbered widget and accumulated widget of
 -- rows of widgets, tag the numbered widget with its number and add
 -- it as new row to the accumulated widget.
 addNumberedRow m (n,w) rows = ( nmbrWgt <+> spacer <+> w ) <=> rows
-    where nmbrWgt = B.padRight (B.Pad $ m - length nmbr) . B.str $ nmbr
-          spacer  = B.str " "
+    where spacer  = B.str " "
           nmbr    = show n
+          nmbrWgt = B.withAttr "lineno"
+                    . B.padRight (B.Pad $ m - length nmbr)
+                    . B.str $ nmbr
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []

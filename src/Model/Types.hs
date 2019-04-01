@@ -151,7 +151,7 @@ data Token =
       deriving ( Ord, Eq, Show )
 
 data DataFormat =
-      Ascii
+      Asc
     | Dec
     | Hex
       deriving ( Eq, Show )
