@@ -18,7 +18,7 @@ import Brick.Widgets.Border                     ( borderWithLabel )
 import Numeric                                  ( showHex         )
 import Data.List                                ( intersperse     )
 
-drawUI :: T.Debugger -> [ B.Widget () ]
+drawUI :: T.Debugger -> [ B.Widget T.WgtName ]
 drawUI db = [ ws <=> ( statusUI $ db ) ]
     where ws  = programUI db <+> memoryUI db
                 <+> B.vBox [ outputUI db
@@ -28,7 +28,7 @@ drawUI db = [ ws <=> ( statusUI $ db ) ]
 ---------------------------------------------------------------------
 -- UI for the program code
 
-programUI :: T.Debugger -> B.Widget ()
+programUI :: T.Debugger -> B.Widget T.WgtName
 -- ^Displays the BF code.
 programUI db = let m = length . show . Vec.length . T.program $ db
                in  borderWithLabel ( B.str "program" )
@@ -41,7 +41,7 @@ programUI db = let m = length . show . Vec.length . T.program $ db
                    . zipWith ( formatCode db ) [0..]
                    . Vec.toList . T.program $ db
 
-formatCode :: T.Debugger -> Int -> T.DebugStatement -> B.Widget ()
+formatCode :: T.Debugger -> Int -> T.DebugStatement -> B.Widget T.WgtName
 -- ^Format each BF statement or control structure for display
 formatCode db pos x
     | pos == getPosition db  = B.withAttr "focus" . B.str . show $ x
@@ -51,7 +51,7 @@ formatCode db pos x
 ---------------------------------------------------------------------
 -- UI for memory tape
 
-memoryUI :: T.Debugger -> B.Widget ()
+memoryUI :: T.Debugger -> B.Widget T.WgtName
 memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
               in  borderWithLabel ( B.str "memory" )
                   . B.padBottom B.Max
@@ -61,7 +61,7 @@ memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
                   . zip [0..]
                   . formatMemory $ db
 
-formatMemory :: T.Debugger -> [B.Widget ()]
+formatMemory :: T.Debugger -> [B.Widget T.WgtName]
 formatMemory db = inBack ++ [inFocus] ++ inFront
        where (T.Tape xs u ys) = T.memory . T.computer $ db
              inBack           = map ( B.str . show ) . reverse $ xs
@@ -71,13 +71,13 @@ formatMemory db = inBack ++ [inFocus] ++ inFront
 ---------------------------------------------------------------------
 -- Input and output UIs
 
-inputUI :: T.Debugger -> B.Widget ()
+inputUI :: T.Debugger -> B.Widget T.WgtName
 inputUI db = dataUI (T.inFormat db) "input" . T.input . T.computer $ db
 
-outputUI :: T.Debugger -> B.Widget ()
+outputUI :: T.Debugger -> B.Widget T.WgtName
 outputUI db = dataUI (T.outFormat db) "output" . T.output . T.computer $ db
 
-dataUI :: T.DataFormat -> String -> BS.ByteString -> B.Widget ()
+dataUI :: T.DataFormat -> String -> BS.ByteString -> B.Widget T.WgtName
 dataUI fmt title bs
     | BS.null bs = go . B.str $ "<no data>"
     | otherwise  = go w
@@ -87,7 +87,7 @@ dataUI fmt title bs
                     T.Hex -> numbered toHex . BS.unpack $ bs
                     T.Asc -> wrappedAscii   . BS.unpack $ bs
 
-numbered :: (Word8 -> String) -> [Word8] -> B.Widget ()
+numbered :: (Word8 -> String) -> [Word8] -> B.Widget T.WgtName
 numbered f ws = let xs = map (B.str . concat) . chunksOf 16
                          . intersperse " " . map f $ ws
                     m  = length . show . length $ xs
@@ -96,7 +96,7 @@ numbered f ws = let xs = map (B.str . concat) . chunksOf 16
 ---------------------------------------------------------------------
 -- Status and commandline UI
 
-statusUI :: T.Debugger -> B.Widget ()
+statusUI :: T.Debugger -> B.Widget T.WgtName
 statusUI db = B.hBox [ B.str "(width, height) = ("
                      , B.str . show . T.termWidth $ db
                      , B.str ","
@@ -117,10 +117,11 @@ attributes = B.attrMap V.defAttr
 ---------------------------------------------------------------------
 -- Helpers
 
-padRightBottom :: B.Padding -> B.Widget () -> B.Widget ()
+padRightBottom :: B.Padding -> B.Widget T.WgtName -> B.Widget T.WgtName
 padRightBottom p = B.padRight p . B.padBottom p
 
-addNumberedRow :: Int -> (Int, B.Widget ()) -> B.Widget () -> B.Widget ()
+addNumberedRow :: Int -> (Int, B.Widget T.WgtName)
+                  -> B.Widget T.WgtName -> B.Widget T.WgtName
 -- ^Given a label width, numbered widget and accumulated widget of
 -- rows of widgets, tag the numbered widget with its number and add
 -- it as new row to the accumulated widget.
@@ -139,7 +140,7 @@ chunksOf n xs = chnk : chunksOf n next
 slice :: (Int, Int) -> [a] -> [a]
 slice (n0, n1) = take (n1 - n0 + 1) . drop n0
 
-wrappedAscii :: [Word8] -> B.Widget ()
+wrappedAscii :: [Word8] -> B.Widget T.WgtName
 wrappedAscii = B.strWrap . concatMap toAscii
 
 toAscii :: Word8 -> String

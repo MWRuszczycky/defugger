@@ -10,8 +10,8 @@ import qualified Brick           as B
 import qualified Model.Types     as T
 import qualified Model.Compiler  as C
 
-type EventHandler = forall e. B.BrickEvent () e
-                              -> B.EventM () (B.Next T.Debugger)
+type EventHandler = forall e. B.BrickEvent T.WgtName e
+                              -> B.EventM T.WgtName (B.Next T.Debugger)
 
 routeEvent :: T.Debugger -> EventHandler
 routeEvent db (B.VtyEvent (V.EvKey V.KEsc [])) = B.halt db

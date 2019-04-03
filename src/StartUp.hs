@@ -83,7 +83,7 @@ defOptions = T.DefuggerOptions {
 ---------------------------------------------------------------------
 -- Brick app initialization
 
-initApp :: B.App T.Debugger e ()
+initApp :: B.App T.Debugger e T.WgtName
 initApp = B.App { B.appDraw         = drawUI
                 , B.appHandleEvent  = routeEvent
                 , B.appChooseCursor = B.neverShowCursor
