@@ -101,7 +101,8 @@ statusUI db = B.hBox [ B.str "(width, height) = ("
                      , B.str . show . T.termWidth $ db
                      , B.str ","
                      , B.str . show . T.termHeight $ db
-                     , B.str ")"
+                     , B.str ") | focus = "
+                     , B.str . show . T.wgtFocus $ db
                      ]
 
 ---------------------------------------------------------------------

@@ -20,12 +20,13 @@ routeEvent db (B.VtyEvent (V.EvResize w h)   ) = B.continue . resizeEv w h $ db
 routeEvent db e                                = B.resizeOrQuit db e
 
 keyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
-keyEv V.KRight _ db      = either (const db) shiftBoth . C.stepForward $ db
-keyEv V.KLeft  _ db      = either (const db) shiftBoth . C.stepBackward $ db
-keyEv (V.KChar 'd') _ db = db { T.outFormat = T.Dec, T.inFormat = T.Dec }
-keyEv (V.KChar 'h') _ db = db { T.outFormat = T.Hex, T.inFormat = T.Hex }
-keyEv (V.KChar 'a') _ db = db { T.outFormat = T.Asc, T.inFormat = T.Asc }
-keyEv _             _ db = db
+keyEv V.KRight       _ db = either (const db) shiftBoth . C.stepForward $ db
+keyEv V.KLeft        _ db = either (const db) shiftBoth . C.stepBackward $ db
+keyEv (V.KChar 'd' ) _ db = db { T.outFormat = T.Dec, T.inFormat = T.Dec    }
+keyEv (V.KChar 'h' ) _ db = db { T.outFormat = T.Hex, T.inFormat = T.Hex    }
+keyEv (V.KChar 'a' ) _ db = db { T.outFormat = T.Asc, T.inFormat = T.Asc    }
+keyEv (V.KChar '\t') _ db = db { T.wgtFocus = changeFocus . T.wgtFocus $ db }
+keyEv _              _ db = db
 
 resizeEv :: Int -> Int -> T.Debugger -> T.Debugger
 resizeEv w h db = db { T.termWidth = w, T.termHeight = h }
@@ -51,3 +52,10 @@ shiftPos (n0,n1) n
     | n < n0    = (n, n + n1 - n0)
     | n > n1    = (n - (n1 - n0), n)
     | otherwise = (n0,n1)
+
+changeFocus :: T.WgtName -> T.WgtName
+changeFocus T.ProgramWgt = T.MemoryWgt
+changeFocus T.MemoryWgt  = T.OutputWgt
+changeFocus T.OutputWgt  = T.InputWgt
+changeFocus T.InputWgt   = T.ProgramWgt
+changeFocus T.StatusWgt  = T.ProgramWgt
