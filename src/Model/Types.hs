@@ -9,6 +9,7 @@ module Model.Types
     , DataFormat      (..)
     , Debugger        (..)
     , Status          (..)
+    , WgtName         (..)
       -- Computer/Computation model
     , Computation
     , Computer        (..)
@@ -69,6 +70,7 @@ data Debugger = Debugger {
     , dictionary :: {-# UNPACK #-} !Dictionary  -- The BF dictionary
     , program    :: {-# UNPACK #-} !DBProgram   -- The BF program
     , status     :: {-# UNPACK #-} !Status      -- Current debug status
+    , wgtFocus   :: !WgtName                    -- Current focused widget
     , readBackup :: ![Word8]                    -- History of reads
     , history    :: ![Int]                      -- History of statements
     , breaks     :: ![Int]                      -- User specified break points
@@ -92,6 +94,15 @@ data DataFormat =
     | Dec                   -- Decimal
     | Hex                   -- Hexidecimal
       deriving ( Eq, Show )
+
+-- |Names for the Brick widgets
+data WgtName =
+      ProgramWgt            -- Widget that displays the program
+    | MemoryWgt             -- Widget that displays the memory
+    | OutputWgt             -- Widget that displays current output
+    | InputWgt              -- Widget that displays the input left
+    | StatusWgt             -- Widget that dislays status messages
+      deriving ( Eq, Ord, Show )
 
 ---------------------------------------------------------------------
 -- Model of a computer for running a BF program/script and the
