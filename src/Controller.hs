@@ -29,7 +29,16 @@ keyEv (V.KChar '\t') _ db = db { T.wgtFocus = changeFocus . T.wgtFocus $ db }
 keyEv _              _ db = db
 
 resizeEv :: Int -> Int -> T.Debugger -> T.Debugger
-resizeEv w h db = db { T.termWidth = w, T.termHeight = h }
+resizeEv w h db = let pv        = T.progView db
+                      mv        = T.memView db
+                      progRow   = getProgRow db
+                      memRow    = C.getAddress db
+                      wgtHeight = h - 3
+                  in  db { T.termWidth  = w
+                         , T.termHeight = h
+                         , T.progView   = resizeWgtView wgtHeight progRow pv
+                         , T.memView    = resizeWgtView wgtHeight memRow  mv
+                         }
 
 ---------------------------------------------------------------------
 -- Helpers
@@ -39,7 +48,7 @@ shiftBoth = shiftMem . shiftProg
 
 shiftProg :: T.Debugger -> T.Debugger
 shiftProg db = let oldView = T.progView db
-                   progRow = quot (C.getPosition db) (T.progWidth db)
+                   progRow = getProgRow db
                in  db { T.progView = shiftPos oldView progRow }
 
 shiftMem :: T.Debugger -> T.Debugger
@@ -47,11 +56,23 @@ shiftMem db = let oldView    = T.memView db
                   memAddress = C.getAddress db
               in  db { T.memView = shiftPos oldView memAddress }
 
+getProgRow :: T.Debugger -> Int
+getProgRow db = quot (C.getPosition db) (T.progWidth db)
+
 shiftPos :: (Int, Int) -> Int -> (Int, Int)
 shiftPos (n0,n1) n
     | n < n0    = (n, n + n1 - n0)
     | n > n1    = (n - (n1 - n0), n)
     | otherwise = (n0,n1)
+
+resizeWgtView :: Int -> Int -> (Int, Int) -> (Int, Int)
+resizeWgtView h n (n0,n1)
+    | h == oldHeight              = (n0, n1)
+    | h > oldHeight               = (n0', n0' + h - 1)
+    | h < oldHeight && n < n0 + h = (n0, n0 + h - 1)
+    | otherwise                   = (n - h + 1, n)
+    where oldHeight = n1 - n0 + 1
+          n0'       = min 0 (n1 - h + 1)
 
 changeFocus :: T.WgtName -> T.WgtName
 changeFocus T.ProgramWgt = T.MemoryWgt
