@@ -73,6 +73,7 @@ data Debugger = Debugger {
     , wgtFocus   :: !WgtName                    -- Current focused widget
     , readBackup :: ![Word8]                    -- History of reads
     , history    :: ![Int]                      -- History of statements
+    , cursor     :: !Int                        -- Cursor position in program
     , breaks     :: ![Int]                      -- User specified break points
     , termWidth  :: !Int                        -- Width of the terminal
     , termHeight :: !Int                        -- Height of the terminal

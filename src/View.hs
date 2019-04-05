@@ -44,8 +44,9 @@ programUI db = let m = length . show . Vec.length . T.program $ db
 formatCode :: T.Debugger -> Int -> T.DebugStatement -> B.Widget T.WgtName
 -- ^Format each BF statement or control structure for display
 formatCode db pos x
-    | pos == getPosition db  = B.withAttr "focus" . B.str . show $ x
-    | elem pos (T.breaks db) = B.withAttr "break" . B.str . show $ x
+    | pos == getPosition db  = B.withAttr "focus"  . B.str . show $ x
+    | pos == T.cursor db     = B.withAttr "cursor" . B.str . show $ x
+    | elem pos (T.breaks db) = B.withAttr "break"  . B.str . show $ x
     | otherwise              = B.str . show $ x
 
 ---------------------------------------------------------------------
@@ -111,6 +112,7 @@ statusUI db = B.hBox [ B.str "(width, height) = ("
 attributes :: B.AttrMap
 attributes = B.attrMap V.defAttr
     [ ( "focus",  B.on V.black V.yellow )
+    , ( "cursor", B.on V.black V.green  )
     , ( "lineno", B.fg V.green          )
     , ( "break",  B.fg V.red            ) ]
 

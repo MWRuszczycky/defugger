@@ -61,6 +61,7 @@ initDebugger opts (width,height) = do
                     , T.status     = T.Normal
                     , T.wgtFocus   = T.ProgramWgt
                     , T.history    = [0]
+                    , T.cursor     = 0
                     , T.breaks     = [ 0, V.length p - 1 ]
                     , T.readBackup = []
                     , T.termWidth  = width

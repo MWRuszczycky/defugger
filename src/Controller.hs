@@ -5,6 +5,7 @@ module Controller
     ( routeEvent
     ) where
 
+import qualified Data.Vector     as Vec
 import qualified Graphics.Vty    as V
 import qualified Brick           as B
 import qualified Model.Types     as T
@@ -20,13 +21,53 @@ routeEvent db (B.VtyEvent (V.EvResize w h)   ) = B.continue . resizeEv w h $ db
 routeEvent db e                                = B.resizeOrQuit db e
 
 keyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
-keyEv V.KRight       _ db = either (const db) shiftBoth . C.stepForward $ db
-keyEv V.KLeft        _ db = either (const db) shiftBoth . C.stepBackward $ db
+keyEv (V.KChar ' ')  _ db = executeStatement db
+keyEv V.KBS          _ db = revertStatement db
+keyEv V.KRight       _ db = moveCursorRight db
+keyEv V.KLeft        _ db = moveCursorLeft db
+keyEv V.KUp          _ db = moveCursorUp db
+keyEv V.KDown        _ db = moveCursorDown db
 keyEv (V.KChar 'd' ) _ db = db { T.outFormat = T.Dec, T.inFormat = T.Dec    }
 keyEv (V.KChar 'h' ) _ db = db { T.outFormat = T.Hex, T.inFormat = T.Hex    }
 keyEv (V.KChar 'a' ) _ db = db { T.outFormat = T.Asc, T.inFormat = T.Asc    }
 keyEv (V.KChar '\t') _ db = db { T.wgtFocus = changeFocus . T.wgtFocus $ db }
 keyEv _              _ db = db
+
+executeStatement :: T.Debugger -> T.Debugger
+executeStatement db = either (const db) go . C.stepForward $ db
+    where go db' = let newDB = shiftBoth db'
+                   in  newDB { T.cursor = C.getPosition newDB }
+
+revertStatement :: T.Debugger -> T.Debugger
+revertStatement db = either (const db) go . C.stepBackward $ db
+    where go db' = let newDB = shiftBoth db'
+                   in  newDB { T.cursor = C.getPosition newDB }
+
+moveCursorRight :: T.Debugger -> T.Debugger
+moveCursorRight db
+    | atEnd     = db
+    | otherwise = db { T.cursor = x + 1 }
+    where x     = T.cursor db
+          atEnd = (== x) . subtract 1 . Vec.length . T.program $ db
+
+moveCursorLeft :: T.Debugger -> T.Debugger
+moveCursorLeft db
+    | x == 0    = db
+    | otherwise = db { T.cursor = x - 1 }
+    where x = T.cursor db
+
+moveCursorUp :: T.Debugger -> T.Debugger
+moveCursorUp db
+    | x < 0     = db
+    | otherwise = db { T.cursor = x }
+    where x = T.cursor db - T.progWidth db
+
+moveCursorDown :: T.Debugger -> T.Debugger
+moveCursorDown db
+    | atEnd     = db
+    | otherwise = db { T.cursor = y }
+    where y     = T.cursor db + T.progWidth db
+          atEnd = (< y) . (subtract 1) . Vec.length . T.program $ db
 
 resizeEv :: Int -> Int -> T.Debugger -> T.Debugger
 resizeEv w h db = let pv        = T.progView db
