@@ -9,6 +9,7 @@ module Model.Debugger
     , stepBackward
       -- Modeling widget interfaces
     , resize
+    , nextWidget
       -- Cursor management
     , moveCursorRight
     , moveCursorLeft
@@ -253,6 +254,18 @@ shiftView (n0,n1) n
     | n > n1    = ( n - h, n     )
     | otherwise = ( n0,    n1    )
     where h = n1 - n0
+
+---------------------------------------------------------------------
+-- Cycling between widgets
+
+nextWidget :: T.WgtName -> T.WgtName
+-- ^Defines a cycling order for the widgets. This is called when the
+-- user presses the tab key to change the active widget.
+nextWidget T.ProgramWgt = T.MemoryWgt
+nextWidget T.MemoryWgt  = T.OutputWgt
+nextWidget T.OutputWgt  = T.InputWgt
+nextWidget T.InputWgt   = T.ProgramWgt
+nextWidget T.StatusWgt  = T.ProgramWgt
 
 -- =============================================================== --
 -- Cursor management

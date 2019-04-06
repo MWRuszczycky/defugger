@@ -26,18 +26,8 @@ keyEv V.KRight       _ db = D.moveCursorRight db
 keyEv V.KLeft        _ db = D.moveCursorLeft db
 keyEv V.KUp          _ db = D.moveCursorUp db
 keyEv V.KDown        _ db = D.moveCursorDown db
-keyEv (V.KChar 'd' ) _ db = db { T.outFormat = T.Dec, T.inFormat = T.Dec    }
-keyEv (V.KChar 'h' ) _ db = db { T.outFormat = T.Hex, T.inFormat = T.Hex    }
-keyEv (V.KChar 'a' ) _ db = db { T.outFormat = T.Asc, T.inFormat = T.Asc    }
-keyEv (V.KChar '\t') _ db = db { T.wgtFocus = changeFocus . T.wgtFocus $ db }
+keyEv (V.KChar 'd' ) _ db = db { T.outFormat = T.Dec, T.inFormat = T.Dec     }
+keyEv (V.KChar 'h' ) _ db = db { T.outFormat = T.Hex, T.inFormat = T.Hex     }
+keyEv (V.KChar 'a' ) _ db = db { T.outFormat = T.Asc, T.inFormat = T.Asc     }
+keyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
 keyEv _              _ db = db
-
----------------------------------------------------------------------
--- Helpers
-
-changeFocus :: T.WgtName -> T.WgtName
-changeFocus T.ProgramWgt = T.MemoryWgt
-changeFocus T.MemoryWgt  = T.OutputWgt
-changeFocus T.OutputWgt  = T.InputWgt
-changeFocus T.InputWgt   = T.ProgramWgt
-changeFocus T.StatusWgt  = T.ProgramWgt
