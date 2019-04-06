@@ -78,11 +78,13 @@ getCursorRow db = quot (T.cursor db) (T.progWidth db)
 
 stepForward :: T.Debugger -> T.Debugger
 -- ^Change the debugger state according to step forward command.
-stepForward db = either (const db) id . executeNextStatement $ db
+stepForward db = either setMsg id . executeNextStatement $ db
+    where setMsg x = db { T.message = x }
 
 stepBackward :: T.Debugger -> T.Debugger
 -- ^Change the debugger state according to step backward command.
-stepBackward db = either (const db) id . revertLastStatement $ db
+stepBackward db = either setMsg id . revertLastStatement $ db
+    where setMsg x = db { T.message = x }
 
 -- Unexported
 
