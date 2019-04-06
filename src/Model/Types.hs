@@ -55,6 +55,7 @@ data DebuggerCommand =
       PureCmd      ( Debugger -> Debugger    )
     | SimpleIOCmd  ( Debugger -> IO Debugger )
     | ComplexIOCmd ( Debugger -> IO Debugger )
+    | QuitCmd
 
 ---------------------------------------------------------------------
 -- Startup data structures used to determine how a new instance of

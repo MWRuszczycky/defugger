@@ -13,6 +13,9 @@ getCommand s = lookupCmd . words $ s
 
 lookupCmd :: [String] -> T.DebuggerCommand
 lookupCmd ("set":cs) = T.PureCmd $ setCmd cs
+lookupCmd ("q":_)    = T.QuitCmd
+lookupCmd ("quit":_) = T.QuitCmd
+lookupCmd ("exit":_) = T.QuitCmd
 lookupCmd _          = T.PureCmd $ errorCmd "Command unrecognized"
 
 -- =============================================================== --

@@ -85,3 +85,4 @@ handleCommand db =
              T.PureCmd f      -> B.continue . f $ db'
              T.SimpleIOCmd f  -> liftIO ( f db') >>= B.continue
              T.ComplexIOCmd f -> B.suspendAndResume $ f db'
+             T.QuitCmd        -> B.halt db'
