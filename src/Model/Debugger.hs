@@ -15,6 +15,8 @@ module Model.Debugger
     , moveCursorLeft
     , moveCursorUp
     , moveCursorDown
+      -- Display formats
+    , changeFormat
     ) where
 
 -- =============================================================== --
@@ -307,3 +309,13 @@ moveCursorDown db
     | otherwise = updateViewByCursor $ db { T.cursor = y }
     where y     = T.cursor db + T.progWidth db
           atEnd = (< y) . (subtract 1) . Vec.length . T.program $ db
+
+-- =============================================================== --
+-- Display formats
+
+changeFormat :: T.DataFormat -> T.Debugger -> T.Debugger
+-- ^Change the data format of the currentl focused widget.
+changeFormat fmt db = case T.wgtFocus db of
+                           T.OutputWgt -> db { T.outFormat = fmt }
+                           T.InputWgt  -> db { T.inFormat  = fmt }
+                           _           -> db

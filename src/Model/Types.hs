@@ -1,6 +1,7 @@
 module Model.Types
-    ( -- Error types
-      ErrorIO
+    ( -- Error and IO types
+      DebuggerCommand (..)
+    , ErrorIO
     , ErrString
       -- Startup data structures
     , DefuggerOptions (..)
@@ -40,10 +41,20 @@ import Data.Text                        ( Text      )
 import Data.Word                        ( Word8     )
 
 ---------------------------------------------------------------------
--- Error types
+-- Error and IO types
 
 type ErrString = String
 type ErrorIO   = ExceptT ErrString IO
+
+-- |Commands that can be executed while running the debugger. Pure
+-- commands have no side effects. Simple IO commands involve IO
+-- actions; however, they can run concurrently with the Brick runtime
+-- system. Complex IO commands require that the Brick runtime system
+-- be suspended while they are executed.
+data DebuggerCommand =
+      PureCmd      ( Debugger -> Debugger    )
+    | SimpleIOCmd  ( Debugger -> IO Debugger )
+    | ComplexIOCmd ( Debugger -> IO Debugger )
 
 ---------------------------------------------------------------------
 -- Startup data structures used to determine how a new instance of

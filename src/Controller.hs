@@ -9,6 +9,8 @@ import qualified Graphics.Vty    as V
 import qualified Brick           as B
 import qualified Model.Types     as T
 import qualified Model.Debugger  as D
+import Control.Monad.IO.Class           ( liftIO            )
+import Commands                         ( getCommand        )
 import Brick.Widgets.Edit               ( editor
                                         , getEditContents
                                         , handleEditorEvent )
@@ -53,9 +55,6 @@ keyEv V.KLeft        _ db = D.moveCursorLeft db
 keyEv V.KUp          _ db = D.moveCursorUp db
 keyEv V.KDown        _ db = D.moveCursorDown db
 keyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
-keyEv (V.KChar 'd' ) _ db = db { T.outFormat = T.Dec, T.inFormat = T.Dec     }
-keyEv (V.KChar 'h' ) _ db = db { T.outFormat = T.Hex, T.inFormat = T.Hex     }
-keyEv (V.KChar 'a' ) _ db = db { T.outFormat = T.Asc, T.inFormat = T.Asc     }
 keyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
 keyEv _              _ db = db
 
@@ -79,8 +78,10 @@ abortToNormalMode db = B.continue $
 
 handleCommand :: T.Debugger -> DebugEventMonad
 -- ^Read the command entered in normal mode and execute it.
-handleCommand db = B.continue $
-    db { T.message     = unlines . getEditContents . T.commandEdit $ db
-       , T.commandEdit = editor T.CommandWgt (Just 1) ""
-       , T.mode        = T.NormalMode
-       }
+handleCommand db =
+    let db' = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
+                 , T.mode        = T.NormalMode }
+    in  case getCommand . unlines . getEditContents . T.commandEdit $ db of
+             T.PureCmd f      -> B.continue . f $ db'
+             T.SimpleIOCmd f  -> liftIO ( f db') >>= B.continue
+             T.ComplexIOCmd f -> B.suspendAndResume $ f db'

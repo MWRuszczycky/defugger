@@ -114,7 +114,8 @@ statusUI db
     where msg = T.message db
 
 commandUI :: T.Debugger -> B.Widget T.WgtName
-commandUI = renderEditor (B.str . unlines) True . T.commandEdit
+commandUI db = B.str ":"
+               <+> ( renderEditor (B.str . unlines) True . T.commandEdit $ db )
 
 ---------------------------------------------------------------------
 -- Attribute map

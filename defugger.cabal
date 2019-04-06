@@ -20,7 +20,8 @@ executable defugger
                       , defugger-internal
 
 library defugger-internal
-  exposed-modules:      Controller
+  exposed-modules:      Commands
+                      , Controller
                       , Loader
                       , StartUp
                       , View
