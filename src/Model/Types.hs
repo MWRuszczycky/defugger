@@ -33,6 +33,7 @@ module Model.Types
 import qualified Data.ByteString as B
 import qualified Data.Text       as Tx
 import qualified Data.Vector     as V
+import Data.Set                         ( Set       )
 import Brick.Widgets.Edit               ( Editor    )
 import Control.Monad.Except             ( ExceptT   )
 import Control.Monad.State.Lazy         ( StateT    )
@@ -88,7 +89,7 @@ data Debugger = Debugger {
     , readBackup  :: ![Word8]                    -- History of reads
     , history     :: ![Int]                      -- History of statements
     , cursor      :: !Int                        -- Cursor position in program
-    , breaks      :: ![Int]                      -- User specified break points
+    , breaks      :: Set Int                     -- User specified break points
     , termWidth   :: !Int                        -- Width of the terminal
     , termHeight  :: !Int                        -- Height of the terminal
     , progWidth   :: !Int                        -- Characters shown per line

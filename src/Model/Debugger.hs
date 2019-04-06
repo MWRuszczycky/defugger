@@ -17,6 +17,10 @@ module Model.Debugger
     , moveCursorDown
       -- Display formats
     , changeFormat
+      -- Break point management
+    , setBreakPoint
+    , unsetBreakPoint
+    , unsetAllBreakPoints
     ) where
 
 -- =============================================================== --
@@ -26,6 +30,7 @@ module Model.Debugger
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
 import qualified Data.Vector     as Vec
+import qualified Data.Set        as Set
 import Data.Word                        ( Word8     )
 import Data.Vector                      ( (!)       )
 import Model.Interpreter                ( advance
@@ -319,3 +324,25 @@ changeFormat fmt db = case T.wgtFocus db of
                            T.OutputWgt -> db { T.outFormat = fmt }
                            T.InputWgt  -> db { T.inFormat  = fmt }
                            _           -> db
+
+-- =============================================================== --
+-- Break point management
+
+setBreakPoint :: T.Debugger -> T.Debugger
+-- ^Set the current cursor position in the program as a break point.
+setBreakPoint db = db { T.breaks = Set.insert n bs }
+    where n  = T.cursor db
+          bs = T.breaks db
+
+unsetBreakPoint :: T.Debugger -> T.Debugger
+unsetBreakPoint db
+    | n == 0       = db
+    | n == len - 1 = db
+    | otherwise    = db { T.breaks = Set.delete n bs }
+    where n   = T.cursor db
+          bs  = T.breaks db
+          len = Vec.length . T.program $ db
+
+unsetAllBreakPoints :: T.Debugger -> T.Debugger
+unsetAllBreakPoints db = db { T.breaks = Set.fromList [ 0, len - 1 ] }
+    where len = Vec.length . T.program $ db

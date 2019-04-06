@@ -11,6 +11,7 @@ module Loader
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
 import qualified Data.Vector     as V
+import qualified Data.Set        as Set
 import Brick.Widgets.Edit               ( editor        )
 import Control.Monad.Except             ( throwError
                                         , liftEither    )
@@ -63,7 +64,7 @@ initDebugger opts (width,height) = do
                     , T.wgtFocus    = T.ProgramWgt
                     , T.history     = [0]
                     , T.cursor      = 0
-                    , T.breaks      = [ 0, V.length p - 1 ]
+                    , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
                     , T.readBackup  = []
                     , T.termWidth   = width
                     , T.termHeight  = height

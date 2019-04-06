@@ -11,6 +11,7 @@ import qualified Graphics.Vty           as V
 import qualified Brick                  as B
 import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
+import qualified Data.Set               as Set
 import Brick.Widgets.Edit                       ( renderEditor    )
 import Model.Debugger                           ( getPosition     )
 import Data.Word                                ( Word8           )
@@ -54,10 +55,10 @@ programUI db = let m = length . show . Vec.length . T.program $ db
 formatCode :: T.Debugger -> Int -> T.DebugStatement -> B.Widget T.WgtName
 -- ^Format each BF statement or control structure for display
 formatCode db pos x
-    | pos == getPosition db  = B.withAttr "focus"  . B.str . show $ x
-    | pos == T.cursor db     = B.withAttr "cursor" . B.str . show $ x
-    | elem pos (T.breaks db) = B.withAttr "break"  . B.str . show $ x
-    | otherwise              = B.str . show $ x
+    | pos == getPosition db        = B.withAttr "focus"  . B.str . show $ x
+    | pos == T.cursor db           = B.withAttr "cursor" . B.str . show $ x
+    | Set.member pos (T.breaks db) = B.withAttr "break"  . B.str . show $ x
+    | otherwise                    = B.str . show $ x
 
 ---------------------------------------------------------------------
 -- UI for memory tape
