@@ -7,6 +7,8 @@ module Model.Debugger
       -- Executing statements
     , stepForward
     , stepBackward
+      -- Modeling widget interfaces
+    , resize
       -- Cursor management
     , moveCursorRight
     , moveCursorLeft
@@ -177,9 +179,47 @@ revertReadIn (w:_) c = let xs = T.input  c
                                     }
 
 -- =============================================================== --
--- Widget managers
--- These combinators are used as an interface to manage how the
--- widgets should be rendered according to the debugger state.
+-- Modeling widget interfaces
+-- These combinators provide an interface to manage how the widgets
+-- should be rendered according to the debugger state. In particular,
+-- the Program and Memory widgets have restricted display ranges to
+-- allow more efficient rendering. However, these ranges need to be
+-- kept up to date.
+
+---------------------------------------------------------------------
+-- Resizing the interface
+-- If the terminal is resized, the view ranges of each widget need to
+-- be updated.
+
+-- Exported
+
+resize :: Int -> Int -> T.Debugger -> T.Debugger
+-- ^Resize all widgets whose display is size-dependent given a width
+-- and height of the terminal.
+resize w h db = db {
+      T.termWidth  = w
+    , T.termHeight = h
+      -- The program has a border and sits on the status line so its
+      -- height is three less than than the total terminal height.
+    , T.progView   = resizeWgtView (h-3) (getPositionRow db) (T.progView db)
+      -- The memory has a border and sits on the status line so its
+      -- height is three less than than the total terminal height.
+    , T.memView    = resizeWgtView (h-3) (getAddress db)     (T.memView db)
+    }
+
+-- Unexported
+
+resizeWgtView :: Int -> Int -> T.VertViewRange -> T.VertViewRange
+-- ^Given a new widget height, a current position and an old view
+-- range, reset the widget's view range to enusre that the current
+-- position is included in the view range.
+resizeWgtView h n (n0, n1)
+    | h == oldHeight              = ( n0,        n1          )
+    | h > oldHeight               = ( n0',       n0' + h - 1 )
+    | h < oldHeight && n < n0 + h = ( n0,        n0 + h - 1  )
+    | otherwise                   = ( n - h + 1, n           )
+    where oldHeight = n1 - n0 + 1
+          n0'       = min 0 (n1 - h + 1)
 
 ---------------------------------------------------------------------
 -- Combinators to manage what to display in a widget

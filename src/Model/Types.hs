@@ -10,6 +10,7 @@ module Model.Types
     , Debugger        (..)
     , Status          (..)
     , WgtName         (..)
+    , VertViewRange
       -- Computer/Computation model
     , Computation
     , Computer        (..)
@@ -80,8 +81,8 @@ data Debugger = Debugger {
     , progWidth  :: !Int                        -- BF characters shown per line
     , inFormat   :: !DataFormat                 -- Display format of input data
     , outFormat  :: !DataFormat                 -- Display format of output data
-    , progView   :: !(Int,Int)                  -- BF script rows to render
-    , memView    :: !(Int,Int)                  -- Memory rows to render
+    , progView   :: !VertViewRange              -- BF script rows to render
+    , memView    :: !VertViewRange              -- Memory rows to render
     }
 
 -- |Status of the debugger
@@ -104,6 +105,9 @@ data WgtName =
     | InputWgt              -- Widget that displays the input left
     | StatusWgt             -- Widget that dislays status messages
       deriving ( Eq, Ord, Show )
+
+-- |Vertical range of lines of a wiget that are in view for display.
+type VertViewRange = (Int, Int)
 
 ---------------------------------------------------------------------
 -- Model of a computer for running a BF program/script and the
