@@ -11,6 +11,7 @@ import qualified Graphics.Vty           as V
 import qualified Brick                  as B
 import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
+import Brick.Widgets.Edit                       ( renderEditor    )
 import Model.Debugger                           ( getPosition     )
 import Data.Word                                ( Word8           )
 import Brick                                    ( (<+>), (<=>)    )
@@ -19,11 +20,20 @@ import Numeric                                  ( showHex         )
 import Data.List                                ( intersperse     )
 
 drawUI :: T.Debugger -> [ B.Widget T.WgtName ]
-drawUI db = [ ws <=> ( statusUI $ db ) ]
-    where ws  = programUI db <+> memoryUI db
-                <+> B.vBox [ outputUI db
-                           , inputUI db
-                           ]
+drawUI db = case T.mode db of
+                 T.NormalMode -> drawNormalUI db
+                 T.CommandMode -> drawCommandUI db
+
+drawNormalUI :: T.Debugger -> [ B.Widget T.WgtName ]
+drawNormalUI db = [ mainWidgets db <=> statusUI db ]
+
+drawCommandUI :: T.Debugger -> [ B.Widget T.WgtName ]
+drawCommandUI db = [ mainWidgets db <=> commandUI db ]
+
+mainWidgets :: T.Debugger -> B.Widget T.WgtName
+mainWidgets db = programUI db
+                 <+> memoryUI db
+                 <+> B.vBox [ outputUI db , inputUI db ]
 
 ---------------------------------------------------------------------
 -- UI for the program code
@@ -98,13 +108,13 @@ numbered f ws = let xs = map (B.str . concat) . chunksOf 16
 -- Status and commandline UI
 
 statusUI :: T.Debugger -> B.Widget T.WgtName
-statusUI db = B.hBox [ B.str "(width, height) = ("
-                     , B.str . show . T.termWidth $ db
-                     , B.str ","
-                     , B.str . show . T.termHeight $ db
-                     , B.str ") | focus = "
-                     , B.str . show . T.wgtFocus $ db
-                     ]
+statusUI db
+    | null msg  = B.str " "
+    | otherwise = B.str msg
+    where msg = T.message db
+
+commandUI :: T.Debugger -> B.Widget T.WgtName
+commandUI = renderEditor (B.str . unlines) True . T.commandEdit
 
 ---------------------------------------------------------------------
 -- Attribute map

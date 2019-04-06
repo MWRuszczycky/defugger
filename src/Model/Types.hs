@@ -71,7 +71,7 @@ data Debugger = Debugger {
       computer    :: {-# UNPACK #-} !Computer    -- The computer
     , dictionary  :: {-# UNPACK #-} !Dictionary  -- The BF dictionary
     , program     :: {-# UNPACK #-} !DBProgram   -- The BF program
-    , mode        :: {-# UNPACK #-} !Mode        -- Current debug status
+    , mode        :: !Mode                       -- Current debug status
     , wgtFocus    :: !WgtName                    -- Current focused widget
     , readBackup  :: ![Word8]                    -- History of reads
     , history     :: ![Int]                      -- History of statements
@@ -85,6 +85,7 @@ data Debugger = Debugger {
     , progView    :: !VertViewRange              -- BF script rows to render
     , memView     :: !VertViewRange              -- Memory rows to render
     , commandEdit :: Editor String WgtName       -- Used to enter commands
+    , message     :: !String                     -- Status message
     }
 
 -- |Status of the debugger

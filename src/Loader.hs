@@ -73,6 +73,7 @@ initDebugger opts (width,height) = do
                     , T.memView     = (0, height - 4)
                     , T.progView    = (0, height - 4)
                     , T.commandEdit = editor T.CommandWgt (Just 1) ""
+                    , T.message     = "Welcome to the Defugger!"
                     }
 
 ---------------------------------------------------------------------

@@ -86,7 +86,7 @@ defOptions = T.DefuggerOptions {
 initApp :: B.App T.Debugger e T.WgtName
 initApp = B.App { B.appDraw         = drawUI
                 , B.appHandleEvent  = routeEvent
-                , B.appChooseCursor = B.neverShowCursor
+                , B.appChooseCursor = \ _ -> B.showCursorNamed T.CommandWgt
                 , B.appStartEvent   = pure
                 , B.appAttrMap      = const attributes
                 }
