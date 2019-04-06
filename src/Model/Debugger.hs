@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Model.Debugger
     ( -- Querying the debugger
       getAddress
@@ -73,9 +75,6 @@ getCursorRow db = quot (T.cursor db) (T.progWidth db)
 -- =============================================================== --
 -- Executing statements
 
----------------------------------------------------------------------
--- Single steps
-
 -- Exported
 
 stepForward :: T.Debugger -> T.Debugger
@@ -121,14 +120,14 @@ revertLastStatement db = revertComputer db
 executeToNextBreak :: T.Debugger -> Either T.ErrString T.Debugger
 -- ^Execute all statements up to and including the next break point.
 executeToNextBreak db = executeNextStatement db >>= go
-    where go db' | Set.member (getPosition db') (T.breaks db') = pure db'
-                 | otherwise = executeToNextBreak db'
+    where go !db' | Set.member (getPosition db') (T.breaks db') = pure db'
+                  | otherwise = executeToNextBreak db'
 
 revertToLastBreak :: T.Debugger -> Either T.ErrString T.Debugger
 -- ^Revert all statements after the last break point.
 revertToLastBreak db = revertLastStatement db >>= go
-    where go db' | Set.member (getPosition db') (T.breaks db') = pure db'
-                 | otherwise = revertToLastBreak db'
+    where go !db' | Set.member (getPosition db') (T.breaks db') = pure db'
+                  | otherwise = revertToLastBreak db'
 
 ---------------------------------------------------------------------
 -- Managing debugger history
