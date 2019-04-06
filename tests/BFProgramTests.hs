@@ -37,16 +37,16 @@ main = hspec $ do
 scriptNoInput :: FilePath -> FilePath -> IO ()
 scriptNoInput s t = do
     opts <- pure ["--run", s] >>= SU.getOptions
-    case T.mode opts of
-         T.Interpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
-         _             -> error "Test failed: Interpreter mode expected"
+    case T.runMode opts of
+         T.RunInterpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
+         _                -> error "Test failed: RunInterpreter mode expected"
 
 scriptWithInput :: FilePath -> FilePath -> FilePath -> IO ()
 scriptWithInput s i t = do
     opts <- pure ["--run", s, i] >>= SU.getOptions
-    case T.mode opts of
-         T.Interpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
-         _             -> error "Test failed: Interpreter mode expected"
+    case T.runMode opts of
+         T.RunInterpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
+         _                -> error "Test failed: RunInterpreter mode expected"
 
 checkResult :: FilePath -> Either T.ErrString T.Computer -> IO ()
 checkResult _ (Left err) = error $ "Test failed: " ++ err

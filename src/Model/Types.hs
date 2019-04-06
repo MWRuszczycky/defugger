@@ -4,11 +4,11 @@ module Model.Types
     , ErrString
       -- Startup data structures
     , DefuggerOptions (..)
-    , Mode            (..)
+    , RunMode         (..)
       -- Debugger model
     , DataFormat      (..)
     , Debugger        (..)
-    , Status          (..)
+    , Mode            (..)
     , WgtName         (..)
     , VertViewRange
       -- Computer/Computation model
@@ -50,15 +50,15 @@ type ErrorIO   = ExceptT ErrString IO
 
 -- |Startup state created based on command line options.
 data DefuggerOptions = DefuggerOptions {
-      mode     :: Mode      -- What mode the program is to run in
+      runMode  :: RunMode   -- What mode the program is to run in
     , args     :: [String]  -- Additional command line arguments
     , terminal :: String    -- Terminal settings used to update env
 }
 
 -- |What the program is to do based on command line arguments
-data Mode =
-      Interpreter           -- Read and interpret a BF script
-    | DebugMode             -- Run the debugger on a BF script
+data RunMode =
+      RunInterpreter        -- Read and interpret a BF script
+    | RunDebugger           -- Run the debugger on a BF script
     | OptsError ErrString   -- Display an error message and quit
       deriving ( Eq, Show )
 
@@ -70,7 +70,7 @@ data Debugger = Debugger {
       computer   :: {-# UNPACK #-} !Computer    -- The computer
     , dictionary :: {-# UNPACK #-} !Dictionary  -- The BF dictionary
     , program    :: {-# UNPACK #-} !DBProgram   -- The BF program
-    , status     :: {-# UNPACK #-} !Status      -- Current debug status
+    , mode       :: {-# UNPACK #-} !Mode        -- Current debug status
     , wgtFocus   :: !WgtName                    -- Current focused widget
     , readBackup :: ![Word8]                    -- History of reads
     , history    :: ![Int]                      -- History of statements
@@ -86,8 +86,9 @@ data Debugger = Debugger {
     }
 
 -- |Status of the debugger
-data Status =
-      Normal                -- Normal operation
+data Mode =
+      NormalMode            -- Normal operation
+    | CommandMode           -- User entering commands
       deriving ( Eq, Show )
 
 -- |Formats for the display of byte-values

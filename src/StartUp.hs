@@ -66,16 +66,16 @@ setTerminal opts = putEnv $ "TERM=" ++ T.terminal opts
 
 getOptions :: [String] -> IO T.DefuggerOptions
 getOptions ("--run":xs) = pure $
-    defOptions { T.mode = T.Interpreter
-               , T.args = xs }
+    defOptions { T.runMode = T.RunInterpreter
+               , T.args    = xs }
 getOptions xs = pure $
-    defOptions { T.mode = T.DebugMode
-               , T.args = xs
+    defOptions { T.runMode = T.RunDebugger
+               , T.args    = xs
                }
 
 defOptions :: T.DefuggerOptions
 defOptions = T.DefuggerOptions {
-      T.mode     = T.Interpreter
+      T.runMode  = T.RunInterpreter
     , T.args     = []
     , T.terminal = "xterm-256color"
     }
