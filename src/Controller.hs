@@ -10,14 +10,14 @@ import qualified Brick           as B
 import qualified Model.Types     as T
 import qualified Model.Debugger  as D
 
-type EventHandler = forall e. B.BrickEvent T.WgtName e
-                              -> B.EventM T.WgtName (B.Next T.Debugger)
+type DebugEventMonad = B.EventM T.WgtName (B.Next T.Debugger)
+type EventHandler    = forall e. B.BrickEvent T.WgtName e -> DebugEventMonad
 
 routeEvent :: T.Debugger -> EventHandler
 routeEvent db (B.VtyEvent (V.EvKey V.KEsc [])) = B.halt db
 routeEvent db (B.VtyEvent (V.EvKey k ms)     ) = B.continue . keyEv k ms $ db
 routeEvent db (B.VtyEvent (V.EvResize w h)   ) = B.continue . resizeEv w h $ db
-routeEvent db e                                = B.resizeOrQuit db e
+routeEvent db _                                = B.continue db
 
 keyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
 keyEv (V.KChar ' ')  _ db = D.stepForward db
