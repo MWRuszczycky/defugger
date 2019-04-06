@@ -41,7 +41,7 @@ mainWidgets db = programUI db
 programUI :: T.Debugger -> B.Widget T.WgtName
 -- ^Displays the BF code.
 programUI db = let m = length . show . Vec.length . T.program $ db
-               in  borderWithLabel ( B.str "program" )
+               in  borderWithLabel ( renderTitle T.ProgramWgt db )
                    . B.padBottom B.Max
                    . foldr ( addNumberedRow m ) B.emptyWidget
                    . slice ( T.progView db )
@@ -64,7 +64,7 @@ formatCode db pos x
 
 memoryUI :: T.Debugger -> B.Widget T.WgtName
 memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
-              in  borderWithLabel ( B.str "memory" )
+              in  borderWithLabel ( renderTitle T.MemoryWgt db )
                   . B.padBottom B.Max
                   . B.hLimit 8 . B.padRight B.Max
                   . foldr ( addNumberedRow m ) B.emptyWidget
@@ -83,16 +83,18 @@ formatMemory db = inBack ++ [inFocus] ++ inFront
 -- Input and output UIs
 
 inputUI :: T.Debugger -> B.Widget T.WgtName
-inputUI db = dataUI (T.inFormat db) "input" . T.input . T.computer $ db
+inputUI db = dataUI (T.inFormat db) title . T.input . T.computer $ db
+    where title = renderTitle T.InputWgt db
 
 outputUI :: T.Debugger -> B.Widget T.WgtName
-outputUI db = dataUI (T.outFormat db) "output" . T.output . T.computer $ db
+outputUI db = dataUI (T.outFormat db) title . T.output . T.computer $ db
+    where title = renderTitle T.OutputWgt db
 
-dataUI :: T.DataFormat -> String -> BS.ByteString -> B.Widget T.WgtName
+dataUI :: T.DataFormat -> B.Widget T.WgtName -> BS.ByteString -> B.Widget T.WgtName
 dataUI fmt title bs
     | BS.null bs = go . B.str $ "<no data>"
     | otherwise  = go w
-    where go = borderWithLabel (B.str title) . padRightBottom B.Max
+    where go = borderWithLabel title . padRightBottom B.Max
           w  = case fmt of
                     T.Dec -> numbered toDec . BS.unpack $ bs
                     T.Hex -> numbered toHex . BS.unpack $ bs
@@ -123,12 +125,18 @@ commandUI db = B.str ":"
 attributes :: B.AttrMap
 attributes = B.attrMap V.defAttr
     [ ( "focus",  B.on V.black V.yellow )
+    , ( "active", B.on V.green V.black )
     , ( "cursor", B.on V.black V.green  )
     , ( "lineno", B.fg V.green          )
     , ( "break",  B.fg V.red            ) ]
 
 ---------------------------------------------------------------------
 -- Helpers
+
+renderTitle :: T.WgtName -> T.Debugger -> B.Widget T.WgtName
+renderTitle wn db
+    | wn == T.wgtFocus db = B.withAttr "active" . B.str . show $ wn
+    | otherwise           = B.str .show $ wn
 
 padRightBottom :: B.Padding -> B.Widget T.WgtName -> B.Widget T.WgtName
 padRightBottom p = B.padRight p . B.padBottom p

@@ -121,7 +121,15 @@ data WgtName =
     | InputWgt              -- Widget that displays the input left
     | StatusWgt             -- Widget that dislays status messages
     | CommandWgt            -- Editor widget for entering commands
-      deriving ( Eq, Ord, Show )
+      deriving ( Eq, Ord )
+
+instance Show WgtName where
+    show ProgramWgt = "Program"
+    show MemoryWgt  = "Memory"
+    show OutputWgt  = "Output"
+    show InputWgt   = "Input"
+    show StatusWgt  = "Status"
+    show CommandWgt = "Command Line"
 
 -- |Vertical range of lines of a wiget that are in view for display.
 type VertViewRange = (Int, Int)
