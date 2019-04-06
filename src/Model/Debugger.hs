@@ -1,99 +1,62 @@
-module Model.Compiler
-    ( runProgram
-    , advance
-    , backup
-    , increment
-    , decrement
-    , readIn
-    , writeOut
-    , whileLoop
-    , stepForward
+module Model.Debugger
+    ( -- Executing statements
+      stepForward
     , stepBackward
+      -- Querying the debugger
     , getPosition
     , getAddress
     ) where
 
+-- =============================================================== --
+-- Combinators for manipulating and managing the Debugger model    --
+-- =============================================================== --
+
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
-import Data.Word                        ( Word8  )
-import Control.Monad                    ( foldM  )
-import Data.Vector                      ( (!)    )
-
----------------------------------------------------------------------
--- Running a program directly
-
-runProgram :: T.Computer -> T.Program -> Either T.ErrString T.Computer
-runProgram = foldM compile
-
-compile :: T.Computer -> T.Statement -> Either T.ErrString T.Computer
-compile c (T.Increment  ) = increment c
-compile c (T.Decrement  ) = decrement c
-compile c (T.Advance    ) = advance   c
-compile c (T.Backup     ) = backup    c
-compile c (T.ReadIn     ) = readIn    c
-compile c (T.WriteOut   ) = writeOut  c
-compile c (T.WhileLoop p) = whileLoop p c
-compile c (T.DoNothing  ) = pure c
-
-advance :: T.Computation
-advance c = case T.memory c of
-                 T.Tape xs u []     -> Right c { T.memory = T.Tape (u:xs) 0 [] }
-                 T.Tape xs u (y:ys) -> Right c { T.memory = T.Tape (u:xs) y ys }
-
-backup :: T.Computation
-backup c = case T.memory c of
-                T.Tape []     _ _  -> Left "Invalid access ahead of start"
-                T.Tape (x:xs) 0 [] -> Right c { T.memory = T.Tape xs x []     }
-                T.Tape (x:xs) u ys -> Right c { T.memory = T.Tape xs x (u:ys) }
-
-increment :: T.Computation
-increment c = let (T.Tape xs u ys) = T.memory c
-              in  Right c { T.memory = T.Tape xs (u + 1) ys }
-
-decrement :: T.Computation
-decrement c = let (T.Tape xs u ys) = T.memory c
-              in  Right c { T.memory = T.Tape xs (u - 1) ys }
-
-readIn :: T.Computation
-readIn c = let (T.Tape xs _ ys) = T.memory c
-           in  case BS.uncons . T.input $ c of
-                    Nothing      -> Left "Attempt to read past end of input"
-                    Just (b, bs) -> Right c { T.memory = T.Tape xs b ys
-                                            , T.input  = bs
-                                            }
-
-writeOut :: T.Computation
-writeOut c = let (T.Tape _ u _) = T.memory c
-             in  Right c { T.output = BS.snoc ( T.output c ) u }
-
-whileLoop :: T.Program -> T.Computation
-whileLoop p c = case T.memory c of
-                     T.Tape _ 0 _ -> pure c
-                     _            -> runProgram c p >>= whileLoop p
+import Data.Word                        ( Word8     )
+import Data.Vector                      ( (!)       )
+import Model.Interpreter                ( advance
+                                        , backup
+                                        , decrement
+                                        , increment
+                                        , readIn
+                                        , writeOut  )
 
 -- =============================================================== --
--- Running a program via the debugger
-
-stepForward :: T.Debugger -> Either T.ErrString T.Debugger
-stepForward db = updateHistory db >>= updateBackup >>= updateComputer
-
-stepBackward :: T.Debugger -> Either T.ErrString T.Debugger
-stepBackward db = revertComputer db >>= revertBackup >>= revertHistory
-
----------------------------------------------------------------------
--- Helpers
+-- Querying the debugger
 
 getPosition :: T.Debugger -> Int
+-- ^Provide the index of the last statement executed in the program.
+-- This corresponds to the current position of the debugger that is
+-- highlighted in the program UI.
 getPosition db = case T.history db of
                       []    -> 0
                       (x:_) -> x
 
 getAddress :: T.Debugger -> Int
+-- ^Provide the index of the focus in the memory tape. This postioin
+-- is highlighted in the memory UI.
 getAddress db = let T.Tape xs _ _ = T.memory . T.computer $ db
                 in  length xs
 
+-- =============================================================== --
+-- Executing statements
+
 ---------------------------------------------------------------------
--- Debug history management
+-- Single steps
+
+stepForward :: T.Debugger -> Either T.ErrString T.Debugger
+-- ^Execute the next statement in the program.
+stepForward db = updateHistory db >>= updateBackup >>= updateComputer
+
+stepBackward :: T.Debugger -> Either T.ErrString T.Debugger
+-- ^Revert the last statement executed in the program.
+stepBackward db = revertComputer db >>= revertBackup >>= revertHistory
+
+---------------------------------------------------------------------
+-- Managing debugger history
+-- The history track what statements in the program have been so far
+-- executed and in what order. This allows backtracking.
 
 updateHistory :: T.Debugger -> Either T.ErrString T.Debugger
 updateHistory db = pure $ db { T.history = h' }
@@ -112,7 +75,10 @@ revertHistory db = case T.history db of
                         (_:h) -> pure $ db { T.history = h }
 
 ---------------------------------------------------------------------
--- Debug backup read-memory management
+-- Managing debugger backup memory
+-- The backup memory is used to track what has been read from input
+-- to the computer memory. This is necessary to ensure the orginal
+-- memory state can be recoverd when reverting statements.
 
 updateBackup :: T.Debugger -> Either T.ErrString T.Debugger
 updateBackup db =
@@ -131,7 +97,7 @@ revertBackup db =
          _          -> pure db
 
 ---------------------------------------------------------------------
--- Debug computer management
+-- Managing the debugger computer model
 
 updateComputer :: T.Debugger -> Either T.ErrString T.Debugger
 updateComputer db = ( \ x -> db { T.computer = x } ) <$> c'

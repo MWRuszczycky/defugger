@@ -19,7 +19,7 @@ import Loader                           ( initComputer
                                         , getScript
                                         , getDict
                                         , getInput      )
-import Model.Compiler                   ( runProgram    )
+import Model.Interpreter                ( runProgram    )
 import Model.Parser                     ( parse         )
 import Controller                       ( routeEvent    )
 import View                             ( drawUI

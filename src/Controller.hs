@@ -9,7 +9,10 @@ import qualified Data.Vector     as Vec
 import qualified Graphics.Vty    as V
 import qualified Brick           as B
 import qualified Model.Types     as T
-import qualified Model.Compiler  as C
+import Model.Debugger                   ( getPosition
+                                        , getAddress
+                                        , stepForward
+                                        , stepBackward )
 
 type EventHandler = forall e. B.BrickEvent T.WgtName e
                               -> B.EventM T.WgtName (B.Next T.Debugger)
@@ -34,14 +37,14 @@ keyEv (V.KChar '\t') _ db = db { T.wgtFocus = changeFocus . T.wgtFocus $ db }
 keyEv _              _ db = db
 
 executeStatement :: T.Debugger -> T.Debugger
-executeStatement db = either (const db) go . C.stepForward $ db
+executeStatement db = either (const db) go . stepForward $ db
     where go db' = let newDB = shiftBoth db'
-                   in  newDB { T.cursor = C.getPosition newDB }
+                   in  newDB { T.cursor = getPosition newDB }
 
 revertStatement :: T.Debugger -> T.Debugger
-revertStatement db = either (const db) go . C.stepBackward $ db
+revertStatement db = either (const db) go . stepBackward $ db
     where go db' = let newDB = shiftBoth db'
-                   in  newDB { T.cursor = C.getPosition newDB }
+                   in  newDB { T.cursor = getPosition newDB }
 
 moveCursorRight :: T.Debugger -> T.Debugger
 moveCursorRight db
@@ -73,7 +76,7 @@ resizeEv :: Int -> Int -> T.Debugger -> T.Debugger
 resizeEv w h db = let pv        = T.progView db
                       mv        = T.memView db
                       progRow   = getProgRow db
-                      memRow    = C.getAddress db
+                      memRow    = getAddress db
                       wgtHeight = h - 3
                   in  db { T.termWidth  = w
                          , T.termHeight = h
@@ -94,11 +97,11 @@ shiftProg db = let oldView = T.progView db
 
 shiftMem :: T.Debugger -> T.Debugger
 shiftMem db = let oldView    = T.memView db
-                  memAddress = C.getAddress db
+                  memAddress = getAddress db
               in  db { T.memView = shiftPos oldView memAddress }
 
 getProgRow :: T.Debugger -> Int
-getProgRow db = quot (C.getPosition db) (T.progWidth db)
+getProgRow db = quot (getPosition db) (T.progWidth db)
 
 shiftPos :: (Int, Int) -> Int -> (Int, Int)
 shiftPos (n0,n1) n

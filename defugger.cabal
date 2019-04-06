@@ -24,8 +24,9 @@ library defugger-internal
                       , Loader
                       , StartUp
                       , View
-                      , Model.Compiler
+                      , Model.Debugger
                       , Model.CoreIO
+                      , Model.Interpreter
                       , Model.Parser
                       , Model.Types
   hs-source-dirs:       src

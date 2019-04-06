@@ -11,7 +11,7 @@ import qualified Graphics.Vty           as V
 import qualified Brick                  as B
 import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
-import Model.Compiler                           ( getPosition     )
+import Model.Debugger                           ( getPosition     )
 import Data.Word                                ( Word8           )
 import Brick                                    ( (<+>), (<=>)    )
 import Brick.Widgets.Border                     ( borderWithLabel )
