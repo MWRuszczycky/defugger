@@ -7,6 +7,8 @@ module Model.Debugger
       -- Executing statements
     , stepForward
     , stepBackward
+    , jumpForward
+    , jumpBackward
       -- Modeling widget interfaces
     , resize
     , nextWidget
@@ -77,13 +79,27 @@ getCursorRow db = quot (T.cursor db) (T.progWidth db)
 -- Exported
 
 stepForward :: T.Debugger -> T.Debugger
--- ^Change the debugger state according to step forward command.
+-- ^Change the debugger state according to execution of the next
+-- statement.
 stepForward db = either setMsg id . executeNextStatement $ db
     where setMsg x = db { T.message = x }
 
 stepBackward :: T.Debugger -> T.Debugger
--- ^Change the debugger state according to step backward command.
+-- ^Change the debugger state according to reversion of the last
+-- statement.
 stepBackward db = either setMsg id . revertLastStatement $ db
+    where setMsg x = db { T.message = x }
+
+jumpForward :: T.Debugger -> T.Debugger
+-- ^Change the debugger state according to execution of all
+-- statements up to and including the next break point.
+jumpForward db = either setMsg id . executeToNextBreak $ db
+    where setMsg x = db { T.message = x }
+
+jumpBackward :: T.Debugger -> T.Debugger
+-- ^Change the debugger state according to reversion of all
+-- statements following the last break point.
+jumpBackward db = either setMsg id . revertToLastBreak $ db
     where setMsg x = db { T.message = x }
 
 -- Unexported
@@ -101,6 +117,18 @@ revertLastStatement db = revertComputer db
                          >>= revertBackup
                          >>= revertHistory
                          >>= pure . updateViewByPosition
+
+executeToNextBreak :: T.Debugger -> Either T.ErrString T.Debugger
+-- ^Execute all statements up to and including the next break point.
+executeToNextBreak db = executeNextStatement db >>= go
+    where go db' | Set.member (getPosition db') (T.breaks db') = pure db'
+                 | otherwise = executeToNextBreak db'
+
+revertToLastBreak :: T.Debugger -> Either T.ErrString T.Debugger
+-- ^Revert all statements after the last break point.
+revertToLastBreak db = revertLastStatement db >>= go
+    where go db' | Set.member (getPosition db') (T.breaks db') = pure db'
+                 | otherwise = revertToLastBreak db'
 
 ---------------------------------------------------------------------
 -- Managing debugger history

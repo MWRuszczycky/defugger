@@ -64,6 +64,8 @@ keyEv V.KBS          _ db = D.stepBackward db
 keyEv (V.KChar 'H')  _ db = D.stepBackward db
 keyEv (V.KChar 'T')  _ db = D.stepForward db
 keyEv (V.KChar 'L')  _ db = D.stepForward db
+keyEv (V.KChar 'K')  _ db = D.jumpForward db
+keyEv (V.KChar 'J')  _ db = D.jumpBackward db
   -- Entering command mode
 keyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
   -- Tabbing between widgets
