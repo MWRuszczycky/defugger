@@ -36,14 +36,14 @@ routeNrm db _                                = B.continue db
 
 routeCmd :: T.Debugger -> EventHandler
 -- ^Routes events under debugger command mode.
-routeCmd db (B.VtyEvent (V.EvKey V.KEsc []))  = returnToNormal db
+routeCmd db (B.VtyEvent (V.EvKey V.KEsc []))  = abortToNormalMode db
 routeCmd db (B.VtyEvent (V.EvResize w h)   )  = B.continue . D.resize w h $ db
-routeCmd db (B.VtyEvent (V.EvKey V.KEnter _)) = getCommand db
+routeCmd db (B.VtyEvent (V.EvKey V.KEnter _)) = handleCommand db
 routeCmd db (B.VtyEvent ev)                   = manageCommandEntry db ev
 routeCmd db _                                 = B.continue db
 
 -- =============================================================== --
--- Event handlers
+-- Normal mode event handlers
 
 keyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
 keyEv (V.KChar ' ')  _ db = D.stepForward db
@@ -59,20 +59,27 @@ keyEv (V.KChar 'a' ) _ db = db { T.outFormat = T.Asc, T.inFormat = T.Asc     }
 keyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
 keyEv _              _ db = db
 
+-- =============================================================== --
+-- Command mode event handlers
+
 manageCommandEntry :: T.Debugger -> V.Event -> DebugEventMonad
+-- ^Hand off Vty events for editing the contents of the command line
+-- to the Brick runtime system.
 manageCommandEntry db ev = do
     updatedEditor <- handleEditorEvent ev (T.commandEdit db)
     B.continue $ db { T.commandEdit = updatedEditor }
 
-returnToNormal :: T.Debugger -> DebugEventMonad
-returnToNormal db = B.continue $
+abortToNormalMode :: T.Debugger -> DebugEventMonad
+-- ^Abort entering a command and return to normal mode.
+abortToNormalMode db = B.continue $
     db { T.message     = ""
        , T.commandEdit = editor T.CommandWgt (Just 1) ""
        , T.mode        = T.NormalMode
        }
 
-getCommand :: T.Debugger -> DebugEventMonad
-getCommand db = B.continue $
+handleCommand :: T.Debugger -> DebugEventMonad
+-- ^Read the command entered in normal mode and execute it.
+handleCommand db = B.continue $
     db { T.message     = unlines . getEditContents . T.commandEdit $ db
        , T.commandEdit = editor T.CommandWgt (Just 1) ""
        , T.mode        = T.NormalMode
