@@ -54,6 +54,11 @@ keyEv V.KRight       _ db = D.moveCursorRight db
 keyEv V.KLeft        _ db = D.moveCursorLeft db
 keyEv V.KUp          _ db = D.moveCursorUp db
 keyEv V.KDown        _ db = D.moveCursorDown db
+keyEv (V.KChar 'h')  _ db = D.moveCursorLeft db
+keyEv (V.KChar 'l')  _ db = D.moveCursorRight db
+keyEv (V.KChar 'k')  _ db = D.moveCursorUp db
+keyEv (V.KChar 'j')  _ db = D.moveCursorDown db
+keyEv (V.KChar 't')  _ db = D.moveCursorRight db
 keyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
 keyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
 keyEv _              _ db = db
