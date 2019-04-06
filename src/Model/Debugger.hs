@@ -1,10 +1,17 @@
 module Model.Debugger
-    ( -- Executing statements
-      stepForward
-    , stepBackward
-      -- Querying the debugger
+    ( -- Querying the debugger
+      getAddress
     , getPosition
-    , getAddress
+    , getPositionRow
+    , getCursorRow
+      -- Executing statements
+    , stepForward
+    , stepBackward
+      -- Cursor management
+    , moveCursorRight
+    , moveCursorLeft
+    , moveCursorUp
+    , moveCursorDown
     ) where
 
 -- =============================================================== --
@@ -13,6 +20,7 @@ module Model.Debugger
 
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
+import qualified Data.Vector     as Vec
 import Data.Word                        ( Word8     )
 import Data.Vector                      ( (!)       )
 import Model.Interpreter                ( advance
@@ -25,6 +33,12 @@ import Model.Interpreter                ( advance
 -- =============================================================== --
 -- Querying the debugger
 
+getAddress :: T.Debugger -> Int
+-- ^Provide the index of the focus in the memory tape. This postioin
+-- is highlighted in the memory UI.
+getAddress db = let T.Tape xs _ _ = T.memory . T.computer $ db
+                in  length xs
+
 getPosition :: T.Debugger -> Int
 -- ^Provide the index of the last statement executed in the program.
 -- This corresponds to the current position of the debugger that is
@@ -33,11 +47,16 @@ getPosition db = case T.history db of
                       []    -> 0
                       (x:_) -> x
 
-getAddress :: T.Debugger -> Int
--- ^Provide the index of the focus in the memory tape. This postioin
--- is highlighted in the memory UI.
-getAddress db = let T.Tape xs _ _ = T.memory . T.computer $ db
-                in  length xs
+getPositionRow :: T.Debugger -> Int
+-- ^Provide the display row in the program widget where the program
+-- is currently stopped (i.e., where the last statement executed is
+-- displayed).
+getPositionRow db = quot (getPosition db) (T.progWidth db)
+
+getCursorRow :: T.Debugger -> Int
+-- ^Provide the display row in the program widget where the cursor
+-- can currently be found.
+getCursorRow db = quot (T.cursor db) (T.progWidth db)
 
 -- =============================================================== --
 -- Executing statements
@@ -45,13 +64,31 @@ getAddress db = let T.Tape xs _ _ = T.memory . T.computer $ db
 ---------------------------------------------------------------------
 -- Single steps
 
-stepForward :: T.Debugger -> Either T.ErrString T.Debugger
--- ^Execute the next statement in the program.
-stepForward db = updateHistory db >>= updateBackup >>= updateComputer
+-- Exported
 
-stepBackward :: T.Debugger -> Either T.ErrString T.Debugger
--- ^Revert the last statement executed in the program.
-stepBackward db = revertComputer db >>= revertBackup >>= revertHistory
+stepForward :: T.Debugger -> T.Debugger
+-- ^Change the debugger state according to step forward command.
+stepForward db = either (const db) id . executeNextStatement $ db
+
+stepBackward :: T.Debugger -> T.Debugger
+-- ^Change the debugger state according to step backward command.
+stepBackward db = either (const db) id . revertLastStatement $ db
+
+-- Unexported
+
+executeNextStatement :: T.Debugger -> Either T.ErrString T.Debugger
+-- ^Execute the next statement in the program if possible.
+executeNextStatement db = updateHistory db
+                          >>= updateBackup
+                          >>= updateComputer
+                          >>= pure . updateViewByPosition
+
+revertLastStatement :: T.Debugger -> Either T.ErrString T.Debugger
+-- ^Revert the last statement executed in the program if possible.
+revertLastStatement db = revertComputer db
+                         >>= revertBackup
+                         >>= revertHistory
+                         >>= pure . updateViewByPosition
 
 ---------------------------------------------------------------------
 -- Managing debugger history
@@ -138,3 +175,81 @@ revertReadIn (w:_) c = let xs = T.input  c
                        in  pure $ c { T.input  = BS.cons u xs
                                     , T.memory = m { T.focus = w }
                                     }
+
+-- =============================================================== --
+-- Widget managers
+-- These combinators are used as an interface to manage how the
+-- widgets should be rendered according to the debugger state.
+
+---------------------------------------------------------------------
+-- Combinators to manage what to display in a widget
+
+updateViewByPosition :: T.Debugger -> T.Debugger
+-- ^Shift the memory and program views to match the program position.
+updateViewByPosition db = shiftMemView . shiftProgView row $ db
+    where row = getPositionRow db
+
+updateViewByCursor :: T.Debugger -> T.Debugger
+-- ^Shift the program view to match the cursor position.
+updateViewByCursor db = shiftProgView row $ db
+    where row = getCursorRow db
+
+shiftProgView :: Int -> T.Debugger -> T.Debugger
+-- ^Shift range of lines to be displayed in the program UI widget.
+shiftProgView pos db = db { T.progView = shiftView oldView pos }
+    where oldView = T.progView db
+
+shiftMemView :: T.Debugger -> T.Debugger
+-- ^Shift range of lines to be displayed in the memory UI widget.
+shiftMemView db = db { T.memView = shiftView oldView memAddress }
+    where oldView    = T.memView db
+          memAddress = getAddress db
+
+shiftView :: (Int, Int) -> Int -> (Int, Int)
+-- ^Shift range of lines to display in the widget (i.e., the view)
+-- given an old range and a position that must be in view.
+shiftView (n0,n1) n
+    | n < n0    = ( n,     n + h )
+    | n > n1    = ( n - h, n     )
+    | otherwise = ( n0,    n1    )
+    where h = n1 - n0
+
+-- =============================================================== --
+-- Cursor management
+-- The cursor allows a the user to move about a BF program without
+-- changing the programatic or computer state. For example, the user
+-- will need to move the cursor around in order to set break points.
+
+moveCursorRight :: T.Debugger -> T.Debugger
+-- ^Move the cursor position to the next statement display row. Do
+-- nothing if the move is not possible.
+moveCursorRight db
+    | atEnd     = updateViewByCursor db
+    | otherwise = updateViewByCursor $ db { T.cursor = x + 1 }
+    where x     = T.cursor db
+          atEnd = (== x) . subtract 1 . Vec.length . T.program $ db
+
+moveCursorLeft :: T.Debugger -> T.Debugger
+-- ^Move the cursor position to the previous statement. Do nothing if
+-- the move is not possible.
+moveCursorLeft db
+    | x == 0    = updateViewByCursor db
+    | otherwise = updateViewByCursor $ db { T.cursor = x - 1 }
+    where x = T.cursor db
+
+moveCursorUp :: T.Debugger -> T.Debugger
+-- ^Move the cursor to the previous display row at the same
+-- horizontal position. Do nothing if the move is not possible.
+moveCursorUp db
+    | x < 0     = updateViewByCursor db
+    | otherwise = updateViewByCursor $ db { T.cursor = x }
+    where x = T.cursor db - T.progWidth db
+
+moveCursorDown :: T.Debugger -> T.Debugger
+-- ^Move the cursor to the next display row at the same horizontal
+-- postition. Do nothing if the move is not possible.
+moveCursorDown db
+    | atEnd     = updateViewByCursor db
+    | otherwise = updateViewByCursor $ db { T.cursor = y }
+    where y     = T.cursor db + T.progWidth db
+          atEnd = (< y) . (subtract 1) . Vec.length . T.program $ db
