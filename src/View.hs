@@ -104,8 +104,9 @@ dataUI fmt title bs
 numbered :: (Word8 -> String) -> [Word8] -> B.Widget T.WgtName
 numbered f ws = let xs = map (B.str . concat) . chunksOf 16
                          . intersperse " " . map f $ ws
-                    m  = length . show . length $ xs
-                 in  foldr ( addNumberedRow m ) B.emptyWidget . zip [0..] $ xs
+                    m  = length . show . (*8) . (subtract 1) . length $ xs
+                 in  foldr ( addNumberedRow m ) B.emptyWidget
+                     . zip [0,8..] $ xs
 
 ---------------------------------------------------------------------
 -- Status and commandline UI
