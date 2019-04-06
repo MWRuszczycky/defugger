@@ -32,6 +32,7 @@ module Model.Types
 import qualified Data.ByteString as B
 import qualified Data.Text       as Tx
 import qualified Data.Vector     as V
+import Brick.Widgets.Edit               ( Editor    )
 import Control.Monad.Except             ( ExceptT   )
 import Control.Monad.State.Lazy         ( StateT    )
 import Control.Monad.Reader             ( ReaderT   )
@@ -67,22 +68,23 @@ data RunMode =
 
 -- |Model of the debugger state
 data Debugger = Debugger {
-      computer   :: {-# UNPACK #-} !Computer    -- The computer
-    , dictionary :: {-# UNPACK #-} !Dictionary  -- The BF dictionary
-    , program    :: {-# UNPACK #-} !DBProgram   -- The BF program
-    , mode       :: {-# UNPACK #-} !Mode        -- Current debug status
-    , wgtFocus   :: !WgtName                    -- Current focused widget
-    , readBackup :: ![Word8]                    -- History of reads
-    , history    :: ![Int]                      -- History of statements
-    , cursor     :: !Int                        -- Cursor position in program
-    , breaks     :: ![Int]                      -- User specified break points
-    , termWidth  :: !Int                        -- Width of the terminal
-    , termHeight :: !Int                        -- Height of the terminal
-    , progWidth  :: !Int                        -- BF characters shown per line
-    , inFormat   :: !DataFormat                 -- Display format of input data
-    , outFormat  :: !DataFormat                 -- Display format of output data
-    , progView   :: !VertViewRange              -- BF script rows to render
-    , memView    :: !VertViewRange              -- Memory rows to render
+      computer    :: {-# UNPACK #-} !Computer    -- The computer
+    , dictionary  :: {-# UNPACK #-} !Dictionary  -- The BF dictionary
+    , program     :: {-# UNPACK #-} !DBProgram   -- The BF program
+    , mode        :: {-# UNPACK #-} !Mode        -- Current debug status
+    , wgtFocus    :: !WgtName                    -- Current focused widget
+    , readBackup  :: ![Word8]                    -- History of reads
+    , history     :: ![Int]                      -- History of statements
+    , cursor      :: !Int                        -- Cursor position in program
+    , breaks      :: ![Int]                      -- User specified break points
+    , termWidth   :: !Int                        -- Width of the terminal
+    , termHeight  :: !Int                        -- Height of the terminal
+    , progWidth   :: !Int                        -- Characters shown per line
+    , inFormat    :: !DataFormat                 -- Display format of input
+    , outFormat   :: !DataFormat                 -- Display format of output
+    , progView    :: !VertViewRange              -- BF script rows to render
+    , memView     :: !VertViewRange              -- Memory rows to render
+    , commandEdit :: Editor String WgtName       -- Used to enter commands
     }
 
 -- |Status of the debugger
@@ -105,6 +107,7 @@ data WgtName =
     | OutputWgt             -- Widget that displays current output
     | InputWgt              -- Widget that displays the input left
     | StatusWgt             -- Widget that dislays status messages
+    | CommandWgt            -- Editor widget for entering commands
       deriving ( Eq, Ord, Show )
 
 -- |Vertical range of lines of a wiget that are in view for display.

@@ -11,6 +11,7 @@ module Loader
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
 import qualified Data.Vector     as V
+import Brick.Widgets.Edit               ( editor        )
 import Control.Monad.Except             ( throwError
                                         , liftEither    )
 import Model.Parser                     ( parseDebug    )
@@ -55,22 +56,23 @@ initDebugger opts (width,height) = do
     d <- getDict   opts
     x <- getInput  opts
     p <- liftEither . parseDebug d $ s
-    pure T.Debugger { T.computer   = initComputer x
-                    , T.dictionary = d
-                    , T.program    = p
-                    , T.mode       = T.NormalMode
-                    , T.wgtFocus   = T.ProgramWgt
-                    , T.history    = [0]
-                    , T.cursor     = 0
-                    , T.breaks     = [ 0, V.length p - 1 ]
-                    , T.readBackup = []
-                    , T.termWidth  = width
-                    , T.termHeight = height
-                    , T.progWidth  = 30
-                    , T.inFormat   = T.Asc
-                    , T.outFormat  = T.Asc
-                    , T.memView    = (0, height - 4)
-                    , T.progView   = (0, height - 4)
+    pure T.Debugger { T.computer    = initComputer x
+                    , T.dictionary  = d
+                    , T.program     = p
+                    , T.mode        = T.NormalMode
+                    , T.wgtFocus    = T.ProgramWgt
+                    , T.history     = [0]
+                    , T.cursor      = 0
+                    , T.breaks      = [ 0, V.length p - 1 ]
+                    , T.readBackup  = []
+                    , T.termWidth   = width
+                    , T.termHeight  = height
+                    , T.progWidth   = 30
+                    , T.inFormat    = T.Asc
+                    , T.outFormat   = T.Asc
+                    , T.memView     = (0, height - 4)
+                    , T.progView    = (0, height - 4)
+                    , T.commandEdit = editor T.CommandWgt (Just 1) ""
                     }
 
 ---------------------------------------------------------------------

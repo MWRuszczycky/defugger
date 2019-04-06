@@ -265,7 +265,8 @@ nextWidget T.ProgramWgt = T.MemoryWgt
 nextWidget T.MemoryWgt  = T.OutputWgt
 nextWidget T.OutputWgt  = T.InputWgt
 nextWidget T.InputWgt   = T.ProgramWgt
-nextWidget T.StatusWgt  = T.ProgramWgt
+nextWidget T.StatusWgt  = T.StatusWgt
+nextWidget T.CommandWgt = T.CommandWgt
 
 -- =============================================================== --
 -- Cursor management
