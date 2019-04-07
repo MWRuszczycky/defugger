@@ -25,29 +25,49 @@ type EventHandler    = forall e. B.BrickEvent T.WgtName e -> DebugEventMonad
 -- Event routers
 
 routeEvent :: T.Debugger -> EventHandler
-routeEvent db ev = case (T.mode db, T.wgtFocus db) of
-                        (T.NormalMode,  T.ProgramWgt) -> routePNrm db ev
-                        (T.CommandMode, _           ) -> routeCmd db ev
-                        _                             -> routeDef db ev
+routeEvent db ev =
+    case (T.mode db, T.wgtFocus db) of
+         (T.NormalMode,  T.ProgramWgt) -> routePNrm db ev
+         (T.NormalMode,  w           ) -> routeDNrm w db ev
+         (T.CommandMode, _           ) -> routeCmd  db ev
 
-routeDef :: T.Debugger -> EventHandler
--- ^Default router.
-routeDef db (B.VtyEvent (V.EvKey V.KEsc _)) = B.halt db
-routeDef db (B.VtyEvent (V.EvKey k  ms   )) = B.continue . dKeyEv k ms $ db
-routeDef db (B.VtyEvent (V.EvResize w h  )) = B.continue . D.resize w h $ db
-routeDef db _                               = B.continue db
+-- routeDef :: T.Debugger -> EventHandler
+-- -- ^Default router.
+-- routeDef db (B.VtyEvent (V.EvKey V.KEsc _)) = B.halt db
+-- routeDef db (B.VtyEvent (V.EvKey k  ms   )) = B.continue . dKeyEv k ms $ db
+-- routeDef db (B.VtyEvent (V.EvResize w h  )) = B.continue . D.resize w h $ db
+-- routeDef db _                               = B.continue db
 
 routePNrm :: T.Debugger -> EventHandler
 -- ^Routes events under debugger normal mode with program focus.
-routePNrm db (B.VtyEvent (V.EvKey V.KEsc [])) = B.halt db
-routePNrm db (B.VtyEvent (V.EvKey k ms)     ) = B.continue . pKeyEv k ms $ db
-routePNrm db (B.VtyEvent (V.EvResize w h)   ) = B.continue . D.resize w h $ db
-routePNrm db _                                = B.continue db
+routePNrm db (B.VtyEvent (V.EvKey V.KEsc _)) = B.halt db
+routePNrm db (B.VtyEvent (V.EvKey k ms)    ) = B.continue . pKeyEv k ms $ db
+routePNrm db (B.VtyEvent (V.EvResize w h)  ) = B.continue . D.resize w h $ db
+routePNrm db _                               = B.continue db
+
+routeDNrm :: T.WgtName -> T.Debugger -> EventHandler
+-- ^Routes events under debugger normal mode with non-program focus
+-- Basically, it just handle standard tabbing, resizing and quitting,
+-- and then everything else is a scroll command.
+routeDNrm _           db (B.VtyEvent (V.EvKey V.KEsc         _)) =
+    B.halt db
+routeDNrm _           db (B.VtyEvent (V.EvResize w h          )) =
+    B.continue . D.resize w h $ db
+routeDNrm _           db (B.VtyEvent (V.EvKey (V.KChar '\t') _)) =
+    B.continue $ db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
+routeDNrm _           db (B.VtyEvent (V.EvKey (V.KChar ':')  _)) =
+    B.continue $  db { T.mode = T.CommandMode }
+routeDNrm T.OutputWgt db (B.VtyEvent (V.EvKey k              _)) =
+    scroll (B.viewportScroll T.OutputWgt) k $ db
+routeDNrm T.InputWgt  db (B.VtyEvent (V.EvKey k              _)) =
+    scroll (B.viewportScroll T.InputWgt) k $ db
+routeDNrm _           db _                                       =
+    B.continue db
 
 routeCmd :: T.Debugger -> EventHandler
 -- ^Routes events under debugger command mode.
-routeCmd db (B.VtyEvent (V.EvKey V.KEsc []))  = abortToNormalMode db
-routeCmd db (B.VtyEvent (V.EvResize w h)   )  = B.continue . D.resize w h $ db
+routeCmd db (B.VtyEvent (V.EvKey V.KEsc   _)) = abortToNormalMode db
+routeCmd db (B.VtyEvent (V.EvResize w h)    ) = B.continue . D.resize w h $ db
 routeCmd db (B.VtyEvent (V.EvKey V.KEnter _)) = handleCommand db
 routeCmd db (B.VtyEvent ev)                   = manageCommandEntry db ev
 routeCmd db _                                 = B.continue db
@@ -58,9 +78,9 @@ routeCmd db _                                 = B.continue db
 ---------------------------------------------------------------------
 -- Default
 
-dKeyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
-dKeyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
-dKeyEv _              _ db = db
+-- dKeyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
+-- dKeyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
+-- dKeyEv _              _ db = db
 
 ---------------------------------------------------------------------
 -- With Program-UI focus
@@ -89,6 +109,16 @@ pKeyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
   -- Tabbing between widgets
 pKeyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
 pKeyEv _              _ db = db
+
+---------------------------------------------------------------------
+-- With Output or Input-UI focus
+
+scroll :: B.ViewportScroll T.WgtName-> V.Key -> T.Debugger -> DebugEventMonad
+scroll vpScroll V.KUp    db = B.vScrollBy vpScroll (-1) >> B.continue db
+scroll vpScroll V.KDown  db = B.vScrollBy vpScroll ( 1) >> B.continue db
+scroll vpScroll V.KLeft  db = B.hScrollBy vpScroll (-1) >> B.continue db
+scroll vpScroll V.KRight db = B.hScrollBy vpScroll ( 1) >> B.continue db
+scroll _        _        db = B.continue db
 
 -- =============================================================== --
 -- Command mode event handlers

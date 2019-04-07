@@ -12,6 +12,7 @@ import qualified Brick                  as B
 import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
 import qualified Data.Set               as Set
+import Data.List                                ( intercalate     )
 import Brick.Widgets.Edit                       ( renderEditor    )
 import Model.Debugger                           ( getPosition     )
 import Data.Word                                ( Word8           )
@@ -83,34 +84,39 @@ formatMemory db = inBack ++ [inFocus] ++ inFront
 -- Input and output UIs
 
 inputUI :: T.Debugger -> B.Widget T.WgtName
-inputUI db = dataUI (T.inFormat db) title . T.input . T.computer $ db
-    where title = renderTitle T.InputWgt db
+inputUI db = borderWithLabel (renderTitle T.InputWgt db)
+             . B.viewport T.InputWgt B.Both
+             . dataUI ( T.inFormat db )
+             . T.input . T.computer $ db
 
 outputUI :: T.Debugger -> B.Widget T.WgtName
-outputUI db = dataUI (T.outFormat db) title . T.output . T.computer $ db
-    where title = renderTitle T.OutputWgt db
+outputUI db = borderWithLabel (renderTitle T.OutputWgt db)
+              . B.viewport T.OutputWgt B.Both
+              . dataUI ( T.outFormat db )
+              . T.output . T.computer $ db
 
-dataUI :: T.DataFormat -> B.Widget T.WgtName -> BS.ByteString -> B.Widget T.WgtName
-dataUI fmt title bs
-    | BS.null bs = go . B.str $ "<no data>"
-    | otherwise  = go w
-    where go = borderWithLabel title . padRightBottom B.Max
-          w  = case fmt of
-                    T.Dec -> wrapWith toDec bs
-                    T.Hex -> wrapWith toHex bs
-                    T.Asc -> wrappedAscii . BS.unpack $ bs
+dataUI :: T.DataFormat -> BS.ByteString -> B.Widget T.WgtName
+dataUI fmt bs
+    | BS.null bs = B.str $ "<no data>"
+    | otherwise  = w
+    where w = case fmt of
+                   T.Dec -> wrapWith toDec bs
+                   T.Hex -> wrapWith toHex bs
+                   T.Asc -> B.vBox . map B.str . lines
+                            . concatMap toAscii
+                            . BS.unpack $ bs
 
 wrapWith :: (Word8 -> String) -> BS.ByteString -> B.Widget T.WgtName
-wrapWith f bs = let m = length . show $ quot (BS.length bs) 8
-                in  B.strWrap
-                    . concat
-                    . zipWith ( formatLine m ) [0,8..]
-                    . chunksOf 8
-                    . map ( (' ':) . f )
+wrapWith f bs = let m = length . show . (16*) $ quot (BS.length bs) 16
+                in  B.vBox
+                    . map B.str
+                    . zipWith ( formatLine m f ) [0,16..]
+                    . chunksOf 16
                     . BS.unpack $ bs
 
-formatLine :: Int -> Int -> [String] -> String
-formatLine m n xs = rightPadStr m (show n) ++ concat xs ++ "\n"
+formatLine :: Int -> (Word8 -> String) -> Int -> [Word8] -> String
+formatLine m f n xs = rightPadStr m (show n) ++ ' ' : ys
+    where ys = intercalate " " . map f $ xs
 
 rightPadStr :: Int -> String -> String
 rightPadStr n s = s ++ replicate ( n - length s ) ' '
@@ -147,8 +153,8 @@ renderTitle wn db
     | wn == T.wgtFocus db = B.withAttr "active" . B.str . show $ wn
     | otherwise           = B.str .show $ wn
 
-padRightBottom :: B.Padding -> B.Widget T.WgtName -> B.Widget T.WgtName
-padRightBottom p = B.padRight p . B.padBottom p
+--padRightBottom :: B.Padding -> B.Widget T.WgtName -> B.Widget T.WgtName
+--padRightBottom p = B.padRight p . B.padBottom p
 
 addNumberedRow :: Int -> (Int, B.Widget T.WgtName)
                   -> B.Widget T.WgtName -> B.Widget T.WgtName
@@ -170,11 +176,11 @@ chunksOf n xs = chnk : chunksOf n next
 slice :: (Int, Int) -> [a] -> [a]
 slice (n0, n1) = take (n1 - n0 + 1) . drop n0
 
-wrappedAscii :: [Word8] -> B.Widget T.WgtName
-wrappedAscii = B.strWrap . concatMap toAscii
-
 toAscii :: Word8 -> String
-toAscii w = [ toEnum . fromIntegral $ w ]
+toAscii w
+    | w == 10   = "\n"
+    | w < 32    = ""
+    | otherwise = [ toEnum . fromIntegral $ w ]
 
 toHex :: Word8 -> String
 toHex w = replicate (2 - length s) '0' ++ s
