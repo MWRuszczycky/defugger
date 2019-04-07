@@ -12,8 +12,8 @@ module Model.Utilities
 -- Pure model utitilies                                            --
 -- =============================================================== --
 
-import Data.Word                    ( Word8     )
-import Numeric                      ( showHex   )
+import Data.Word ( Word8     )
+import Numeric   ( showHex   )
 
 -- =============================================================== --
 -- List operations

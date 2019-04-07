@@ -5,6 +5,11 @@ module Controller.Router
     ( routeEvent
     ) where
 
+-- =============================================================== --
+-- Managing user input while running in debugger mode.             --
+-- This basically defines the Brick interface for the defugger.    --
+-- =============================================================== --
+
 import qualified Graphics.Vty    as V
 import qualified Brick           as B
 import qualified Model.Types     as T

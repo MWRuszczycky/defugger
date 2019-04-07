@@ -1,11 +1,19 @@
 module StartUp
-    ( getOptions
-    , interpreter
-    , debugger
+    ( -- Running the interperter mode
+      interpreter
     , endInterpreter
-    , endDebugger
     , formatOutput
+      --  Running the debugger mode mode
+    , debugger
+    , endDebugger
+      -- Command line arguments parsing
+    , getOptions
     ) where
+
+-- =============================================================== --
+-- Central controller for figuring out what the defugger is going  --
+-- to do once it starts up.                                        --
+-- =============================================================== --
 
 import qualified Graphics.Vty    as V
 import qualified Data.ByteString as BS
@@ -25,7 +33,7 @@ import Controller.Loader                ( initComputer
                                         , getDict
                                         , getInput      )
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Running the interpreter mode
 
 interpreter :: T.DefuggerOptions -> T.ErrorIO T.Computer
@@ -42,7 +50,7 @@ endInterpreter (Right c) = putStrLn . formatOutput . T.output $ c
 formatOutput :: BS.ByteString -> String
 formatOutput = map ( toEnum . fromIntegral ) . BS.unpack
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Running the debugger mode
 
 debugger :: T.DefuggerOptions -> T.ErrorIO T.Debugger
@@ -61,7 +69,7 @@ getTerminalDimensions = V.outputForConfig V.defaultConfig >>= V.displayBounds
 setTerminal :: T.DefuggerOptions -> IO ()
 setTerminal opts = putEnv $ "TERM=" ++ T.terminal opts
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Command line arguments parsing
 
 getOptions :: [String] -> IO T.DefuggerOptions
@@ -80,7 +88,7 @@ defOptions = T.DefuggerOptions {
     , T.terminal = "xterm-256color"
     }
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Brick app initialization
 
 initApp :: B.App T.Debugger e T.WgtName
