@@ -23,11 +23,13 @@ import Brick                        ( (<=>), (<+>) )
 attributes :: B.AttrMap
 -- ^The default attribute map.
 attributes = B.attrMap V.defAttr
-    [ ( "focus",  B.on V.black V.yellow )
-    , ( "active", B.on V.green V.black )
-    , ( "cursor", B.on V.black V.green  )
-    , ( "lineno", B.fg V.green          )
-    , ( "break",  B.fg V.red            ) ]
+    [ ( "background", B.bg         V.black  )
+    , ( "focus",      B.on V.black V.yellow )
+    , ( "active",     B.on V.green V.black  )
+    , ( "cursor",     B.on V.black V.green  )
+    , ( "lineno",     B.fg V.green          )
+    , ( "break",      B.on V.black V.red    )
+    ]
 
 -- =============================================================== --
 -- Widget utilities

@@ -48,7 +48,8 @@ drawCommandUI db = [ mainWidgets db <=> commandUI db ]
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
 -- ^Helper function for assembling the widgets that are rendered the
 -- same independent of the debugger mode.
-mainWidgets db = programUI db
+mainWidgets db = B.withAttr "background" $
+                     programUI db
                  <+> memoryUI db
                  <+> B.vBox [ outputUI db , inputUI db ]
 
@@ -169,8 +170,8 @@ rightPadStr n s = s ++ replicate ( n - length s ) ' '
 
 statusUI :: T.Debugger -> B.Widget T.WgtName
 statusUI db
-    | null msg  = B.str " "
-    | otherwise = B.str msg
+    | null msg  = B.withAttr "background" . B.str $ " "
+    | otherwise = B.withAttr "background" . B.str $ msg
     where msg = T.message db
 
 commandUI :: T.Debugger -> B.Widget T.WgtName
