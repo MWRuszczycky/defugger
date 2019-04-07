@@ -106,11 +106,17 @@ pKeyEv _              _ db = db
 -- This just supports scrolling around the widget contents.
 
 scroll :: B.ViewportScroll T.WgtName-> V.Key -> T.Debugger -> DebugEventMonad
-scroll vpScroll V.KUp    db = B.vScrollBy vpScroll (-1) >> B.continue db
-scroll vpScroll V.KDown  db = B.vScrollBy vpScroll ( 1) >> B.continue db
-scroll vpScroll V.KLeft  db = B.hScrollBy vpScroll (-1) >> B.continue db
-scroll vpScroll V.KRight db = B.hScrollBy vpScroll ( 1) >> B.continue db
-scroll _        _        db = B.continue db
+scroll vp V.KUp         db = B.vScrollBy vp (-1) >> B.continue db
+scroll vp V.KDown       db = B.vScrollBy vp ( 1) >> B.continue db
+scroll vp V.KLeft       db = B.hScrollBy vp (-1) >> B.continue db
+scroll vp V.KRight      db = B.hScrollBy vp ( 1) >> B.continue db
+scroll vp (V.KChar 'h') db = B.hScrollBy vp (-1) >> B.continue db
+scroll vp (V.KChar 'l') db = B.hScrollBy vp ( 1) >> B.continue db
+scroll vp (V.KChar 'k') db = B.vScrollBy vp (-1) >> B.continue db
+scroll vp (V.KChar 'j') db = B.vScrollBy vp ( 1) >> B.continue db
+scroll vp (V.KChar 't') db = B.hScrollBy vp ( 1) >> B.continue db
+scroll vp (V.KChar 'd') db = B.hScrollBy vp (-1) >> B.continue db
+scroll _  _             db = B.continue db
 
 -- =============================================================== --
 -- Command mode event handlers
