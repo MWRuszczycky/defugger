@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Loader
+module Controller.Loader
     ( initComputer
     , initDebugger
     , getScript

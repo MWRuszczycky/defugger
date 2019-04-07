@@ -7,21 +7,21 @@
 -- executed with the interepreter
 -- =============================================================== --
 
-import qualified Data.Text       as Tx
-import qualified Data.ByteString as B
-import qualified Model.Types     as T
-import qualified Model.Parser    as P
-import qualified Controller      as C
-import qualified Loader          as L
-import qualified StartUp         as SU
-import Control.Monad.Except             ( runExceptT )
-import Data.Text                        ( Text       )
-import Model.Parser                     ( parse      )
-import Test.Hspec                       ( Spec (..)
-                                        , describe
-                                        , hspec
-                                        , it
-                                        , shouldBe   )
+import qualified Data.Text          as Tx
+import qualified Data.ByteString    as B
+import qualified Model.Types        as T
+import qualified Model.Parser       as P
+import qualified Controller.Router  as C
+import qualified Controller.Loader  as L
+import qualified StartUp            as SU
+import Control.Monad.Except                 ( runExceptT )
+import Data.Text                            ( Text       )
+import Model.Parser                         ( parse      )
+import Test.Hspec                           ( Spec (..)
+                                            , describe
+                                            , hspec
+                                            , it
+                                            , shouldBe   )
 
 main :: IO ()
 main = hspec $ do

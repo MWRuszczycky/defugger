@@ -20,16 +20,18 @@ executable defugger
                       , defugger-internal
 
 library defugger-internal
-  exposed-modules:      Commands
-                      , Controller
-                      , Loader
-                      , StartUp
-                      , View
+  exposed-modules:      Controller.Commands
+                      , Controller.Loader
+                      , Controller.Router
                       , Model.Debugger
                       , Model.CoreIO
                       , Model.Interpreter
                       , Model.Parser
                       , Model.Types
+                      , Model.Utilities
+                      , StartUp
+                      , View.View
+                      , View.Core
   hs-source-dirs:       src
   ghc-options:          -O2 -W
   build-depends:        base >=4.7 && <5

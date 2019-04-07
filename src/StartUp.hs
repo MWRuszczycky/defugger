@@ -14,16 +14,16 @@ import qualified Model.Types     as T
 import System.Posix.Env                 ( putEnv        )
 import Control.Monad.Except             ( liftEither
                                         , lift          )
-import Loader                           ( initComputer
+import Model.Interpreter                ( runProgram    )
+import Model.Parser                     ( parse         )
+import View.View                        ( drawUI        )
+import View.Core                        ( attributes    )
+import Controller.Router                ( routeEvent    )
+import Controller.Loader                ( initComputer
                                         , initDebugger
                                         , getScript
                                         , getDict
                                         , getInput      )
-import Model.Interpreter                ( runProgram    )
-import Model.Parser                     ( parse         )
-import Controller                       ( routeEvent    )
-import View                             ( drawUI
-                                        , attributes    )
 
 ---------------------------------------------------------------------
 -- Running the interpreter mode

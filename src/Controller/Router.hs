@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Rank2Types        #-}
 
-module Controller
+module Controller.Router
     ( routeEvent
     ) where
 
@@ -10,7 +10,7 @@ import qualified Brick           as B
 import qualified Model.Types     as T
 import qualified Model.Debugger  as D
 import Control.Monad.IO.Class           ( liftIO            )
-import Commands                         ( getCommand        )
+import Controller.Commands              ( getCommand        )
 import Brick.Widgets.Edit               ( editor
                                         , getEditContents
                                         , handleEditorEvent )
@@ -31,13 +31,6 @@ routeEvent db ev =
          (T.NormalMode,  w           ) -> routeDNrm w db ev
          (T.CommandMode, _           ) -> routeCmd  db ev
 
--- routeDef :: T.Debugger -> EventHandler
--- -- ^Default router.
--- routeDef db (B.VtyEvent (V.EvKey V.KEsc _)) = B.halt db
--- routeDef db (B.VtyEvent (V.EvKey k  ms   )) = B.continue . dKeyEv k ms $ db
--- routeDef db (B.VtyEvent (V.EvResize w h  )) = B.continue . D.resize w h $ db
--- routeDef db _                               = B.continue db
-
 routePNrm :: T.Debugger -> EventHandler
 -- ^Routes events under debugger normal mode with program focus.
 routePNrm db (B.VtyEvent (V.EvKey V.KEsc _)) = B.halt db
@@ -47,7 +40,7 @@ routePNrm db _                               = B.continue db
 
 routeDNrm :: T.WgtName -> T.Debugger -> EventHandler
 -- ^Routes events under debugger normal mode with non-program focus
--- Basically, it just handle standard tabbing, resizing and quitting,
+-- Basically, it just handles standard tabbing, resizing and quitting,
 -- and then everything else is a scroll command.
 routeDNrm _           db (B.VtyEvent (V.EvKey V.KEsc         _)) =
     B.halt db
@@ -56,7 +49,7 @@ routeDNrm _           db (B.VtyEvent (V.EvResize w h          )) =
 routeDNrm _           db (B.VtyEvent (V.EvKey (V.KChar '\t') _)) =
     B.continue $ db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
 routeDNrm _           db (B.VtyEvent (V.EvKey (V.KChar ':')  _)) =
-    B.continue $  db { T.mode = T.CommandMode }
+    B.continue $ db { T.mode = T.CommandMode }
 routeDNrm T.OutputWgt db (B.VtyEvent (V.EvKey k              _)) =
     scroll (B.viewportScroll T.OutputWgt) k $ db
 routeDNrm T.InputWgt  db (B.VtyEvent (V.EvKey k              _)) =
@@ -74,13 +67,6 @@ routeCmd db _                                 = B.continue db
 
 -- =============================================================== --
 -- Normal mode event handlers
-
----------------------------------------------------------------------
--- Default
-
--- dKeyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
--- dKeyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
--- dKeyEv _              _ db = db
 
 ---------------------------------------------------------------------
 -- With Program-UI focus
@@ -112,6 +98,7 @@ pKeyEv _              _ db = db
 
 ---------------------------------------------------------------------
 -- With Output or Input-UI focus
+-- This just supports scrolling around the widget contents.
 
 scroll :: B.ViewportScroll T.WgtName-> V.Key -> T.Debugger -> DebugEventMonad
 scroll vpScroll V.KUp    db = B.vScrollBy vpScroll (-1) >> B.continue db

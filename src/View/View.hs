@@ -1,46 +1,64 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module View
+module View.View
     ( drawUI
-    , attributes
     ) where
+
+-- =============================================================== --
+-- Rendering the debugger interface using Brick                    --
+-- =============================================================== --
 
 import qualified Data.Foldable          as F
 import qualified Data.ByteString        as BS
-import qualified Graphics.Vty           as V
 import qualified Brick                  as B
-import qualified Model.Types            as T
 import qualified Data.Vector            as Vec
 import qualified Data.Set               as Set
+import qualified Model.Types            as T
 import Data.List                                ( intercalate     )
 import Brick.Widgets.Edit                       ( renderEditor    )
-import Model.Debugger                           ( getPosition     )
 import Data.Word                                ( Word8           )
 import Brick                                    ( (<+>), (<=>)    )
 import Brick.Widgets.Border                     ( borderWithLabel )
-import Numeric                                  ( showHex         )
+import Model.Debugger                           ( getPosition     )
+import View.Core                                ( addNumberedRow
+                                                , renderTitle     )
+import Model.Utilities                          ( chunksOf
+                                                , slice
+                                                , toAscii
+                                                , toHex
+                                                , toDec           )
+
+-- =============================================================== --
+-- Assembling the main debugger UI
 
 drawUI :: T.Debugger -> [ B.Widget T.WgtName ]
+-- ^Route the rendering result based on the debugger mode.
 drawUI db = case T.mode db of
                  T.NormalMode -> drawNormalUI db
                  T.CommandMode -> drawCommandUI db
 
 drawNormalUI :: T.Debugger -> [ B.Widget T.WgtName ]
+-- ^Render the UI under normal mode.
 drawNormalUI db = [ mainWidgets db <=> statusUI db ]
 
 drawCommandUI :: T.Debugger -> [ B.Widget T.WgtName ]
+-- ^Render the UI under command mode.
 drawCommandUI db = [ mainWidgets db <=> commandUI db ]
 
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
+-- ^Helper function for assembling the widgets that are rendered the
+-- same independent of the debugger mode.
 mainWidgets db = programUI db
                  <+> memoryUI db
                  <+> B.vBox [ outputUI db , inputUI db ]
 
----------------------------------------------------------------------
--- UI for the program code
+-- =============================================================== --
+-- Rendering the UI for displaying the program code
 
 programUI :: T.Debugger -> B.Widget T.WgtName
--- ^Displays the BF code.
+-- ^The code is rendered as standard BF broken up into fixed lengths
+-- of BF tokens given the debugger state. To make rendering more
+-- efficient, only the lines currently visible are rendered.
 programUI db = let m = length . show . Vec.length . T.program $ db
                in  borderWithLabel ( renderTitle T.ProgramWgt db )
                    . B.padBottom B.Max
@@ -60,10 +78,12 @@ formatCode db pos x
     | Set.member pos (T.breaks db) = B.withAttr "break"  . B.str . show $ x
     | otherwise                    = B.str . show $ x
 
----------------------------------------------------------------------
--- UI for memory tape
+-- =============================================================== --
+-- Rendering the UI for displaying the memory/tape state
 
 memoryUI :: T.Debugger -> B.Widget T.WgtName
+-- ^Memory is renderd with each position on its own line. To make
+-- rendering more efficient, only the visible regions are rendered.
 memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
               in  borderWithLabel ( renderTitle T.MemoryWgt db )
                   . B.padBottom B.Max
@@ -74,14 +94,19 @@ memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
                   . formatMemory $ db
 
 formatMemory :: T.Debugger -> [B.Widget T.WgtName]
+-- ^Format each memory value and highlight the focus.
 formatMemory db = inBack ++ [inFocus] ++ inFront
        where (T.Tape xs u ys) = T.memory . T.computer $ db
              inBack           = map ( B.str . show ) . reverse $ xs
              inFocus          = B.withAttr "focus" . B.str . show $ u
              inFront          = map ( B.str . show ) $ ys
 
----------------------------------------------------------------------
--- Input and output UIs
+-- =============================================================== --
+-- Rendering the UI for displaying the input and output UIs
+-- In contrast to the program and memory UIs the input and output
+-- UIs are fully rendered using scrollable viewports. It may be best
+-- in the future to change this, but it is working reasonably well.
+-- Rendering the input and output UIs is otherwise identical.
 
 inputUI :: T.Debugger -> B.Widget T.WgtName
 inputUI db = borderWithLabel (renderTitle T.InputWgt db)
@@ -96,33 +121,51 @@ outputUI db = borderWithLabel (renderTitle T.OutputWgt db)
               . T.output . T.computer $ db
 
 dataUI :: T.DataFormat -> BS.ByteString -> B.Widget T.WgtName
+-- ^Common rendering operatins for both the input and output UIs.
+-- When testing, it was found that rendering ascii outputs was very
+-- efficient and did not result in lags. In contrast, it was much
+-- more difficult to render hexidecimal and decimal formats whith 8
+-- bytes displayed per line. This was true even when essentially the
+-- same rendering pipelines were used. Much better rendering
+-- efficiency was possible with much less lag when more widgets are
+-- rendered per line. Hence, 16 bytes per line is used in the decimal
+-- and hexidecimal rendering functions.
 dataUI fmt bs
     | BS.null bs = B.str $ "<no data>"
     | otherwise  = w
     where w = case fmt of
-                   T.Dec -> wrapWith toDec bs
-                   T.Hex -> wrapWith toHex bs
+                   T.Dec -> wrapWith 16 toDec bs
+                   T.Hex -> wrapWith 16 toHex bs
                    T.Asc -> B.vBox . map B.str . lines
                             . concatMap toAscii
                             . BS.unpack $ bs
 
-wrapWith :: (Word8 -> String) -> BS.ByteString -> B.Widget T.WgtName
-wrapWith f bs = let m = length . show . (16*) $ quot (BS.length bs) 16
-                in  B.vBox
-                    . map B.str
-                    . zipWith ( formatLine m f ) [0,16..]
-                    . chunksOf 16
-                    . BS.unpack $ bs
+wrapWith :: Int -> (Word8 -> String) -> BS.ByteString -> B.Widget T.WgtName
+-- ^Map a bytestring bs to a widget with with n bytes rendered per
+-- line separated by a single space given the rendering function f.
+-- Each line is number by the index of the first byte in the line.
+wrapWith n f bs = let m = length . show . (n*) $ quot (BS.length bs) n
+                  in  B.vBox
+                      . map B.str
+                      . zipWith ( formatLine m f ) [0,n..]
+                      . chunksOf n
+                      . BS.unpack $ bs
 
 formatLine :: Int -> (Word8 -> String) -> Int -> [Word8] -> String
+-- ^Given a label width m, a label number n and a list of bytes,
+-- render each byte to a string using rendering function f and
+-- concatenate them separated by a single space such that the string
+-- begins with the label number fit into m spaces.
 formatLine m f n xs = rightPadStr m (show n) ++ ' ' : ys
     where ys = intercalate " " . map f $ xs
 
 rightPadStr :: Int -> String -> String
+-- ^Pad a string on the right with spaces to a length n.
 rightPadStr n s = s ++ replicate ( n - length s ) ' '
 
----------------------------------------------------------------------
--- Status and commandline UI
+-- =============================================================== --
+-- Rendering the status UI for displaying messages and the command UI
+-- for reading user commands.
 
 statusUI :: T.Debugger -> B.Widget T.WgtName
 statusUI db
@@ -133,59 +176,3 @@ statusUI db
 commandUI :: T.Debugger -> B.Widget T.WgtName
 commandUI db = B.str ":"
                <+> ( renderEditor (B.str . unlines) True . T.commandEdit $ db )
-
----------------------------------------------------------------------
--- Attribute map
-
-attributes :: B.AttrMap
-attributes = B.attrMap V.defAttr
-    [ ( "focus",  B.on V.black V.yellow )
-    , ( "active", B.on V.green V.black )
-    , ( "cursor", B.on V.black V.green  )
-    , ( "lineno", B.fg V.green          )
-    , ( "break",  B.fg V.red            ) ]
-
----------------------------------------------------------------------
--- Helpers
-
-renderTitle :: T.WgtName -> T.Debugger -> B.Widget T.WgtName
-renderTitle wn db
-    | wn == T.wgtFocus db = B.withAttr "active" . B.str . show $ wn
-    | otherwise           = B.str .show $ wn
-
---padRightBottom :: B.Padding -> B.Widget T.WgtName -> B.Widget T.WgtName
---padRightBottom p = B.padRight p . B.padBottom p
-
-addNumberedRow :: Int -> (Int, B.Widget T.WgtName)
-                  -> B.Widget T.WgtName -> B.Widget T.WgtName
--- ^Given a label width, numbered widget and accumulated widget of
--- rows of widgets, tag the numbered widget with its number and add
--- it as new row to the accumulated widget.
-addNumberedRow m (n,w) rows = ( nmbrWgt <+> spacer <+> w ) <=> rows
-    where spacer  = B.str " "
-          nmbr    = show n
-          nmbrWgt = B.withAttr "lineno"
-                    . B.padRight (B.Pad $ m - length nmbr)
-                    . B.str $ nmbr
-
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs = chnk : chunksOf n next
-    where (chnk, next) = splitAt n xs
-
-slice :: (Int, Int) -> [a] -> [a]
-slice (n0, n1) = take (n1 - n0 + 1) . drop n0
-
-toAscii :: Word8 -> String
-toAscii w
-    | w == 10   = "\n"
-    | w < 32    = ""
-    | otherwise = [ toEnum . fromIntegral $ w ]
-
-toHex :: Word8 -> String
-toHex w = replicate (2 - length s) '0' ++ s
-    where s = showHex w ""
-
-toDec :: Word8 -> String
-toDec w = replicate (3 - length s) '0' ++ s
-    where s = show w
