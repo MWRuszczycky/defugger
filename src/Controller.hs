@@ -25,16 +25,24 @@ type EventHandler    = forall e. B.BrickEvent T.WgtName e -> DebugEventMonad
 -- Event routers
 
 routeEvent :: T.Debugger -> EventHandler
-routeEvent db ev = case T.mode db of
-                        T.NormalMode  -> routeNrm db ev
-                        T.CommandMode -> routeCmd db ev
+routeEvent db ev = case (T.mode db, T.wgtFocus db) of
+                        (T.NormalMode,  T.ProgramWgt) -> routePNrm db ev
+                        (T.CommandMode, _           ) -> routeCmd db ev
+                        _                             -> routeDef db ev
 
-routeNrm :: T.Debugger -> EventHandler
--- ^Routes events under debugger normal mode.
-routeNrm db (B.VtyEvent (V.EvKey V.KEsc [])) = B.halt db
-routeNrm db (B.VtyEvent (V.EvKey k ms)     ) = B.continue . keyEv k ms $ db
-routeNrm db (B.VtyEvent (V.EvResize w h)   ) = B.continue . D.resize w h $ db
-routeNrm db _                                = B.continue db
+routeDef :: T.Debugger -> EventHandler
+-- ^Default router.
+routeDef db (B.VtyEvent (V.EvKey V.KEsc _)) = B.halt db
+routeDef db (B.VtyEvent (V.EvKey k  ms   )) = B.continue . dKeyEv k ms $ db
+routeDef db (B.VtyEvent (V.EvResize w h  )) = B.continue . D.resize w h $ db
+routeDef db _                               = B.continue db
+
+routePNrm :: T.Debugger -> EventHandler
+-- ^Routes events under debugger normal mode with program focus.
+routePNrm db (B.VtyEvent (V.EvKey V.KEsc [])) = B.halt db
+routePNrm db (B.VtyEvent (V.EvKey k ms)     ) = B.continue . pKeyEv k ms $ db
+routePNrm db (B.VtyEvent (V.EvResize w h)   ) = B.continue . D.resize w h $ db
+routePNrm db _                                = B.continue db
 
 routeCmd :: T.Debugger -> EventHandler
 -- ^Routes events under debugger command mode.
@@ -47,30 +55,40 @@ routeCmd db _                                 = B.continue db
 -- =============================================================== --
 -- Normal mode event handlers
 
-keyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
+---------------------------------------------------------------------
+-- Default
+
+dKeyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
+dKeyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
+dKeyEv _              _ db = db
+
+---------------------------------------------------------------------
+-- With Program-UI focus
+
+pKeyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
   -- Cursor movements
-keyEv V.KRight       _ db = D.moveCursorRight db
-keyEv V.KLeft        _ db = D.moveCursorLeft db
-keyEv V.KUp          _ db = D.moveCursorUp db
-keyEv V.KDown        _ db = D.moveCursorDown db
-keyEv (V.KChar 'h')  _ db = D.moveCursorLeft db
-keyEv (V.KChar 'l')  _ db = D.moveCursorRight db
-keyEv (V.KChar 'k')  _ db = D.moveCursorUp db
-keyEv (V.KChar 'j')  _ db = D.moveCursorDown db
-keyEv (V.KChar 't')  _ db = D.moveCursorRight db
+pKeyEv V.KRight       _ db = D.moveCursorRight db
+pKeyEv V.KLeft        _ db = D.moveCursorLeft db
+pKeyEv V.KUp          _ db = D.moveCursorUp db
+pKeyEv V.KDown        _ db = D.moveCursorDown db
+pKeyEv (V.KChar 'h')  _ db = D.moveCursorLeft db
+pKeyEv (V.KChar 'l')  _ db = D.moveCursorRight db
+pKeyEv (V.KChar 'k')  _ db = D.moveCursorUp db
+pKeyEv (V.KChar 'j')  _ db = D.moveCursorDown db
+pKeyEv (V.KChar 't')  _ db = D.moveCursorRight db
   -- Program position movements
-keyEv (V.KChar ' ')  _ db = D.stepForward db
-keyEv V.KBS          _ db = D.stepBackward db
-keyEv (V.KChar 'H')  _ db = D.stepBackward db
-keyEv (V.KChar 'T')  _ db = D.stepForward db
-keyEv (V.KChar 'L')  _ db = D.stepForward db
-keyEv (V.KChar 'J')  _ db = D.jumpForward db
-keyEv (V.KChar 'K')  _ db = D.jumpBackward db
+pKeyEv (V.KChar ' ')  _ db = D.stepForward db
+pKeyEv V.KBS          _ db = D.stepBackward db
+pKeyEv (V.KChar 'H')  _ db = D.stepBackward db
+pKeyEv (V.KChar 'T')  _ db = D.stepForward db
+pKeyEv (V.KChar 'L')  _ db = D.stepForward db
+pKeyEv (V.KChar 'J')  _ db = D.jumpForward db
+pKeyEv (V.KChar 'K')  _ db = D.jumpBackward db
   -- Entering command mode
-keyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
+pKeyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
   -- Tabbing between widgets
-keyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
-keyEv _              _ db = db
+pKeyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
+pKeyEv _              _ db = db
 
 -- =============================================================== --
 -- Command mode event handlers
