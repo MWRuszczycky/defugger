@@ -71,8 +71,8 @@ initDebugger opts (width,height) = do
                     , T.progWidth   = 30
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
-                    , T.memView     = (0, height - 4)
-                    , T.progView    = (0, height - 4)
+                    , T.memView     = (0, height - 5)
+                    , T.progView    = (0, height - 5)
                     , T.commandEdit = editor T.CommandWgt (Just 1) ""
                     , T.message     = "Welcome to the Defugger: A BF Debugger!"
                     }

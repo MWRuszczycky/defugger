@@ -14,19 +14,21 @@ import qualified Brick                  as B
 import qualified Data.Vector            as Vec
 import qualified Data.Set               as Set
 import qualified Model.Types            as T
-import Data.List                                ( intercalate     )
-import Brick.Widgets.Edit                       ( renderEditor    )
-import Data.Word                                ( Word8           )
-import Brick                                    ( (<+>), (<=>)    )
-import Brick.Widgets.Border                     ( borderWithLabel )
-import Model.Debugger                           ( getPosition     )
+import Data.List                                ( intercalate       )
+import Brick.Widgets.Edit                       ( renderEditor      )
+import Data.Word                                ( Word8             )
+import Brick                                    ( (<+>), (<=>)      )
+import Brick.Widgets.Border                     ( vBorder
+                                                , border
+                                                , hBorder           )
+import Model.Debugger                           ( getPosition       )
 import View.Core                                ( addNumberedRow
-                                                , renderTitle     )
+                                                , renderTitle       )
 import Model.Utilities                          ( chunksOf
                                                 , slice
                                                 , toAscii
                                                 , toHex
-                                                , toDec           )
+                                                , toDec             )
 
 -- =============================================================== --
 -- Assembling the main debugger UI
@@ -47,11 +49,25 @@ drawCommandUI db = [ mainWidgets db <=> commandUI db ]
 
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
 -- ^Helper function for assembling the widgets that are rendered the
--- same independent of the debugger mode.
-mainWidgets db = B.withAttr "background" $
-                     programUI db
-                 <+> memoryUI db
-                 <+> B.vBox [ outputUI db , inputUI db ]
+-- same independent of the debugger mode. This is a little
+-- complicated in order to get the borders and size policies right.
+mainWidgets db = B.withAttr "background" . B.joinBorders . border $
+    B.hBox [ -- The program UI widget
+              B.vBox [ ( renderTitle T.ProgramWgt db )
+                    , programUI db ]
+           , vBorder
+              -- The memory UI widget
+           , B.hLimit 12 $
+                B.vBox [ B.padRight B.Max ( renderTitle T.MemoryWgt  db )
+                       , memoryUI db ]
+           , vBorder
+              -- The stacked input and output UI widgets
+           , B.vBox [ B.padRight B.Max ( renderTitle T.OutputWgt db )
+                    , outputUI db
+                    , hBorder
+                    , B.padRight B.Max ( renderTitle T.InputWgt  db )
+                    , inputUI db ]
+           ]
 
 -- =============================================================== --
 -- Rendering the UI for displaying the program code
@@ -61,8 +77,7 @@ programUI :: T.Debugger -> B.Widget T.WgtName
 -- of BF tokens given the debugger state. To make rendering more
 -- efficient, only the lines currently visible are rendered.
 programUI db = let m = length . show . Vec.length . T.program $ db
-               in  borderWithLabel ( renderTitle T.ProgramWgt db )
-                   . B.padBottom B.Max
+               in  B.padBottom B.Max
                    . foldr ( addNumberedRow m ) B.emptyWidget
                    . slice ( T.progView db )
                    . zip [0, T.progWidth db .. ]
@@ -86,9 +101,7 @@ memoryUI :: T.Debugger -> B.Widget T.WgtName
 -- ^Memory is renderd with each position on its own line. To make
 -- rendering more efficient, only the visible regions are rendered.
 memoryUI db = let m = length . show . F.length . T.memory . T.computer $ db
-              in  borderWithLabel ( renderTitle T.MemoryWgt db )
-                  . B.padBottom B.Max
-                  . B.hLimit 8 . B.padRight B.Max
+              in  B.padBottom B.Max
                   . foldr ( addNumberedRow m ) B.emptyWidget
                   . slice (T.memView db)
                   . zip [0..]
@@ -110,14 +123,12 @@ formatMemory db = inBack ++ [inFocus] ++ inFront
 -- Rendering the input and output UIs is otherwise identical.
 
 inputUI :: T.Debugger -> B.Widget T.WgtName
-inputUI db = borderWithLabel (renderTitle T.InputWgt db)
-             . B.viewport T.InputWgt B.Both
+inputUI db = B.viewport T.InputWgt B.Both
              . dataUI ( T.inFormat db )
              . T.input . T.computer $ db
 
 outputUI :: T.Debugger -> B.Widget T.WgtName
-outputUI db = borderWithLabel (renderTitle T.OutputWgt db)
-              . B.viewport T.OutputWgt B.Both
+outputUI db = B.viewport T.OutputWgt B.Both
               . dataUI ( T.outFormat db )
               . T.output . T.computer $ db
 

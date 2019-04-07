@@ -236,12 +236,12 @@ resize :: Int -> Int -> T.Debugger -> T.Debugger
 resize w h db = db {
       T.termWidth  = w
     , T.termHeight = h
-      -- The program has a border and sits on the status line so its
-      -- height is three less than than the total terminal height.
-    , T.progView   = resizeWgtView (h-3) (getPositionRow db) (T.progView db)
-      -- The memory has a border and sits on the status line so its
-      -- height is three less than than the total terminal height.
-    , T.memView    = resizeWgtView (h-3) (getAddress db)     (T.memView db)
+      -- The program has a border and title and sits on the status
+      -- line so its height is four less than the terminal height.
+    , T.progView   = resizeWgtView (h-4) (getPositionRow db) (T.progView db)
+      -- The memory has a border and title and sits on the status
+      -- line so its height is four less than the terminal height.
+    , T.memView    = resizeWgtView (h-4) (getAddress db)     (T.memView db)
     }
 
 -- Unexported
