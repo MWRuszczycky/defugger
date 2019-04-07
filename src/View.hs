@@ -18,7 +18,6 @@ import Data.Word                                ( Word8           )
 import Brick                                    ( (<+>), (<=>)    )
 import Brick.Widgets.Border                     ( borderWithLabel )
 import Numeric                                  ( showHex         )
-import Data.List                                ( intersperse     )
 
 drawUI :: T.Debugger -> [ B.Widget T.WgtName ]
 drawUI db = case T.mode db of
@@ -97,16 +96,24 @@ dataUI fmt title bs
     | otherwise  = go w
     where go = borderWithLabel title . padRightBottom B.Max
           w  = case fmt of
-                    T.Dec -> numbered toDec . BS.unpack $ bs
-                    T.Hex -> numbered toHex . BS.unpack $ bs
-                    T.Asc -> wrappedAscii   . BS.unpack $ bs
+                    T.Dec -> wrapWith toDec bs
+                    T.Hex -> wrapWith toHex bs
+                    T.Asc -> wrappedAscii . BS.unpack $ bs
 
-numbered :: (Word8 -> String) -> [Word8] -> B.Widget T.WgtName
-numbered f ws = let xs = map (B.str . concat) . chunksOf 16
-                         . intersperse " " . map f $ ws
-                    m  = length . show . (*8) . (subtract 1) . length $ xs
-                 in  foldr ( addNumberedRow m ) B.emptyWidget
-                     . zip [0,8..] $ xs
+wrapWith :: (Word8 -> String) -> BS.ByteString -> B.Widget T.WgtName
+wrapWith f bs = let m = length . show $ quot (BS.length bs) 8
+                in  B.strWrap
+                    . concat
+                    . zipWith ( formatLine m ) [0,8..]
+                    . chunksOf 8
+                    . map ( (' ':) . f )
+                    . BS.unpack $ bs
+
+formatLine :: Int -> Int -> [String] -> String
+formatLine m n xs = rightPadStr m (show n) ++ concat xs ++ "\n"
+
+rightPadStr :: Int -> String -> String
+rightPadStr n s = s ++ replicate ( n - length s ) ' '
 
 ---------------------------------------------------------------------
 -- Status and commandline UI
