@@ -19,8 +19,9 @@ module Model.Debugger
     , moveCursorLeft
     , moveCursorUp
     , moveCursorDown
-      -- Display formats
+      -- Display formats and messaging
     , changeFormat
+    , noMessage
       -- Break point management
     , setBreakPoint
     , unsetBreakPoint
@@ -345,7 +346,7 @@ moveCursorDown db
           atEnd = (< y) . (subtract 1) . Vec.length . T.program $ db
 
 -- =============================================================== --
--- Display formats
+-- Display formats and messaging
 
 changeFormat :: T.DataFormat -> T.Debugger -> T.Debugger
 -- ^Change the data format of the currentl focused widget.
@@ -353,6 +354,9 @@ changeFormat fmt db = case T.wgtFocus db of
                            T.OutputWgt -> db { T.outFormat = fmt }
                            T.InputWgt  -> db { T.inFormat  = fmt }
                            _           -> db
+
+noMessage :: T.Debugger -> T.Debugger
+noMessage db = db { T.message = "" }
 
 -- =============================================================== --
 -- Break point management

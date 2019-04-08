@@ -1,7 +1,6 @@
 module Model.Types
     ( -- Error and IO types
-      DebuggerCommand (..)
-    , ErrorIO
+      ErrorIO
     , ErrString
       -- Startup data structures
     , DefuggerOptions (..)
@@ -12,6 +11,10 @@ module Model.Types
     , Mode            (..)
     , WgtName         (..)
     , VertViewRange
+      -- Debugger commands
+    , Command         (..)
+    , DebuggerArgCommand
+    , DebuggerCommand (..)
       -- Computer/Computation model
     , Computation
     , Computer        (..)
@@ -41,24 +44,13 @@ import Control.Monad.Reader             ( ReaderT   )
 import Data.Text                        ( Text      )
 import Data.Word                        ( Word8     )
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Error and IO types
 
 type ErrString = String
 type ErrorIO   = ExceptT ErrString IO
 
--- |Commands that can be executed while running the debugger. Pure
--- commands have no side effects. Simple IO commands involve IO
--- actions; however, they can run concurrently with the Brick runtime
--- system. Complex IO commands require that the Brick runtime system
--- be suspended while they are executed.
-data DebuggerCommand =
-      PureCmd      ( Debugger -> Debugger    )
-    | SimpleIOCmd  ( Debugger -> IO Debugger )
-    | ComplexIOCmd ( Debugger -> IO Debugger )
-    | QuitCmd
-
----------------------------------------------------------------------
+-- =============================================================== --
 -- Startup data structures used to determine how a new instance of
 -- the program should run
 
@@ -67,7 +59,7 @@ data DefuggerOptions = DefuggerOptions {
       runMode  :: RunMode   -- What mode the program is to run in
     , args     :: [String]  -- Additional command line arguments
     , terminal :: String    -- Terminal settings used to update env
-}
+    }
 
 -- |What the program is to do based on command line arguments
 data RunMode =
@@ -76,7 +68,7 @@ data RunMode =
     | OptsError ErrString   -- Display an error message and quit
       deriving ( Eq, Show )
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Modeling the debugger
 
 -- |Model of the debugger state
@@ -135,7 +127,34 @@ instance Show WgtName where
 -- |Vertical range of lines of a wiget that are in view for display.
 type VertViewRange = (Int, Int)
 
----------------------------------------------------------------------
+-- =============================================================== --
+-- Debugger commands
+
+-- |Everything you need to manage a command to be read, document and
+-- and run from the debugger.
+data Command = Command {
+      cmdName   :: String
+    , cmd       :: DebuggerArgCommand
+    , shortHelp :: Text
+    , longHelp  :: Text
+    }
+
+-- |Commands that can be executed while running the debugger. Pure
+-- commands have no side effects. Simple IO commands involve IO
+-- actions; however, they can run concurrently with the Brick runtime
+-- system. Complex IO commands require that the Brick runtime system
+-- be suspended while they are executed.
+data DebuggerCommand =
+      PureCmd      ( Debugger -> Debugger    )
+    | SimpleIOCmd  ( Debugger -> IO Debugger )
+    | ComplexIOCmd ( Debugger -> IO Debugger )
+    | QuitCmd
+    | ErrorCmd ErrString
+
+-- |Build a debugger command from arguments.
+type DebuggerArgCommand = [String] -> DebuggerCommand
+
+-- =============================================================== --
 -- Model of a computer for running a BF program/script and the
 -- associated computations
 
@@ -169,7 +188,7 @@ data Computer = Computer {
     , memory :: !(Tape Word8)   -- Memory tape
     } deriving ( Show )
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Model of BF scripts and programs
 
 -- |A Program is a list of statements used to determine Computations.
@@ -227,7 +246,7 @@ instance Show DebugStatement where
     show (DBOpenLoop  _) = "["
     show (DBCloseLoop _) = "]"
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Parsing BF scripts
 
 -- |A BFScript is a list of standardized tokens used to parse a BF

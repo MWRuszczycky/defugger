@@ -139,10 +139,12 @@ abortToNormalMode db = B.continue $
 handleCommand :: T.Debugger -> DebugEventMonad
 -- ^Read the command entered in normal mode and execute it.
 handleCommand db =
-    let db' = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
-                 , T.mode        = T.NormalMode }
-    in  case getCommand . unlines . getEditContents . T.commandEdit $ db of
+    let db'    = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
+                    , T.mode        = T.NormalMode }
+        cmdStr =  getEditContents . T.commandEdit $ db
+    in  case getCommand . words . unlines $ cmdStr of
              T.PureCmd f      -> B.continue . f $ db'
              T.SimpleIOCmd f  -> liftIO ( f db') >>= B.continue
              T.ComplexIOCmd f -> B.suspendAndResume $ f db'
+             T.ErrorCmd e     -> B.continue $ db' { T.message = e }
              T.QuitCmd        -> B.halt db'
