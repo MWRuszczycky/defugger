@@ -15,7 +15,10 @@ module View.Core
 import qualified Graphics.Vty as V
 import qualified Brick        as B
 import qualified Model.Types  as T
-import Brick                        ( (<=>), (<+>) )
+import Brick                        ( (<=>), (<+>)      )
+import Brick.Widgets.Border         ( borderAttr        )
+import Brick.Widgets.Edit           ( editAttr
+                                    , editFocusedAttr   )
 
 -- =============================================================== --
 -- Managing attributes
@@ -23,12 +26,15 @@ import Brick                        ( (<=>), (<+>) )
 attributes :: B.AttrMap
 -- ^The default attribute map.
 attributes = B.attrMap V.defAttr
-    [ ( "background", B.bg         V.black  )
-    , ( "focus",      B.on V.black V.yellow )
-    , ( "active",     B.on V.green V.black  )
-    , ( "cursor",     B.on V.black V.green  )
-    , ( "lineno",     B.fg V.green          )
-    , ( "break",      B.on V.black V.red    )
+    [ ( "background",    B.bg         V.black  )
+    , ( "focus",         B.on V.black V.yellow )
+    , ( "active",        B.on V.green V.black  )
+    , ( "cursor",        B.on V.black V.green  )
+    , ( "lineno",        B.on V.green V.black  )
+    , ( "break",         B.on V.black V.red    )
+    , ( borderAttr,      B.on V.white V.black  )
+    , ( editAttr,        B.on V.white V.black  )
+    , ( editFocusedAttr, B.on V.white V.black  )
     ]
 
 -- =============================================================== --

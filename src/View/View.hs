@@ -41,17 +41,19 @@ drawUI db = case T.mode db of
 
 drawNormalUI :: T.Debugger -> [ B.Widget T.WgtName ]
 -- ^Render the UI under normal mode.
-drawNormalUI db = [ mainWidgets db <=> statusUI db ]
+drawNormalUI db = [ B.withAttr "background" $
+                    mainWidgets db <=> statusUI db ]
 
 drawCommandUI :: T.Debugger -> [ B.Widget T.WgtName ]
 -- ^Render the UI under command mode.
-drawCommandUI db = [ mainWidgets db <=> commandUI db ]
+drawCommandUI db = [ B.withAttr "background" $
+                     mainWidgets db <=> commandUI db ]
 
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
 -- ^Helper function for assembling the widgets that are rendered the
 -- same independent of the debugger mode. This is a little
 -- complicated in order to get the borders and size policies right.
-mainWidgets db = B.withAttr "background" . B.joinBorders . border $
+mainWidgets db = B.joinBorders . border $
     B.hBox [ -- The program UI widget
               B.vBox [ ( renderTitle T.ProgramWgt db )
                     , programUI db ]
@@ -181,10 +183,10 @@ rightPadStr n s = s ++ replicate ( n - length s ) ' '
 
 statusUI :: T.Debugger -> B.Widget T.WgtName
 statusUI db
-    | null msg  = B.withAttr "background" . B.str $ " "
-    | otherwise = B.withAttr "background" . B.str $ msg
+    | null msg  = B.str $ " "
+    | otherwise = B.str $ msg
     where msg = T.message db
 
 commandUI :: T.Debugger -> B.Widget T.WgtName
-commandUI db = B.str ":"
+commandUI db = ( B.withAttr "background" $ B.str ":" )
                <+> ( renderEditor (B.str . unlines) True . T.commandEdit $ db )
