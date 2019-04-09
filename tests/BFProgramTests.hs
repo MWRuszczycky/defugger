@@ -35,18 +35,24 @@ main = hspec $ do
                             "tests/files/HelloWorld.out"
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
-scriptNoInput s t = do
-    opts <- pure ["--run", s] >>= SU.getOptions
-    case T.runMode opts of
-         T.RunInterpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
-         _                -> error "Test failed: RunInterpreter mode expected"
+scriptNoInput s t = runExceptT ( args >>= SU.getOptions ) >>= either err go
+    where args    = pure ["--run", s]
+          err e   = error $ "Test failed: Unable to read options: " ++ e
+          goError = error "Test failed: RunInterpreter mode expected"
+          go opts = case T.runMode opts of
+                         T.RunInterpreter -> runExceptT (SU.interpreter opts)
+                                             >>= checkResult t
+                         _                -> goError
 
 scriptWithInput :: FilePath -> FilePath -> FilePath -> IO ()
-scriptWithInput s i t = do
-    opts <- pure ["--run", s, i] >>= SU.getOptions
-    case T.runMode opts of
-         T.RunInterpreter -> runExceptT (SU.interpreter opts) >>= checkResult t
-         _                -> error "Test failed: RunInterpreter mode expected"
+scriptWithInput s i t = runExceptT ( args >>= SU.getOptions ) >>= either err go
+    where args    = pure ["--run", s, i]
+          err e   = error $ "Test failed: Unable to read options: " ++ e
+          goError = error "Test failed: RunInterpreter mode expected"
+          go opts = case T.runMode opts of
+                         T.RunInterpreter -> runExceptT (SU.interpreter opts)
+                                             >>= checkResult t
+                         _                -> goError
 
 checkResult :: FilePath -> Either T.ErrString T.Computer -> IO ()
 checkResult _ (Left err) = error $ "Test failed: " ++ err

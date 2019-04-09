@@ -12,9 +12,10 @@ import qualified Data.ByteString as BS
 import qualified Model.Types     as T
 import qualified Data.Vector     as V
 import qualified Data.Set        as Set
+import qualified Data.Text       as Tx
 import Brick.Widgets.Edit               ( editor        )
-import Control.Monad.Except             ( throwError
-                                        , liftEither    )
+import Control.Monad.Except             ( liftEither
+                                        , throwError    )
 import Model.Parser                     ( parseDebug    )
 import Data.Text                        ( Text          )
 import Model.CoreIO                     ( tryReadFile
@@ -24,9 +25,11 @@ import Model.CoreIO                     ( tryReadFile
 -- Options and terminal initialization handling
 
 getScript :: T.DefuggerOptions -> T.ErrorIO Text
-getScript opts = case T.args opts of
-                      []    -> throwError "A script file is required"
-                      (x:_) -> tryReadFile x
+getScript opts =
+    case (T.args opts, T.runMode opts) of
+         ([],  T.RunInterpreter) -> throwError "A BF script file is required."
+         ([],  T.RunDebugger   ) -> pure Tx.empty
+         (x:_, _               ) -> tryReadFile x
 
 getInput :: T.DefuggerOptions -> T.ErrorIO BS.ByteString
 getInput opts = case T.args opts of

@@ -65,7 +65,6 @@ data DefuggerOptions = DefuggerOptions {
 data RunMode =
       RunInterpreter        -- Read and interpret a BF script
     | RunDebugger           -- Run the debugger on a BF script
-    | OptsError ErrString   -- Display an error message and quit
       deriving ( Eq, Show )
 
 -- =============================================================== --

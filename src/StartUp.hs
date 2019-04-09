@@ -72,7 +72,7 @@ setTerminal opts = putEnv $ "TERM=" ++ T.terminal opts
 -- =============================================================== --
 -- Command line arguments parsing
 
-getOptions :: [String] -> IO T.DefuggerOptions
+getOptions :: [String] -> T.ErrorIO T.DefuggerOptions
 getOptions ("--run":xs) = pure $
     defOptions { T.runMode = T.RunInterpreter
                , T.args    = xs }
