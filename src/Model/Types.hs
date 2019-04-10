@@ -72,27 +72,34 @@ data RunMode =
 
 -- |Model of the debugger state
 data Debugger = Debugger {
+      -- Core model
       computer    :: {-# UNPACK #-} !Computer    -- The computer
     , dictionary  :: {-# UNPACK #-} !Dictionary  -- The BF dictionary
     , program     :: {-# UNPACK #-} !DBProgram   -- The BF program
-    , mode        :: !Mode                       -- Current debug status
+      -- Positioning, running mode and history
+    , mode        :: !Mode                       -- Current debug mode
     , wgtFocus    :: !WgtName                    -- Current focused widget
-    , readBackup  :: ![Word8]                    -- History of reads
-    , history     :: ![Int]                      -- History of statements
     , cursor      :: !Int                        -- Cursor position in program
-    , breaks      :: Set Int                     -- User specified break points
+    , history     :: ![Int]                      -- History of statements
+    , readBackup  :: ![Word8]                    -- History of reads
+      -- Command and status widgets
+    , commandEdit :: Editor String WgtName       -- Used to enter commands
+    , message     :: !String                     -- Status message
+      -- Terminal and display parameters
     , termWidth   :: !Int                        -- Width of the terminal
     , termHeight  :: !Int                        -- Height of the terminal
+    , progView    :: !VertViewRange              -- BF script rows to render
+    , memView     :: !VertViewRange              -- Memory rows to render
+      -- Settings
+    , breaks      :: Set Int                     -- User specified break points
     , progWidth   :: !Int                        -- Characters shown per line
     , inFormat    :: !DataFormat                 -- Display format of input
     , outFormat   :: !DataFormat                 -- Display format of output
-    , progView    :: !VertViewRange              -- BF script rows to render
-    , memView     :: !VertViewRange              -- Memory rows to render
-    , commandEdit :: Editor String WgtName       -- Used to enter commands
-    , message     :: !String                     -- Status message
+      -- Flags
+    , jumpEdit    :: Bool                        -- Jump to edit point
     }
 
--- |Status of the debugger
+-- |Debugger operating modes
 data Mode =
       NormalMode            -- Normal operation
     | CommandMode           -- User entering commands

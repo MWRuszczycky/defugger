@@ -60,24 +60,31 @@ initDebugger opts (width,height) = do
     d <- getDict   opts
     x <- getInput  opts
     p <- liftEither . parseDebug d $ s
-    pure T.Debugger { T.computer    = initComputer x
+    pure T.Debugger { -- Core model
+                      T.computer    = initComputer x
                     , T.dictionary  = d
                     , T.program     = p
+                      -- Positioning, running mode and history
                     , T.mode        = T.NormalMode
                     , T.wgtFocus    = T.ProgramWgt
-                    , T.history     = [0]
                     , T.cursor      = 0
-                    , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
+                    , T.history     = [0]
                     , T.readBackup  = []
+                      -- Command and status widgets
+                    , T.commandEdit = editor T.CommandWgt (Just 1) ""
+                    , T.message     = "Welcome to the Defugger: A BF Debugger!"
+                      -- Terminal and display parameters
                     , T.termWidth   = width
                     , T.termHeight  = height
+                    , T.progView    = (0, height - 5)
+                    , T.memView     = (0, height - 5)
+                      -- Settings
+                    , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
                     , T.progWidth   = 30
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
-                    , T.memView     = (0, height - 5)
-                    , T.progView    = (0, height - 5)
-                    , T.commandEdit = editor T.CommandWgt (Just 1) ""
-                    , T.message     = "Welcome to the Defugger: A BF Debugger!"
+                      -- Flags
+                    , T.jumpEdit    = False
                     }
 
 ---------------------------------------------------------------------
