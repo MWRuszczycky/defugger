@@ -6,11 +6,15 @@ module Model.Debugger
     , getPosition
     , getPositionRow
     , getCursorRow
+    , isBracket
+    , isAtStart
+    , isAtEnd
       -- Executing statements
     , stepForward
     , stepBackward
     , jumpForward
     , jumpBackward
+      -- Editing programs
       -- Modeling widget interfaces
     , resize
     , nextWidget
@@ -72,6 +76,41 @@ getCursorRow :: T.Debugger -> Int
 -- ^Provide the display row in the program widget where the cursor
 -- can currently be found.
 getCursorRow db = quot (T.cursor db) (T.progWidth db)
+
+isBracket :: T.DebugStatement -> Bool
+-- ^Determine whether a statement is a while-loop bracket.
+isBracket (T.DBOpenLoop  _ ) = True
+isBracket (T.DBCloseLoop _ ) = True
+isBracket _                  = False
+
+isAtStart :: T.Debugger -> Bool
+-- ^Determine whether the program is at the start position.
+isAtStart db = case T.program db ! getPosition db of
+                    T.DBStart -> True
+                    _         -> False
+
+isAtEnd :: T.Debugger -> Bool
+-- ^Determine whether the program is at the end position.
+isAtEnd db = case T.program db ! getPosition db of
+                    T.DBEnd -> True
+                    _       -> False
+
+--getOuterMost :: Int -> T.DBProgram -> Maybe (Int, Int)
+---- ^Get the indices of the outermost while-loop brackets about a
+---- position index n in a program p.
+--getOuterMost n p
+--    | n < 1                = Nothing
+--    | n > Vec.length p - 1 = Nothing
+--    | null ws              = Nothing
+--    | otherwise            = Just (i, j)
+--    where ws = Vec.foldl' go [] . Vec.slice n (Vec.length p) $ p
+--          go []     (T.DBCloseLoop n) = [T.DBCloseLoop n]
+--          go (_:xs) (T.DBCloseLoop _) = xs
+--          go []     (T.DBOpenLoop n ) = [T.DBOpenLoop  n]
+--          go xs     (T.DBOpenLoop n ) = T.DBOpenLoop n : xs
+--          go _      _                 = []
+--          (T.DBCloseLoop j)           = head ws
+--          (T.DBOpenLoop  i)           = p ! j
 
 -- =============================================================== --
 -- Executing statements
@@ -215,6 +254,15 @@ revertReadIn (w:_) c = let xs = T.input  c
                        in  pure $ c { T.input  = BS.cons u xs
                                     , T.memory = m { T.focus = w }
                                     }
+
+-- =============================================================== --
+-- Editing programs
+-- These combinators model editing of BF programs by adding or
+-- deleting statements in the program.
+
+--deleteStatement :: T.Debugger -> T.Debugger
+---- ^Delete the current cursor position if allowed.
+--deleteStatement db = undefined
 
 -- =============================================================== --
 -- Modeling widget interfaces

@@ -95,6 +95,16 @@ pKeyEv (V.KChar 'T')  _ db = D.stepForward db
 pKeyEv (V.KChar 'L')  _ db = D.stepForward db
 pKeyEv (V.KChar 'J')  _ db = D.jumpForward db
 pKeyEv (V.KChar 'K')  _ db = D.jumpBackward db
+  -- Program editing
+pKeyEv (V.KChar 'x')  _ db = db -- delete statement
+pKeyEv (V.KChar '<')  _ db = db
+pKeyEv (V.KChar '>')  _ db = db
+pKeyEv (V.KChar '+')  _ db = db
+pKeyEv (V.KChar '-')  _ db = db
+pKeyEv (V.KChar '.')  _ db = db
+pKeyEv (V.KChar ',')  _ db = db
+pKeyEv (V.KChar '[')  _ db = db
+pKeyEv (V.KChar ']')  _ db = db
   -- Entering command mode
 pKeyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
   -- Tabbing between widgets
