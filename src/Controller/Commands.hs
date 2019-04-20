@@ -7,9 +7,10 @@ module Controller.Commands
 import qualified Data.Vector    as Vec
 import qualified Model.Types    as T
 import qualified Model.Debugger as D
-import Data.Text                     ( Text     )
-import Data.List                     ( find     )
-import Model.Utilities               ( chunksOf )
+import Text.Read                     ( readMaybe )
+import Data.Text                     ( Text      )
+import Data.List                     ( find      )
+import Model.Utilities               ( chunksOf  )
 
 -- =============================================================== --
 -- Command hub and router
@@ -42,12 +43,28 @@ setCmdSHelp = "sets a debugger property"
 setCmdLHelp = "long help for set command"
 
 setCmd :: T.DebuggerArgCommand
-setCmd ("hex":_)   = T.PureCmd  $ D.noMessage . D.changeFormat T.Hex
-setCmd ("dec":_)   = T.PureCmd  $ D.noMessage . D.changeFormat T.Dec
-setCmd ("ascii":_) = T.PureCmd  $ D.noMessage . D.changeFormat T.Asc
-setCmd ("break":_) = T.PureCmd  $ D.noMessage . D.setBreakPoint
-setCmd (x:_)       = T.ErrorCmd $ "Cannot set property " ++ x
-setCmd []          = T.ErrorCmd   "Nothing to set"
+setCmd ("hex":_)     = setHex
+setCmd ("dec":_)     = setDec
+setCmd ("ascii":_)   = setAsc
+setCmd ("break":_)   = setBreak
+setCmd ("width":x:_) = setWidth x
+setCmd (x:_)         = T.ErrorCmd $ "Cannot set property " ++ x
+setCmd []            = T.ErrorCmd   "Nothing to set"
+
+setHex, setDec, setAsc :: T.DebuggerCommand
+setHex = T.PureCmd  $ D.noMessage . D.changeFormat T.Hex
+setDec = T.PureCmd  $ D.noMessage . D.changeFormat T.Dec
+setAsc = T.PureCmd  $ D.noMessage . D.changeFormat T.Asc
+
+setBreak :: T.DebuggerCommand
+setBreak = T.PureCmd  $ D.noMessage . D.setBreakPoint
+
+setWidth :: String -> T.DebuggerCommand
+setWidth x = maybe err (T.PureCmd . go) . readMaybe $ x
+    where err  = T.ErrorCmd $ "Cannot set width to " ++ x
+          go n | n < 10    = \ db -> db { T.message = "Invalid width" }
+               | otherwise = \ db -> db { T.message = ""
+                                        , T.progWidth = n }
 
 ---------------------------------------------------------------------
 -- unset
