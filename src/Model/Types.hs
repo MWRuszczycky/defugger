@@ -140,7 +140,7 @@ type VertViewRange = (Int, Int)
 -- |Everything you need to manage a command to be read, document and
 -- and run from the debugger.
 data Command = Command {
-      cmdName   :: String
+      cmdNames  :: [String]
     , cmd       :: DebuggerArgCommand
     , shortHelp :: Text
     , longHelp  :: Text

@@ -16,18 +16,16 @@ import Model.Utilities               ( chunksOf )
 
 getCommand :: [String] -> T.DebuggerCommand
 getCommand []     = T.PureCmd $ id
-getCommand (x:xs) = maybe err go . find ( (== x) . T.cmdName ) $ hub
+getCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ hub
     where err  = T.ErrorCmd "Command unrecognized"
           go c = T.cmd c xs
 
 hub :: [T.Command]
 -- ^Organizes all the commands that can be run from the debugger.
-hub = [ T.Command "set"   setCmd   setCmdSHelp   setCmdLHelp
-      , T.Command "unset" unsetCmd unsetCmdSHelp unsetCmdLHelp
-      , T.Command "w"     writeCmd writeCmdSHelp writeCmdLHelp
-      , T.Command "quit"  quitCmd  quitCmdSHelp  quitCmdLHelp
-      , T.Command "exit"  quitCmd  quitCmdSHelp  quitCmdLHelp
-      , T.Command "q"     quitCmd  quitCmdSHelp  quitCmdLHelp
+hub = [ T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
+      , T.Command unsetNames unsetCmd unsetCmdSHelp unsetCmdLHelp
+      , T.Command writeNames writeCmd writeCmdSHelp writeCmdLHelp
+      , T.Command quitNames  quitCmd  quitCmdSHelp  quitCmdLHelp
       ]
 
 -- =============================================================== --
@@ -35,6 +33,9 @@ hub = [ T.Command "set"   setCmd   setCmdSHelp   setCmdLHelp
 
 ---------------------------------------------------------------------
 -- set
+
+setNames :: [String]
+setNames = [ "set", "s" ]
 
 setCmdSHelp, setCmdLHelp :: Text
 setCmdSHelp = "sets a debugger property"
@@ -51,6 +52,9 @@ setCmd []          = T.ErrorCmd   "Nothing to set"
 ---------------------------------------------------------------------
 -- unset
 
+unsetNames :: [String]
+unsetNames = [ "unset", "u" ]
+
 unsetCmdSHelp, unsetCmdLHelp :: Text
 unsetCmdSHelp = "unsets a debugger property"
 unsetCmdLHelp = "long help for unset command"
@@ -63,6 +67,9 @@ unsetCmd []                = T.ErrorCmd   "Nothing to unset"
 
 ---------------------------------------------------------------------
 -- write
+
+writeNames :: [String]
+writeNames = [ "write", "w" ]
 
 writeCmdSHelp, writeCmdLHelp :: Text
 writeCmdSHelp = "write the current script"
@@ -93,6 +100,9 @@ formatScript n = unlines . chunksOf n
 
 ---------------------------------------------------------------------
 -- quit | exit | q
+
+quitNames :: [String]
+quitNames = [ "quit", "exit", "q" ]
 
 quitCmdSHelp, quitCmdLHelp :: Text
 quitCmdSHelp = "quits the defugger"
