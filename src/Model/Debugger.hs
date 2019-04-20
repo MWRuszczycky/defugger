@@ -10,6 +10,7 @@ module Model.Debugger
     , isAtStart
     , isAtEnd
     , getOuterWhile
+    , inSameWhile
       -- Executing statements
     , stepForward
     , stepBackward
@@ -95,6 +96,13 @@ isAtEnd :: T.Debugger -> Bool
 isAtEnd db = case T.program db ! getPosition db of
                     T.DBEnd -> True
                     _       -> False
+
+inSameWhile :: Int -> Int -> T.DBProgram -> Bool
+-- ^Determine whether two indices i & j are in the same while loop.
+inSameWhile i j p = case ( getOuterWhile i p, getOuterWhile j p) of
+                         (Nothing, _      ) -> False
+                         (_,       Nothing) -> False
+                         (Just x,  Just y ) -> x == y
 
 getOuterWhile :: Int -> T.DBProgram -> Maybe (Int, Int)
 -- ^Get the indices of the outermost while-loop brackets about a

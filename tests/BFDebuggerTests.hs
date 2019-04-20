@@ -30,6 +30,7 @@ main = hspec $ do
     bracketFinding101
     bracketFinding102
     bracketFinding103
+    bracketFinding201
 
 bracketFinding101 :: Spec
 bracketFinding101 = do
@@ -126,6 +127,52 @@ bracketFinding103 = do
             D.getOuterWhile 13 p `shouldBe` Just (10,15)
         it "Works when between the outermost brackets & not on a bracket" $ do
             D.getOuterWhile 8  p `shouldBe` Nothing
+
+bracketFinding201 :: Spec
+bracketFinding201 = do
+    describe "Testing inSameWhile" $ do
+        it "Works with testScript101" $ do
+            let p101 = getTestProgram testScript101
+            (14,31) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (31,14) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (24,45) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (45,24) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (9 ,41) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (41, 9) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (34,46) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (46,34) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (40,40) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p101 )
+            (6 ,22) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (22, 6) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (39,65) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (65,39) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            ( 6,83) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (83, 6) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            ( 0,56) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (56, 0) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (107,6) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (6,107) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (0,107) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (107,0) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+            (56,56) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p101 )
+        it "Works with testScript102" $ do
+            let p102 = getTestProgram testScript102
+            (4,4) `shouldSatisfy`      ( \ (i,j) -> D.inSameWhile i j p102 )
+            (3,4) `shouldSatisfy`      ( \ (i,j) -> D.inSameWhile i j p102 )
+            (1,4) `shouldSatisfy`      ( \ (i,j) -> D.inSameWhile i j p102 )
+            (4,6) `shouldSatisfy`      ( \ (i,j) -> D.inSameWhile i j p102 )
+            (1,6) `shouldSatisfy`      ( \ (i,j) -> D.inSameWhile i j p102 )
+            (0,6) `shouldNotSatisfy`   ( \ (i,j) -> D.inSameWhile i j p102 )
+            (7,1) `shouldNotSatisfy`   ( \ (i,j) -> D.inSameWhile i j p102 )
+            (7,1) `shouldNotSatisfy`   ( \ (i,j) -> D.inSameWhile i j p102 )
+            (0,7) `shouldNotSatisfy`   ( \ (i,j) -> D.inSameWhile i j p102 )
+            (4,7) `shouldNotSatisfy`   ( \ (i,j) -> D.inSameWhile i j p102 )
+            (4,0) `shouldNotSatisfy`   ( \ (i,j) -> D.inSameWhile i j p102 )
+        it "Works with testScript103" $ do
+            let p103 = getTestProgram testScript103
+            ( 3, 4) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p103 )
+            (12,13) `shouldSatisfy`    ( \ (i,j) -> D.inSameWhile i j p103 )
+            ( 4,13) `shouldNotSatisfy` ( \ (i,j) -> D.inSameWhile i j p103 )
 
 ---------------------------------------------------------------------
 -- Helpers
