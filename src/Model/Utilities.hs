@@ -2,6 +2,9 @@ module Model.Utilities
     ( -- List operations
       chunksOf
     , slice
+      -- Vector operations
+    , vecDelete
+    , vecInsert
       -- Rendering utilities
     , toAscii
     , toHex
@@ -12,6 +15,7 @@ module Model.Utilities
 -- Pure model utitilies                                            --
 -- =============================================================== --
 
+import qualified Data.Vector as Vec
 import Data.Word ( Word8     )
 import Numeric   ( showHex   )
 
@@ -25,6 +29,20 @@ chunksOf n xs = chnk : chunksOf n next
 
 slice :: (Int, Int) -> [a] -> [a]
 slice (n0, n1) = take (n1 - n0 + 1) . drop n0
+
+-- =============================================================== --
+-- Vector operations
+
+vecDelete :: Int -> Vec.Vector a -> Vec.Vector a
+vecDelete i v
+    | i < 0       = v
+    | Vec.null v1 = v
+    | otherwise   = Vec.concat [ v0,  Vec.tail v1 ]
+    where (v0,v1) = Vec.splitAt i v
+
+vecInsert :: Int -> a -> Vec.Vector a -> Vec.Vector a
+vecInsert i x v = Vec.concat [ v0, Vec.singleton x, v1 ]
+    where (v0,v1) = Vec.splitAt i v
 
 -- =============================================================== --
 -- Rendering utilities

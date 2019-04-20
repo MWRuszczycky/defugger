@@ -17,6 +17,8 @@ module Model.Debugger
     , jumpForward
     , jumpBackward
       -- Editing programs
+    , deleteStatementAtCursor
+    , addStatementAtCursor
       -- Modeling widget interfaces
     , resize
     , nextWidget
@@ -44,6 +46,8 @@ import qualified Data.Vector     as Vec
 import qualified Data.Set        as Set
 import Data.Word                        ( Word8     )
 import Data.Vector                      ( (!)       )
+import Model.Utilities                  ( vecDelete
+                                        , vecInsert )
 import Model.Interpreter                ( advance
                                         , backup
                                         , decrement
@@ -272,9 +276,115 @@ revertReadIn (w:_) c = let xs = T.input  c
 -- These combinators model editing of BF programs by adding or
 -- deleting statements in the program.
 
---deleteStatement :: T.Debugger -> T.Debugger
----- ^Delete the current cursor position if allowed.
---deleteStatement db = undefined
+---------------------------------------------------------------------
+-- Common unexported helpers
+
+adjCrossRefs :: Int -> Int -> T.DBProgram -> T.DBProgram
+-- ^Adjust cross reference indices greater than or equal to i by d.
+adjCrossRefs i d = Vec.map go
+    where go (T.DBOpenLoop  j) | j < i     = T.DBOpenLoop j
+                               | otherwise = T.DBOpenLoop $ j + d
+          go (T.DBCloseLoop j) | j < i     = T.DBCloseLoop j
+                               | otherwise = T.DBCloseLoop $ j + d
+          go x                 = x
+
+adjBkPnt :: Int -> Int -> Set.Set Int -> Set.Set Int
+-- ^Adjust break point indices greater than or equal to i by d.
+adjBkPnt i d = Set.map go
+    where go j | j < i     = j
+               | otherwise = j + d
+
+---------------------------------------------------------------------
+-- Deleting statements
+
+-- Exported
+
+deleteStatementAtCursor :: T.Debugger -> T.Debugger
+-- ^Delete the debug statement or pair of while brackets at the
+-- current cursor position. Do not allow deletion if program
+-- may have advanced beyond the point of deletion.
+deleteStatementAtCursor db
+    | cur == 0                = db { T.message = startPointDelErr }
+    | cur == Vec.length p - 1 = db { T.message = endPointDelErr   }
+    | pos >= cur              = db { T.message = evalDelErr       }
+    | inSameWhile cur pos p   = db { T.message = sameWhileDelErr  }
+    | otherwise               = deleteStatement cur db
+    where pos = getPosition db
+          cur = T.cursor db
+          p   = T.program db
+
+-- Unexported helpers
+
+startPointDelErr, endPointDelErr, evalDelErr, sameWhileDelErr :: T.ErrString
+-- ^Error messages for deleting statements from a program.
+startPointDelErr = "Cannot delete: Cursor at start point"
+endPointDelErr   = "Cannot delete: Cursor at end point"
+evalDelErr       = "Cannot delete: Program evaluation ahead of cursor"
+sameWhileDelErr  = "Cannot delete: Evaluation and cursor in same while-loop"
+
+deleteStatement :: Int -> T.Debugger -> T.Debugger
+-- ^Delete the statement at position i from the program in the
+-- debugger. This function also updates the break points and handles
+-- deletion of while loop brackets.
+deleteStatement i db =
+    let p = T.program db
+        b = T.breaks  db
+    in  case p ! i of
+             (T.DBOpenLoop  j) ->
+                db { T.program =   adjCrossRefs i (-1) . vecDelete i
+                                 . adjCrossRefs j (-1) . vecDelete j $ p
+                   , T.breaks  = adjBkPnt i (-1) . adjBkPnt j (-1) $ b
+                   , T.cursor  = i - 1 }
+             (T.DBCloseLoop j) ->
+                db { T.program =   adjCrossRefs j (-1) . vecDelete j
+                                 . adjCrossRefs i (-1) . vecDelete i $ p
+                   , T.breaks  = adjBkPnt j (-1) . adjBkPnt i (-1) $ b
+                   , T.cursor  = i - 2 }
+             _                 ->
+                db { T.program = adjCrossRefs i (-1) . vecDelete i $ p
+                   , T.breaks  = adjBkPnt i (-1) b
+                   , T.cursor  = i - 1 }
+
+---------------------------------------------------------------------
+-- Adding statements
+
+-- Exported
+
+addStatementAtCursor :: T.DebugStatement -> T.Debugger -> T.Debugger
+-- ^Add a given debug statement x to the current cursor position. Do
+-- Do not allow insertion when the program evaluation may have
+-- advanced beyond the point of insertion.
+addStatementAtCursor x db
+    | cur == 0 && pos == 0  = addStatementAtCursor x $ db { T.cursor = 1 }
+    | pos >= cur            = db { T.message = evalAddErr      }
+    | inSameWhile cur pos p = db { T.message = sameWhileAddErr }
+    | otherwise             = addStatement cur x db
+    where pos = getPosition db
+          cur = T.cursor db
+          p   = T.program db
+
+-- Unexported helpers
+
+evalAddErr, sameWhileAddErr :: T.ErrString
+evalAddErr       = "Cannot insert: Program evaluation ahead of cursor"
+sameWhileAddErr  = "Cannot insert: Evaluation and cursor in same while-loop"
+
+addStatement :: Int -> T.DebugStatement -> T.Debugger -> T.Debugger
+-- ^Insert the statement x at position i in the program in the
+-- debugger. This function also updates the break points and handles
+-- insertion of while loop bracket pairs.
+addStatement i x db
+    | isBracket x = db { T.program = vecInsert i op . vecInsert i cl
+                                     . adjCrossRefs i 2 $ p
+                       , T.breaks  = adjBkPnt i 2 $ b
+                       , T.cursor  = i + 1 }
+    | otherwise   = db { T.program = vecInsert i x . adjCrossRefs i 1 $ p
+                       , T.breaks  = adjBkPnt i 1 b
+                       , T.cursor  = i + 1 }
+    where p  = T.program db
+          b  = T.breaks  db
+          cl = T.DBCloseLoop   i
+          op = T.DBOpenLoop  $ i + 1
 
 -- =============================================================== --
 -- Modeling widget interfaces

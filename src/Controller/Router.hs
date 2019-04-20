@@ -96,15 +96,15 @@ pKeyEv (V.KChar 'L')  _ db = D.stepForward db
 pKeyEv (V.KChar 'J')  _ db = D.jumpForward db
 pKeyEv (V.KChar 'K')  _ db = D.jumpBackward db
   -- Program editing
-pKeyEv (V.KChar 'x')  _ db = db -- delete statement
-pKeyEv (V.KChar '<')  _ db = db
-pKeyEv (V.KChar '>')  _ db = db
-pKeyEv (V.KChar '+')  _ db = db
-pKeyEv (V.KChar '-')  _ db = db
-pKeyEv (V.KChar '.')  _ db = db
-pKeyEv (V.KChar ',')  _ db = db
-pKeyEv (V.KChar '[')  _ db = db
-pKeyEv (V.KChar ']')  _ db = db
+pKeyEv (V.KChar 'x')  _ db = D.deleteStatementAtCursor db
+pKeyEv (V.KChar '<')  _ db = D.addStatementAtCursor T.DBBackup db
+pKeyEv (V.KChar '>')  _ db = D.addStatementAtCursor T.DBAdvance db
+pKeyEv (V.KChar '+')  _ db = D.addStatementAtCursor T.DBIncrement db
+pKeyEv (V.KChar '-')  _ db = D.addStatementAtCursor T.DBDecrement db
+pKeyEv (V.KChar '.')  _ db = D.addStatementAtCursor T.DBWriteOut db
+pKeyEv (V.KChar ',')  _ db = D.addStatementAtCursor T.DBReadIn db
+pKeyEv (V.KChar '[')  _ db = D.addStatementAtCursor (T.DBOpenLoop 0) db
+pKeyEv (V.KChar ']')  _ db = D.addStatementAtCursor (T.DBCloseLoop 0) db
   -- Entering command mode
 pKeyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
   -- Tabbing between widgets
