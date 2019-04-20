@@ -308,7 +308,7 @@ deleteStatementAtCursor db
     | cur == Vec.length p - 1 = db { T.message = endPointDelErr   }
     | pos >= cur              = db { T.message = evalDelErr       }
     | inSameWhile cur pos p   = db { T.message = sameWhileDelErr  }
-    | otherwise               = deleteStatement cur db
+    | otherwise               = deleteStatement cur $ db { T.unsaved = True }
     where pos = getPosition db
           cur = T.cursor db
           p   = T.program db
@@ -358,7 +358,7 @@ addStatementAtCursor x db
     | cur == 0 && pos == 0  = addStatementAtCursor x $ db { T.cursor = 1 }
     | pos >= cur            = db { T.message = evalAddErr      }
     | inSameWhile cur pos p = db { T.message = sameWhileAddErr }
-    | otherwise             = addStatement cur x db
+    | otherwise             = addStatement cur x $ db { T.unsaved = True }
     where pos = getPosition db
           cur = T.cursor db
           p   = T.program db

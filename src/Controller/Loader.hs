@@ -25,12 +25,19 @@ import Model.CoreIO                     ( tryReadFile
 ---------------------------------------------------------------------
 -- Options and terminal initialization handling
 
+getSavePath :: T.DefuggerOptions -> T.ErrorIO (Maybe FilePath)
+getSavePath opts =
+    case T.args opts of
+         []    -> pure Nothing
+         (x:_) -> pure . Just $ x
+
 getScript :: T.DefuggerOptions -> T.ErrorIO Text
-getScript opts =
-    case (T.args opts, T.runMode opts) of
-         ([],  T.RunInterpreter) -> throwError "A BF script file is required."
-         ([],  T.RunDebugger   ) -> pure Tx.empty
-         (x:_, _               ) -> tryReadFile x
+getScript opts = do
+    mbFp <- getSavePath opts
+    case (mbFp, T.runMode opts) of
+         (Nothing, T.RunInterpreter) -> throwError "A BF script file is required."
+         (Nothing, T.RunDebugger   ) -> pure Tx.empty
+         (Just fp, _               ) -> tryReadFile fp
 
 getInput :: T.DefuggerOptions -> T.ErrorIO BS.ByteString
 getInput opts = case T.args opts of
@@ -57,10 +64,11 @@ bfDict = T.toDictionary [ ( T.BFGT,    [">"] )
 
 initDebugger :: T.DefuggerOptions -> (Int, Int) -> T.ErrorIO T.Debugger
 initDebugger opts (width,height) = do
-    s <- getScript opts
-    d <- getDict   opts
-    x <- getInput  opts
-    p <- liftEither . parseDebug d $ s
+    fp <- getSavePath opts
+    s  <- getScript opts
+    d  <- getDict   opts
+    x  <- getInput  opts
+    p  <- liftEither . parseDebug d $ s
     pure T.Debugger { -- Core model
                       T.computer    = initComputer x
                     , T.dictionary  = d
@@ -84,8 +92,9 @@ initDebugger opts (width,height) = do
                     , T.progWidth   = 30
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
+                    , T.savePath    = fp
                       -- Flags
-                    , T.jumpEdit    = False
+                    , T.unsaved     = False
                     }
 
 ---------------------------------------------------------------------
