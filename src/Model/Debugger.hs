@@ -9,6 +9,7 @@ module Model.Debugger
     , isBracket
     , isAtStart
     , isAtEnd
+    , getOuterWhile
       -- Executing statements
     , stepForward
     , stepBackward
@@ -95,22 +96,25 @@ isAtEnd db = case T.program db ! getPosition db of
                     T.DBEnd -> True
                     _       -> False
 
---getOuterMost :: Int -> T.DBProgram -> Maybe (Int, Int)
----- ^Get the indices of the outermost while-loop brackets about a
----- position index n in a program p.
---getOuterMost n p
---    | n < 1                = Nothing
---    | n > Vec.length p - 1 = Nothing
---    | null ws              = Nothing
---    | otherwise            = Just (i, j)
---    where ws = Vec.foldl' go [] . Vec.slice n (Vec.length p) $ p
---          go []     (T.DBCloseLoop n) = [T.DBCloseLoop n]
---          go (_:xs) (T.DBCloseLoop _) = xs
---          go []     (T.DBOpenLoop n ) = [T.DBOpenLoop  n]
---          go xs     (T.DBOpenLoop n ) = T.DBOpenLoop n : xs
---          go _      _                 = []
---          (T.DBCloseLoop j)           = head ws
---          (T.DBOpenLoop  i)           = p ! j
+getOuterWhile :: Int -> T.DBProgram -> Maybe (Int, Int)
+-- ^Get the indices of the outermost while-loop brackets about a
+-- position index n in a program p. If n is on a bracket, then it is
+-- still treated as being within the bracket.
+getOuterWhile n p
+    | n < 1     = Nothing
+    | 1 >= m    = Nothing
+    | null ws   = if isBracket (p ! n) then Just (i', j') else Nothing
+    | otherwise = Just (i, j)
+    where m                  = Vec.length p - n
+          ws                 = Vec.foldl' go [] . Vec.slice n m $ p
+          (T.DBCloseLoop  i) = head ws -- Found an outer loop
+          (T.DBOpenLoop   j) = p ! i
+          (T.DBOpenLoop  j') = p ! n   -- Starts at the opening of outer loop
+          (T.DBCloseLoop i') = p ! j'
+          go (T.DBOpenLoop _:xs) (T.DBCloseLoop _) = xs
+          go xs                  (T.DBCloseLoop k) = T.DBCloseLoop k : xs
+          go xs                  (T.DBOpenLoop  k) = T.DBOpenLoop k  : xs
+          go xs                  _                 = xs
 
 -- =============================================================== --
 -- Executing statements

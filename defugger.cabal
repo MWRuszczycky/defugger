@@ -65,3 +65,15 @@ test-suite bfprogram-tests
                       , mtl
                       , text
   default-language:     Haskell2010
+
+test-suite bfdebug-tests
+  type:                 exitcode-stdio-1.0
+  main-is:              BFDebuggerTests.hs
+  hs-source-dirs:       tests
+  build-depends:        base >=4.7 && <5
+                      , bytestring
+                      , defugger-internal
+                      , hspec
+                      , text
+                      , vector
+  default-language:     Haskell2010

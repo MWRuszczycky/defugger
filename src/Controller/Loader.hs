@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Controller.Loader
-    ( initComputer
+    ( bfDict
+    , initComputer
     , initDebugger
     , getScript
     , getDict
