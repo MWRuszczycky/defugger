@@ -90,6 +90,8 @@ pKeyEv (V.KChar 't')  _ db = D.moveCursorRight db
   -- Program position movements
 pKeyEv (V.KChar ' ')  _ db = D.stepForward db
 pKeyEv V.KBS          _ db = D.stepBackward db
+pKeyEv (V.KPageDown)  _ db = D.jumpForward db
+pKeyEv (V.KPageUp  )  _ db = D.jumpBackward db
 pKeyEv (V.KChar 'H')  _ db = D.stepBackward db
 pKeyEv (V.KChar 'T')  _ db = D.stepForward db
 pKeyEv (V.KChar 'L')  _ db = D.stepForward db
