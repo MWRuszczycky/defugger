@@ -4,4 +4,5 @@ dist/
 *.aux
 *.hp
 programs/
+demos/working/
 result
