@@ -14,7 +14,7 @@
 
 The Defugger should run on Linux and MacOs; however, it will probably not work on Windows. The Defugger is developed with the [Haskell Tool Stack](https://docs.haskellstack.org/en/stable/README/). To get the Defugger, clone and compile with
 ```sh
-$ git clone https://github.com/MWRuszczycky/defugger
+$ git clone https://github.com/MWRuszczycky/defugger.git
 $ cd defugger
 $ stack build
 ```
