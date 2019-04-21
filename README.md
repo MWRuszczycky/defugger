@@ -119,3 +119,5 @@ That being said, the Defugger appears to perform just fine with less computation
 * Allow a wider range of BF formats and command naming dictionaries.
 * Write a better README.
 * Write more tests, especially for the editing transformations.
+* Add bracket-pair highlighting.
+* Add some way to help keep track of where you are in the script (e.g., displaying the statement number, etc.).
