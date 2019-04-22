@@ -331,18 +331,20 @@ deleteStatement i db =
         b = T.breaks  db
     in  case p ! i of
              (T.DBOpenLoop  j) ->
-                db { T.program =   adjCrossRefs i (-1) . vecDelete i
+                db { T.program = adjCrossRefs i (-1) . vecDelete i
                                  . adjCrossRefs j (-1) . vecDelete j $ p
-                   , T.breaks  = adjBkPnt i (-1) . adjBkPnt j (-1) $ b
+                   , T.breaks  = adjBkPnt i (-1) . adjBkPnt j (-1)
+                                 . Set.delete i . Set.delete j $ b
                    , T.cursor  = i - 1 }
              (T.DBCloseLoop j) ->
-                db { T.program =   adjCrossRefs j (-1) . vecDelete j
+                db { T.program = adjCrossRefs j (-1) . vecDelete j
                                  . adjCrossRefs i (-1) . vecDelete i $ p
-                   , T.breaks  = adjBkPnt j (-1) . adjBkPnt i (-1) $ b
+                   , T.breaks  = adjBkPnt j (-1) . adjBkPnt i (-1)
+                                 . Set.delete i . Set.delete j $ b
                    , T.cursor  = i - 2 }
              _                 ->
                 db { T.program = adjCrossRefs i (-1) . vecDelete i $ p
-                   , T.breaks  = adjBkPnt i (-1) b
+                   , T.breaks  = adjBkPnt i (-1) . Set.delete i $ b
                    , T.cursor  = i - 1 }
 
 ---------------------------------------------------------------------
