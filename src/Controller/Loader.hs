@@ -55,8 +55,9 @@ bfDict = T.toDictionary [ ( T.BFGT,    [">"] )
 initDebugger :: T.DefuggerOptions -> (Int, Int) -> T.ErrorIO T.Debugger
 initDebugger opts (width,height) = do
     let scriptPath = getScriptPath opts
-    s  <- maybe (pure Tx.empty) tryReadFile scriptPath
-    x  <- maybe (pure BS.empty) tryReadBytes . getInputPath  $ opts
+        inputPath  = getInputPath  opts
+    s  <- maybe (pure Tx.empty) tryReadFile  scriptPath
+    x  <- maybe (pure BS.empty) tryReadBytes inputPath
     d  <- getDict opts
     p  <- liftEither . parseDebug d $ s
     pure T.Debugger { -- Core model
@@ -83,6 +84,7 @@ initDebugger opts (width,height) = do
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
                     , T.scriptPath  = scriptPath
+                    , T.inputPath   = inputPath
                     }
 
 resetDebugger :: Maybe FilePath -> Maybe FilePath -> T.Debugger
@@ -103,6 +105,7 @@ resetDebugger scriptPath inputPath db = do
               -- Settings
             , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
             , T.scriptPath  = scriptPath
+            , T.inputPath   = inputPath
             }
 
 ---------------------------------------------------------------------
