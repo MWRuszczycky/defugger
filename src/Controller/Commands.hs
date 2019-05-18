@@ -104,9 +104,7 @@ writeScript db = do
          Nothing -> pure $ db { T.message = "Save path required" }
          Just fp -> do let x = formatScript (T.progWidth db) . T.program $ db
                        writeFile fp x
-                       pure $ db { T.message = "Saved to " ++ fp
-                                 , T.unsaved = False
-                                 }
+                       pure $ db { T.message = "Saved to " ++ fp }
 
 formatScript :: Int -> T.DBProgram -> String
 -- ^Format a BF debug program to a string with n characters per line.

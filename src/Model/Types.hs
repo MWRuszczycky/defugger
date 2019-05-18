@@ -96,9 +96,7 @@ data Debugger = Debugger {
     , inFormat    :: !DataFormat                 -- Display format of input
     , outFormat   :: !DataFormat                 -- Display format of output
     , savePath    :: Maybe FilePath              -- Path to save to
-      -- Flags
-    , unsaved     :: Bool                        -- Script has not been saved
-    }                                            -- since last edit
+    }
 
 -- |Debugger operating modes
 data Mode =

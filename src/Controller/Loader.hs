@@ -93,8 +93,6 @@ initDebugger opts (width,height) = do
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
                     , T.savePath    = fp
-                      -- Flags
-                    , T.unsaved     = False
                     }
 
 ---------------------------------------------------------------------
