@@ -7,10 +7,12 @@ module Controller.Commands
 import qualified Data.Vector    as Vec
 import qualified Model.Types    as T
 import qualified Model.Debugger as D
-import Text.Read                     ( readMaybe )
-import Data.Text                     ( Text      )
-import Data.List                     ( find      )
-import Model.Utilities               ( chunksOf  )
+import Control.Monad.Except          ( runExceptT    )
+import Text.Read                     ( readMaybe     )
+import Data.Text                     ( Text          )
+import Data.List                     ( find          )
+import Model.Utilities               ( chunksOf      )
+import Controller.Loader             ( resetDebugger )
 
 -- =============================================================== --
 -- Command hub and router
@@ -23,7 +25,8 @@ getCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ hub
 
 hub :: [T.Command]
 -- ^Organizes all the commands that can be run from the debugger.
-hub = [ T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
+hub = [ T.Command loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
+      , T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
       , T.Command unsetNames unsetCmd unsetCmdSHelp unsetCmdLHelp
       , T.Command writeNames writeCmd writeCmdSHelp writeCmdLHelp
       , T.Command quitNames  quitCmd  quitCmdSHelp  quitCmdLHelp
@@ -31,6 +34,28 @@ hub = [ T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
 
 -- =============================================================== --
 -- Commands
+
+---------------------------------------------------------------------
+-- load
+
+loadNames :: [String]
+loadNames = [ "load", "l" ]
+
+loadCmdSHelp, loadCmdLHelp :: Text
+loadCmdSHelp = "attempt to load a BF script into the defugger"
+loadCmdLHelp = "long help for load command"
+
+loadCmd :: T.DebuggerArgCommand
+loadCmd []      = T.ErrorCmd "A path to a BF script must be specified"
+loadCmd (x:y:_) = T.SimpleIOCmd $ tryLoad (Just x) (Just y)
+loadCmd (x:_)   = T.SimpleIOCmd $ tryLoad (Just x) Nothing
+
+tryLoad :: Maybe FilePath -> Maybe FilePath -> T.Debugger -> IO T.Debugger
+tryLoad scriptPath inputPath db0 = do
+    result <- runExceptT . resetDebugger scriptPath inputPath $ db0
+    case result of
+         Left errMsg -> pure $ db0 { T.message = errMsg }
+         Right db1   -> pure . D.noMessage $ db1
 
 ---------------------------------------------------------------------
 -- set
@@ -95,11 +120,11 @@ writeCmdLHelp = "long help for write command"
 writeCmd :: T.DebuggerArgCommand
 writeCmd []    = T.SimpleIOCmd writeScript
 writeCmd (x:_) = T.SimpleIOCmd $
-    \ db -> writeScript $ db { T.savePath = Just x }
+    \ db -> writeScript $ db { T.scriptPath = Just x }
 
 writeScript :: T.Debugger -> IO T.Debugger
 writeScript db = do
-    let mbFp = T.savePath db
+    let mbFp = T.scriptPath db
     case mbFp of
          Nothing -> pure $ db { T.message = "Save path required" }
          Just fp -> do let x = formatScript (T.progWidth db) . T.program $ db
