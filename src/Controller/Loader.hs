@@ -4,9 +4,10 @@ module Controller.Loader
     ( bfDict
     , initComputer
     , initDebugger
-    , getScript
+    , resetDebugger
+    , getScriptPath
+    , getInputPath
     , getDict
-    , getInput
     ) where
 
 import qualified Data.ByteString as BS
@@ -15,34 +16,23 @@ import qualified Data.Vector     as V
 import qualified Data.Set        as Set
 import qualified Data.Text       as Tx
 import Brick.Widgets.Edit               ( editor        )
-import Control.Monad.Except             ( liftEither
-                                        , throwError    )
+import Control.Monad.Except             ( liftEither    )
 import Model.Parser                     ( parseDebug    )
-import Data.Text                        ( Text          )
 import Model.CoreIO                     ( tryReadFile
                                         , tryReadBytes  )
 
 ---------------------------------------------------------------------
 -- Options and terminal initialization handling
 
-getSavePath :: T.DefuggerOptions -> T.ErrorIO (Maybe FilePath)
-getSavePath opts =
-    case T.args opts of
-         []    -> pure Nothing
-         (x:_) -> pure . Just $ x
+getScriptPath :: T.DefuggerOptions -> Maybe FilePath
+getScriptPath opts = case T.args opts of
+                          (x:_) -> Just x
+                          _     -> Nothing
 
-getScript :: T.DefuggerOptions -> T.ErrorIO Text
-getScript opts = do
-    mbFp <- getSavePath opts
-    case (mbFp, T.runMode opts) of
-         (Nothing, T.RunInterpreter) -> throwError "A BF script file is required."
-         (Nothing, T.RunDebugger   ) -> pure Tx.empty
-         (Just fp, _               ) -> tryReadFile fp
-
-getInput :: T.DefuggerOptions -> T.ErrorIO BS.ByteString
-getInput opts = case T.args opts of
-                     (_:x:_) -> tryReadBytes x
-                     _       -> pure BS.empty
+getInputPath :: T.DefuggerOptions -> Maybe FilePath
+getInputPath opts = case T.args opts of
+                         (_:x:_) -> Just x
+                         _       -> Nothing
 
 getDict :: T.DefuggerOptions -> T.ErrorIO T.Dictionary
 getDict _ = pure bfDict
@@ -64,10 +54,10 @@ bfDict = T.toDictionary [ ( T.BFGT,    [">"] )
 
 initDebugger :: T.DefuggerOptions -> (Int, Int) -> T.ErrorIO T.Debugger
 initDebugger opts (width,height) = do
-    fp <- getSavePath opts
-    s  <- getScript opts
-    d  <- getDict   opts
-    x  <- getInput  opts
+    let scriptPath = getScriptPath opts
+    s  <- maybe (pure Tx.empty) tryReadFile scriptPath
+    x  <- maybe (pure BS.empty) tryReadBytes . getInputPath  $ opts
+    d  <- getDict opts
     p  <- liftEither . parseDebug d $ s
     pure T.Debugger { -- Core model
                       T.computer    = initComputer x
@@ -92,8 +82,28 @@ initDebugger opts (width,height) = do
                     , T.progWidth   = 30
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
-                    , T.savePath    = fp
+                    , T.scriptPath  = scriptPath
                     }
+
+resetDebugger :: Maybe FilePath -> Maybe FilePath -> T.Debugger
+                 -> T.ErrorIO T.Debugger
+-- ^Given an already initialized debugger, reset the computer,
+-- program, and input keeping everything else the same.
+resetDebugger scriptPath inputPath db = do
+    s <- maybe (pure Tx.empty) tryReadFile  scriptPath
+    x <- maybe (pure BS.empty) tryReadBytes inputPath
+    p <- liftEither . parseDebug (T.dictionary db) $ s
+    pure db { -- Core model
+              T.computer    = initComputer x
+            , T.program     = p
+              -- Positioning, running mode and history
+            , T.cursor      = 0
+            , T.history     = [0]
+            , T.readBackup  = []
+              -- Settings
+            , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
+            , T.scriptPath  = scriptPath
+            }
 
 ---------------------------------------------------------------------
 -- Computer initialization and resetting

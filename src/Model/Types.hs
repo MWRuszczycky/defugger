@@ -95,7 +95,7 @@ data Debugger = Debugger {
     , progWidth   :: !Int                        -- Characters shown per line
     , inFormat    :: !DataFormat                 -- Display format of input
     , outFormat   :: !DataFormat                 -- Display format of output
-    , savePath    :: Maybe FilePath              -- Path to save to
+    , scriptPath  :: Maybe FilePath              -- Path to the script
     }
 
 -- |Debugger operating modes

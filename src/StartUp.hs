@@ -21,26 +21,30 @@ import qualified Brick           as B
 import qualified Model.Types     as T
 import System.Posix.Env                 ( putEnv        )
 import Control.Monad.Except             ( liftEither
-                                        , lift          )
+                                        , lift
+                                        , throwError    )
 import Model.Interpreter                ( runProgram    )
 import Model.Parser                     ( parse         )
+import Model.CoreIO                     ( tryReadFile
+                                        , tryReadBytes  )
 import View.View                        ( drawUI        )
 import View.Core                        ( attributes    )
 import Controller.Router                ( routeEvent    )
 import Controller.Loader                ( initComputer
                                         , initDebugger
-                                        , getScript
+                                        , getScriptPath
                                         , getDict
-                                        , getInput      )
+                                        , getInputPath  )
 
 -- =============================================================== --
 -- Running the interpreter mode
 
 interpreter :: T.DefuggerOptions -> T.ErrorIO T.Computer
 interpreter opts = do
-    s <- getScript opts
-    d <- getDict   opts
-    x <- getInput  opts
+    let missingErr = "BF script file required."
+    s  <- maybe (throwError missingErr) tryReadFile . getScriptPath $ opts
+    x  <- maybe (pure BS.empty) tryReadBytes . getInputPath $ opts
+    d  <- getDict opts
     liftEither $ parse d s >>= runProgram ( initComputer x )
 
 endInterpreter :: Either T.ErrString T.Computer -> IO ()
