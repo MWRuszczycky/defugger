@@ -7,7 +7,7 @@ module StartUp
     , debugger
     , endDebugger
       -- Command line arguments parsing
-    , getOptions
+    , parseOptions
     ) where
 
 -- =============================================================== --
@@ -32,9 +32,7 @@ import View.View                        ( drawUI        )
 import View.Core                        ( attributes    )
 import Controller.Router                ( routeEvent    )
 import Controller.Loader                ( initComputer
-                                        , initDebugger
-                                        , getScriptPath
-                                        , getInputPath  )
+                                        , initDebugger  )
 
 -- =============================================================== --
 -- Running the interpreter mode
@@ -42,8 +40,8 @@ import Controller.Loader                ( initComputer
 interpreter :: T.DefuggerOptions -> T.ErrorIO T.Computer
 interpreter opts = do
     let missingErr = "BF script file required."
-    s  <- maybe (throwError missingErr) tryReadFile . getScriptPath $ opts
-    x  <- maybe (pure BS.empty) tryReadBytes . getInputPath $ opts
+    s  <- maybe (throwError missingErr) tryReadFile . T.pathToScript $ opts
+    x  <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
     liftEither $ parse def s >>= runProgram ( initComputer x )
 
 endInterpreter :: Either T.ErrString T.Computer -> IO ()
@@ -58,7 +56,7 @@ formatOutput = map ( toEnum . fromIntegral ) . BS.unpack
 
 debugger :: T.DefuggerOptions -> T.ErrorIO T.Debugger
 debugger opts = do
-    lift . setTerminal $ opts
+    lift . putEnv $ "TERM=" ++ T.terminal opts
     st0 <- initDebugger opts =<< lift getTerminalDimensions
     lift . B.defaultMain initApp $ st0
 
@@ -69,19 +67,19 @@ endDebugger (Right _) = putStrLn "Defugger completed with no errors."
 getTerminalDimensions :: IO (Int, Int)
 getTerminalDimensions = V.outputForConfig V.defaultConfig >>= V.displayBounds
 
-setTerminal :: T.DefuggerOptions -> IO ()
-setTerminal opts = putEnv $ "TERM=" ++ T.terminal opts
-
 -- =============================================================== --
 -- Command line arguments parsing
 
-getOptions :: [String] -> T.ErrorIO T.DefuggerOptions
-getOptions ("--run":xs) = pure $
-    def { T.runMode = T.RunInterpreter
-        , T.args    = xs }
-getOptions xs = pure $
-    def { T.runMode = T.RunDebugger
-        , T.args    = xs }
+parseOptions :: [String] -> T.ErrorIO T.DefuggerOptions
+parseOptions []              = pure def
+parseOptions ("--run":x:[])  = pure def { T.runMode      = T.RunInterpreter
+                                        , T.pathToScript = Just x }
+parseOptions ("--run":x:y:_) = pure def { T.runMode      = T.RunInterpreter
+                                        , T.pathToScript = Just x
+                                        , T.pathToInput  = Just y }
+parseOptions (x:[])          = pure def { T.pathToScript = Just x }
+parseOptions (x:y:_)         = pure def { T.pathToScript = Just x
+                                        , T.pathToInput  = Just y }
 
 -- =============================================================== --
 -- Brick app initialization

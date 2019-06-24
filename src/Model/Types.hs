@@ -59,15 +59,17 @@ type ErrorIO   = ExceptT ErrString IO
 
 -- |Startup state created based on command line options.
 data DefuggerOptions = DefuggerOptions {
-      runMode  :: RunMode   -- What mode the program is to run in
-    , args     :: [String]  -- Additional command line arguments
-    , terminal :: String    -- Terminal settings used to update env
+      runMode      :: RunMode        -- What mode the program is to run in
+    , pathToScript :: Maybe FilePath -- File path to BF program script
+    , pathToInput  :: Maybe FilePath -- File path to BF program input
+    , terminal     :: String         -- Terminal settings used to update env
     }
 
 instance Default DefuggerOptions where
-    def = DefuggerOptions { runMode = RunInterpreter
-                          , args    = []
-                          , terminal = "xterm-256color"
+    def = DefuggerOptions { runMode      = RunDebugger
+                          , pathToScript = Nothing
+                          , pathToInput  = Nothing
+                          , terminal     = "xterm-256color"
                           }
 
 -- |What the program is to do based on command line arguments

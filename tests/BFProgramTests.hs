@@ -35,7 +35,7 @@ main = hspec $ do
                             "tests/files/HelloWorld.out"
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
-scriptNoInput s t = runExceptT ( args >>= SU.getOptions ) >>= either err go
+scriptNoInput s t = runExceptT (args >>= SU.parseOptions) >>= either err go
     where args    = pure ["--run", s]
           err e   = error $ "Test failed: Unable to read options: " ++ e
           goError = error "Test failed: RunInterpreter mode expected"
@@ -45,7 +45,7 @@ scriptNoInput s t = runExceptT ( args >>= SU.getOptions ) >>= either err go
                          _                -> goError
 
 scriptWithInput :: FilePath -> FilePath -> FilePath -> IO ()
-scriptWithInput s i t = runExceptT ( args >>= SU.getOptions ) >>= either err go
+scriptWithInput s i t = runExceptT (args >>= SU.parseOptions) >>= either err go
     where args    = pure ["--run", s, i]
           err e   = error $ "Test failed: Unable to read options: " ++ e
           goError = error "Test failed: RunInterpreter mode expected"

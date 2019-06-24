@@ -4,8 +4,6 @@ module Controller.Loader
     ( initComputer
     , initDebugger
     , resetDebugger
-    , getScriptPath
-    , getInputPath
     ) where
 
 import qualified Data.ByteString as BS
@@ -21,28 +19,13 @@ import Model.CoreIO                     ( tryReadFile
                                         , tryReadBytes  )
 
 ---------------------------------------------------------------------
--- Options and terminal initialization handling
-
-getScriptPath :: T.DefuggerOptions -> Maybe FilePath
-getScriptPath opts = case T.args opts of
-                          (x:_) -> Just x
-                          _     -> Nothing
-
-getInputPath :: T.DefuggerOptions -> Maybe FilePath
-getInputPath opts = case T.args opts of
-                         (_:x:_) -> Just x
-                         _       -> Nothing
-
----------------------------------------------------------------------
 -- Debuggeer initialization and resetting
 
 initDebugger :: T.DefuggerOptions -> (Int, Int) -> T.ErrorIO T.Debugger
 initDebugger opts (width,height) = do
-    let scriptPath = getScriptPath opts
-        inputPath  = getInputPath  opts
-        dictionary = def
-    s  <- maybe (pure Tx.empty) tryReadFile  scriptPath
-    x  <- maybe (pure BS.empty) tryReadBytes inputPath
+    let dictionary = def
+    s  <- maybe (pure Tx.empty) tryReadFile . T.pathToScript $ opts
+    x  <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
     p  <- liftEither . parseDebug dictionary $ s
     pure T.Debugger { -- Core model
                       T.computer    = initComputer x
@@ -67,8 +50,8 @@ initDebugger opts (width,height) = do
                     , T.progWidth   = 30
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
-                    , T.scriptPath  = scriptPath
-                    , T.inputPath   = inputPath
+                    , T.scriptPath  = T.pathToScript opts
+                    , T.inputPath   = T.pathToInput opts
                     }
 
 resetDebugger :: Maybe FilePath -> Maybe FilePath -> T.Debugger
