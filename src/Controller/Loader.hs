@@ -1,13 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Controller.Loader
-    ( bfDict
-    , initComputer
+    ( initComputer
     , initDebugger
     , resetDebugger
     , getScriptPath
     , getInputPath
-    , getDict
     ) where
 
 import qualified Data.ByteString as BS
@@ -15,6 +13,7 @@ import qualified Model.Types     as T
 import qualified Data.Vector     as V
 import qualified Data.Set        as Set
 import qualified Data.Text       as Tx
+import Data.Default                     ( def           )
 import Brick.Widgets.Edit               ( editor        )
 import Control.Monad.Except             ( liftEither    )
 import Model.Parser                     ( parseDebug    )
@@ -34,21 +33,6 @@ getInputPath opts = case T.args opts of
                          (_:x:_) -> Just x
                          _       -> Nothing
 
-getDict :: T.DefuggerOptions -> T.ErrorIO T.Dictionary
-getDict _ = pure bfDict
-
-bfDict :: T.Dictionary
-bfDict = T.toDictionary [ ( T.BFGT,    [">"] )
-                        , ( T.BFLT,    ["<"] )
-                        , ( T.BFPlus,  ["+"] )
-                        , ( T.BFMinus, ["-"] )
-                        , ( T.BFDot,   ["."] )
-                        , ( T.BFComma, [","] )
-                        , ( T.BFStart, ["["] )
-                        , ( T.BFStop,  ["]"] )
-                        , ( T.BFHash,  ["#"] )
-                        ]
-
 ---------------------------------------------------------------------
 -- Debuggeer initialization and resetting
 
@@ -56,13 +40,13 @@ initDebugger :: T.DefuggerOptions -> (Int, Int) -> T.ErrorIO T.Debugger
 initDebugger opts (width,height) = do
     let scriptPath = getScriptPath opts
         inputPath  = getInputPath  opts
+        dictionary = def
     s  <- maybe (pure Tx.empty) tryReadFile  scriptPath
     x  <- maybe (pure BS.empty) tryReadBytes inputPath
-    d  <- getDict opts
-    p  <- liftEither . parseDebug d $ s
+    p  <- liftEither . parseDebug dictionary $ s
     pure T.Debugger { -- Core model
                       T.computer    = initComputer x
-                    , T.dictionary  = d
+                    , T.dictionary  = dictionary
                     , T.program     = p
                       -- Positioning, running mode and history
                     , T.mode        = T.NormalMode

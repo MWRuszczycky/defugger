@@ -13,8 +13,8 @@ import qualified Model.Types        as T
 import qualified Model.Parser       as P
 import qualified Model.Debugger     as D
 import qualified StartUp            as S
+import Data.Default                         ( def               )
 import Data.Vector                          ( (!)               )
-import Controller.Loader                    ( bfDict            )
 import Model.CoreIO                         ( tryReadFile       )
 import Data.Text                            ( Text              )
 import Test.Hspec                           ( Spec (..)
@@ -178,7 +178,7 @@ bracketFinding201 = do
 -- Helpers
 
 getTestProgram :: Text -> T.DBProgram
-getTestProgram = either err id . P.parseDebug bfDict
+getTestProgram = either err id . P.parseDebug def
     where err e = error $ "Test failed: " ++ e
 
 ---------------------------------------------------------------------

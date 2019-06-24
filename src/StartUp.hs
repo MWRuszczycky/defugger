@@ -19,6 +19,7 @@ import qualified Graphics.Vty    as V
 import qualified Data.ByteString as BS
 import qualified Brick           as B
 import qualified Model.Types     as T
+import Data.Default                     ( def           )
 import System.Posix.Env                 ( putEnv        )
 import Control.Monad.Except             ( liftEither
                                         , lift
@@ -33,7 +34,6 @@ import Controller.Router                ( routeEvent    )
 import Controller.Loader                ( initComputer
                                         , initDebugger
                                         , getScriptPath
-                                        , getDict
                                         , getInputPath  )
 
 -- =============================================================== --
@@ -44,8 +44,7 @@ interpreter opts = do
     let missingErr = "BF script file required."
     s  <- maybe (throwError missingErr) tryReadFile . getScriptPath $ opts
     x  <- maybe (pure BS.empty) tryReadBytes . getInputPath $ opts
-    d  <- getDict opts
-    liftEither $ parse d s >>= runProgram ( initComputer x )
+    liftEither $ parse def s >>= runProgram ( initComputer x )
 
 endInterpreter :: Either T.ErrString T.Computer -> IO ()
 endInterpreter (Left e)  = putStrLn $ "Error: " ++ e
@@ -78,19 +77,11 @@ setTerminal opts = putEnv $ "TERM=" ++ T.terminal opts
 
 getOptions :: [String] -> T.ErrorIO T.DefuggerOptions
 getOptions ("--run":xs) = pure $
-    defOptions { T.runMode = T.RunInterpreter
-               , T.args    = xs }
+    def { T.runMode = T.RunInterpreter
+        , T.args    = xs }
 getOptions xs = pure $
-    defOptions { T.runMode = T.RunDebugger
-               , T.args    = xs
-               }
-
-defOptions :: T.DefuggerOptions
-defOptions = T.DefuggerOptions {
-      T.runMode  = T.RunInterpreter
-    , T.args     = []
-    , T.terminal = "xterm-256color"
-    }
+    def { T.runMode = T.RunDebugger
+        , T.args    = xs }
 
 -- =============================================================== --
 -- Brick app initialization

@@ -9,6 +9,7 @@
 
 import qualified Data.Text   as Tx
 import qualified Model.Types as T
+import Data.Default                 ( def       )
 import Data.Text                    ( Text      )
 import Model.Parser                 ( parse     )
 import Test.Hspec                   ( Spec (..)
@@ -55,16 +56,7 @@ format = concatMap go
 -- Dictionary 1
 
 bfDict1 :: T.Dictionary
-bfDict1 = T.toDictionary [ ( T.BFGT,    [">"] )
-                         , ( T.BFLT,    ["<"] )
-                         , ( T.BFPlus,  ["+"] )
-                         , ( T.BFMinus, ["-"] )
-                         , ( T.BFDot,   ["."] )
-                         , ( T.BFComma, [","] )
-                         , ( T.BFStart, ["["] )
-                         , ( T.BFStop,  ["]"] )
-                         , ( T.BFHash,  ["#"] )
-                         ]
+bfDict1 = def
 
 -- Valid Scripts
 

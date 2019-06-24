@@ -38,6 +38,7 @@ library defugger-internal
                       , brick
                       , bytestring
                       , containers
+                      , data-default
                       , mtl
                       , text
                       , unix
@@ -49,6 +50,7 @@ test-suite bfparser-tests
   main-is:              BFParserTests.hs
   hs-source-dirs:       tests
   build-depends:        base >=4.7 && <5
+                      , data-default
                       , defugger-internal
                       , hspec
                       , text
@@ -72,6 +74,7 @@ test-suite bfdebug-tests
   hs-source-dirs:       tests
   build-depends:        base >=4.7 && <5
                       , bytestring
+                      , data-default
                       , defugger-internal
                       , hspec
                       , text

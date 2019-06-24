@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Model.Types
     ( -- Error and IO types
       ErrorIO
@@ -36,13 +38,14 @@ module Model.Types
 import qualified Data.ByteString as B
 import qualified Data.Text       as Tx
 import qualified Data.Vector     as V
-import Data.Set                         ( Set       )
-import Brick.Widgets.Edit               ( Editor    )
-import Control.Monad.Except             ( ExceptT   )
-import Control.Monad.State.Lazy         ( StateT    )
-import Control.Monad.Reader             ( ReaderT   )
-import Data.Text                        ( Text      )
-import Data.Word                        ( Word8     )
+import Data.Default                     ( Default (..)  )
+import Data.Set                         ( Set           )
+import Brick.Widgets.Edit               ( Editor        )
+import Control.Monad.Except             ( ExceptT       )
+import Control.Monad.State.Lazy         ( StateT        )
+import Control.Monad.Reader             ( ReaderT       )
+import Data.Text                        ( Text          )
+import Data.Word                        ( Word8         )
 
 -- =============================================================== --
 -- Error and IO types
@@ -61,9 +64,15 @@ data DefuggerOptions = DefuggerOptions {
     , terminal :: String    -- Terminal settings used to update env
     }
 
+instance Default DefuggerOptions where
+    def = DefuggerOptions { runMode = RunInterpreter
+                          , args    = []
+                          , terminal = "xterm-256color"
+                          }
+
 -- |What the program is to do based on command line arguments
-data RunMode =
-      RunInterpreter        -- Read and interpret a BF script
+data RunMode
+    = RunInterpreter        -- Read and interpret a BF script
     | RunDebugger           -- Run the debugger on a BF script
       deriving ( Eq, Show )
 
@@ -100,21 +109,21 @@ data Debugger = Debugger {
     }
 
 -- |Debugger operating modes
-data Mode =
-      NormalMode            -- Normal operation
+data Mode
+    = NormalMode            -- Normal operation
     | CommandMode           -- User entering commands
       deriving ( Eq, Show )
 
 -- |Formats for the display of byte-values
-data DataFormat =
-      Asc                   -- Ascii
+data DataFormat
+    = Asc                   -- Ascii
     | Dec                   -- Decimal
     | Hex                   -- Hexidecimal
       deriving ( Eq, Show )
 
 -- |Names for the Brick widgets
-data WgtName =
-      ProgramWgt            -- Widget that displays the program
+data WgtName
+    = ProgramWgt            -- Widget that displays the program
     | MemoryWgt             -- Widget that displays the memory
     | OutputWgt             -- Widget that displays current output
     | InputWgt              -- Widget that displays the input left
@@ -150,8 +159,8 @@ data Command = Command {
 -- actions; however, they can run concurrently with the Brick runtime
 -- system. Complex IO commands require that the Brick runtime system
 -- be suspended while they are executed.
-data DebuggerCommand =
-      PureCmd      ( Debugger -> Debugger    )
+data DebuggerCommand
+    = PureCmd      ( Debugger -> Debugger    )
     | SimpleIOCmd  ( Debugger -> IO Debugger )
     | ComplexIOCmd ( Debugger -> IO Debugger )
     | QuitCmd
@@ -198,16 +207,16 @@ data Computer = Computer {
 -- Model of BF scripts and programs
 
 -- |A Program is a list of statements used to determine Computations.
-type Program     = [Statement]
+type Program = [Statement]
 
 -- |A DBProgram is a vector of debug statements used to determine
 -- computations in the stateful context of a debugger.
-type DBProgram   = V.Vector DebugStatement
+type DBProgram = V.Vector DebugStatement
 
 -- |Minimal definition of BF statements for interpretting a BF script
 -- without debugging.
-data Statement =
-      Increment
+data Statement
+    = Increment
     | Decrement
     | Advance
     | Backup
@@ -228,8 +237,8 @@ instance Show Statement where
 
 -- |Definition of a BF script with additional information to allow
 -- for debugging operations.
-data DebugStatement =
-      DBStart
+data DebugStatement
+    = DBStart
     | DBEnd
     | DBIncrement
     | DBDecrement
@@ -268,8 +277,8 @@ type Parser = StateT Text (Either String)
 type BFParser = ReaderT Dictionary Parser
 
 -- |A Token is a standardized command that can be specified using BF.
-data Token =
-      BFPlus        -- Increment focus of memory tape by 1
+data Token
+    = BFPlus        -- Increment focus of memory tape by 1
     | BFMinus       -- Decrement focus of memory tape by 1
     | BFGT          -- Advance focus of memory tape forward one unit
     | BFLT          -- Backup focus of memory tape one unit
@@ -297,3 +306,15 @@ toDictionary :: [(Token, [Text])] -> Dictionary
 -- to create a new value of type Dictionary.
 toDictionary ts = Dictionary ts $ all ( (== 1) . Tx.length ) $ xs
     where xs = concat . snd . unzip $ ts
+
+instance Default Dictionary where
+    def = toDictionary [ ( BFGT,    [">"] )
+                       , ( BFLT,    ["<"] )
+                       , ( BFPlus,  ["+"] )
+                       , ( BFMinus, ["-"] )
+                       , ( BFDot,   ["."] )
+                       , ( BFComma, [","] )
+                       , ( BFStart, ["["] )
+                       , ( BFStop,  ["]"] )
+                       , ( BFHash,  ["#"] )
+                       ]
