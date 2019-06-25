@@ -60,9 +60,9 @@ jumpBackward db = either setMsg id . revertToLastBreak $ db
 
 executeNextStatement :: T.Debugger -> Either T.ErrString T.Debugger
 -- ^Execute the next statement in the program if possible.
-executeNextStatement db = updateHistory db
-                          >>= updateBackup
-                          >>= updateComputer
+executeNextStatement db = advanceHistory db
+                          >>= advanceBackup
+                          >>= advanceComputer
                           >>= pure . updateViewByPosition
 
 revertLastStatement :: T.Debugger -> Either T.ErrString T.Debugger
@@ -92,8 +92,8 @@ revertToLastBreak db = revertLastStatement db >>= go
 ---------------------------------------------------------------------
 -- Computer
 
-updateComputer :: T.Debugger -> Either T.ErrString T.Debugger
-updateComputer db = ( \ x -> db { T.computer = x } ) <$> c'
+advanceComputer :: T.Debugger -> Either T.ErrString T.Debugger
+advanceComputer db = ( \ x -> db { T.computer = x } ) <$> c'
     where n  = getPosition db
           c  = T.computer db
           c' = case T.program db ! n of
@@ -137,8 +137,8 @@ revertReadIn (w:_) c = let xs = T.input  c
 -- The history tracks what statements in the program have been so far
 -- executed and in what order. This allows back-tracking.
 
-updateHistory :: T.Debugger -> Either T.ErrString T.Debugger
-updateHistory db = pure $ db { T.history = h' }
+advanceHistory :: T.Debugger -> Either T.ErrString T.Debugger
+advanceHistory db = pure $ db { T.history = h' }
     where n   = getPosition db
           h   = T.history db
           foc = T.focus . T.memory . T.computer $ db
@@ -159,8 +159,8 @@ revertHistory db = case T.history db of
 -- to the computer memory. This is necessary to ensure the orginal
 -- memory state can be recovered when reverting statements.
 
-updateBackup :: T.Debugger -> Either T.ErrString T.Debugger
-updateBackup db =
+advanceBackup :: T.Debugger -> Either T.ErrString T.Debugger
+advanceBackup db =
     let bs = T.readBackup db
         u  = T.focus . T.memory . T.computer $ db
     in  case T.program db ! (getPosition db) of
