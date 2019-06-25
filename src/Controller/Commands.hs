@@ -4,15 +4,15 @@ module Controller.Commands
     ( getCommand
     ) where
 
-import qualified Data.Vector    as Vec
-import qualified Model.Types    as T
-import qualified Model.Debugger as D
-import Control.Monad.Except          ( runExceptT    )
-import Text.Read                     ( readMaybe     )
-import Data.Text                     ( Text          )
-import Data.List                     ( find          )
-import Model.Utilities               ( chunksOf      )
-import Controller.Loader             ( resetDebugger )
+import qualified Data.Vector             as Vec
+import qualified Model.Types             as T
+import qualified Model.Debugger.Debugger as D
+import Control.Monad.Except                     ( runExceptT    )
+import Text.Read                                ( readMaybe     )
+import Data.Text                                ( Text          )
+import Data.List                                ( find          )
+import Model.Utilities                          ( chunksOf      )
+import Controller.Loader                        ( resetDebugger )
 
 -- =============================================================== --
 -- Command hub and router

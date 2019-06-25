@@ -10,15 +10,15 @@ module Controller.Router
 -- This basically defines the Brick interface for the defugger.    --
 -- =============================================================== --
 
-import qualified Graphics.Vty    as V
-import qualified Brick           as B
-import qualified Model.Types     as T
-import qualified Model.Debugger  as D
-import Control.Monad.IO.Class           ( liftIO            )
-import Controller.Commands              ( getCommand        )
-import Brick.Widgets.Edit               ( editor
-                                        , getEditContents
-                                        , handleEditorEvent )
+import qualified Graphics.Vty             as V
+import qualified Brick                    as B
+import qualified Model.Types              as T
+import qualified Model.Debugger.Debugger  as D
+import Control.Monad.IO.Class                   ( liftIO            )
+import Controller.Commands                      ( getCommand        )
+import Brick.Widgets.Edit                       ( editor
+                                                , getEditContents
+                                                , handleEditorEvent )
 
 -- =============================================================== --
 -- Local helper type synonyms

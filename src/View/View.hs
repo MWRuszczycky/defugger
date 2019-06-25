@@ -21,7 +21,7 @@ import Brick                                    ( (<+>), (<=>)      )
 import Brick.Widgets.Border                     ( vBorder
                                                 , border
                                                 , hBorder           )
-import Model.Debugger                           ( getPosition       )
+import Model.Debugger.Debugger                  ( getPosition       )
 import View.Core                                ( addNumberedRow
                                                 , renderTitle       )
 import Model.Utilities                          ( chunksOf
