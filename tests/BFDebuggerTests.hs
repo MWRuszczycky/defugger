@@ -7,23 +7,23 @@
 -- and actions thereon executed with the debugger
 -- =============================================================== --
 
-import qualified Data.Text          as Tx
-import qualified Data.Vector        as Vec
-import qualified Model.Types        as T
-import qualified Model.Parser       as P
-import qualified Model.Debugger     as D
-import qualified StartUp            as S
-import Data.Default                         ( def               )
-import Data.Vector                          ( (!)               )
-import Model.CoreIO                         ( tryReadFile       )
-import Data.Text                            ( Text              )
-import Test.Hspec                           ( Spec (..)
-                                            , describe
-                                            , hspec
-                                            , it
-                                            , shouldSatisfy
-                                            , shouldNotSatisfy
-                                            , shouldBe          )
+import qualified Data.Text               as Tx
+import qualified Data.Vector             as Vec
+import qualified Model.Types             as T
+import qualified Model.Parser            as P
+import qualified Model.Debugger.Debugger as D
+import qualified StartUp                 as S
+import Data.Default                             ( def               )
+import Data.Vector                              ( (!)               )
+import Model.CoreIO                             ( tryReadFile       )
+import Data.Text                                ( Text              )
+import Test.Hspec                               ( Spec (..)
+                                                , describe
+                                                , hspec
+                                                , it
+                                                , shouldSatisfy
+                                                , shouldNotSatisfy
+                                                , shouldBe          )
 
 main :: IO ()
 main = hspec $ do
