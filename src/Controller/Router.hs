@@ -27,95 +27,104 @@ type DebugEventMonad = B.EventM T.WgtName (B.Next T.Debugger)
 type EventHandler    = forall e. B.BrickEvent T.WgtName e -> DebugEventMonad
 
 -- =============================================================== --
--- Event routers
+-- Event router -- This is the controller entry point.
 
 routeEvent :: T.Debugger -> EventHandler
 routeEvent db ev =
     case (T.mode db, T.wgtFocus db) of
-         (T.NormalMode,  T.ProgramWgt) -> routePNrm db ev
-         (T.NormalMode,  w           ) -> routeDNrm w db ev
-         (T.CommandMode, _           ) -> routeCmd  db ev
-
-routePNrm :: T.Debugger -> EventHandler
--- ^Routes events under debugger normal mode with program focus.
-routePNrm db (B.VtyEvent (V.EvKey V.KEsc _)) = B.halt db
-routePNrm db (B.VtyEvent (V.EvKey k ms)    ) = B.continue . pKeyEv k ms $ db
-routePNrm db (B.VtyEvent (V.EvResize w h)  ) = B.continue . D.resize w h $ db
-routePNrm db _                               = B.continue db
-
-routeDNrm :: T.WgtName -> T.Debugger -> EventHandler
--- ^Routes events under debugger normal mode with non-program focus
--- Basically, it just handles standard tabbing, resizing and quitting,
--- and then everything else is a scroll command.
-routeDNrm _           db (B.VtyEvent (V.EvKey V.KEsc         _)) =
-    B.halt db
-routeDNrm _           db (B.VtyEvent (V.EvResize w h          )) =
-    B.continue . D.resize w h $ db
-routeDNrm _           db (B.VtyEvent (V.EvKey (V.KChar '\t') _)) =
-    B.continue $ db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
-routeDNrm _           db (B.VtyEvent (V.EvKey (V.KChar ':')  _)) =
-    B.continue $ db { T.mode = T.CommandMode }
-routeDNrm T.OutputWgt db (B.VtyEvent (V.EvKey k              _)) =
-    scroll (B.viewportScroll T.OutputWgt) k $ db
-routeDNrm T.InputWgt  db (B.VtyEvent (V.EvKey k              _)) =
-    scroll (B.viewportScroll T.InputWgt) k $ db
-routeDNrm _           db _                                       =
-    B.continue db
-
-routeCmd :: T.Debugger -> EventHandler
--- ^Routes events under debugger command mode.
-routeCmd db (B.VtyEvent (V.EvKey V.KEsc   _)) = abortToNormalMode db
-routeCmd db (B.VtyEvent (V.EvResize w h)    ) = B.continue . D.resize w h $ db
-routeCmd db (B.VtyEvent (V.EvKey V.KEnter _)) = handleCommand db
-routeCmd db (B.VtyEvent ev)                   = manageCommandEntry db ev
-routeCmd db _                                 = B.continue db
+         (T.NormalMode,  T.ProgramWgt) -> routeProgramNormalEvent db ev
+         (T.NormalMode,  w           ) -> routeNonProgramNormalEvent w db ev
+         (T.CommandMode, _           ) -> routeCommandEvent  db ev
 
 -- =============================================================== --
--- Normal mode event handlers
+-- Events in normal mode with program focus
 
 ---------------------------------------------------------------------
--- With Program-UI focus
+-- Router
 
-pKeyEv :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
+routeProgramNormalEvent :: T.Debugger -> EventHandler
+routeProgramNormalEvent db (B.VtyEvent (V.EvKey V.KEsc _ )) =
+    B.halt db
+
+routeProgramNormalEvent db (B.VtyEvent (V.EvKey k ms)) =
+    B.continue . keyEvent k ms $ db
+
+routeProgramNormalEvent db (B.VtyEvent (V.EvResize w h) ) =
+    B.continue . D.resize w h $ db
+
+routeProgramNormalEvent db _ =
+    B.continue db
+
+---------------------------------------------------------------------
+-- Key events
+
+keyEvent :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
   -- Cursor movements
-pKeyEv V.KRight       _ db = D.moveCursorRight db
-pKeyEv V.KLeft        _ db = D.moveCursorLeft db
-pKeyEv V.KUp          _ db = D.moveCursorUp db
-pKeyEv V.KDown        _ db = D.moveCursorDown db
-pKeyEv (V.KChar 'h')  _ db = D.moveCursorLeft db
-pKeyEv (V.KChar 'l')  _ db = D.moveCursorRight db
-pKeyEv (V.KChar 'k')  _ db = D.moveCursorUp db
-pKeyEv (V.KChar 'j')  _ db = D.moveCursorDown db
-pKeyEv (V.KChar 't')  _ db = D.moveCursorRight db
+keyEvent V.KRight       _ db = D.moveCursorRight db
+keyEvent V.KLeft        _ db = D.moveCursorLeft db
+keyEvent V.KUp          _ db = D.moveCursorUp db
+keyEvent V.KDown        _ db = D.moveCursorDown db
+keyEvent (V.KChar 'h')  _ db = D.moveCursorLeft db
+keyEvent (V.KChar 'l')  _ db = D.moveCursorRight db
+keyEvent (V.KChar 'k')  _ db = D.moveCursorUp db
+keyEvent (V.KChar 'j')  _ db = D.moveCursorDown db
+keyEvent (V.KChar 't')  _ db = D.moveCursorRight db
   -- Program position movements
-pKeyEv (V.KChar ' ')  _ db = D.stepForward db
-pKeyEv V.KBS          _ db = D.stepBackward db
-pKeyEv (V.KPageDown)  _ db = D.jumpForward db
-pKeyEv (V.KPageUp  )  _ db = D.jumpBackward db
-pKeyEv (V.KChar 'H')  _ db = D.stepBackward db
-pKeyEv (V.KChar 'T')  _ db = D.stepForward db
-pKeyEv (V.KChar 'L')  _ db = D.stepForward db
-pKeyEv (V.KChar 'J')  _ db = D.jumpForward db
-pKeyEv (V.KChar 'K')  _ db = D.jumpBackward db
+keyEvent (V.KChar ' ')  _ db = D.stepForward db
+keyEvent V.KBS          _ db = D.stepBackward db
+keyEvent (V.KPageDown)  _ db = D.jumpForward db
+keyEvent (V.KPageUp  )  _ db = D.jumpBackward db
+keyEvent (V.KChar 'H')  _ db = D.stepBackward db
+keyEvent (V.KChar 'T')  _ db = D.stepForward db
+keyEvent (V.KChar 'L')  _ db = D.stepForward db
+keyEvent (V.KChar 'J')  _ db = D.jumpForward db
+keyEvent (V.KChar 'K')  _ db = D.jumpBackward db
   -- Program editing
-pKeyEv (V.KChar 'x')  _ db = D.deleteStatementAtCursor db
-pKeyEv (V.KChar '<')  _ db = D.addStatementAtCursor T.DBBackup db
-pKeyEv (V.KChar '>')  _ db = D.addStatementAtCursor T.DBAdvance db
-pKeyEv (V.KChar '+')  _ db = D.addStatementAtCursor T.DBIncrement db
-pKeyEv (V.KChar '-')  _ db = D.addStatementAtCursor T.DBDecrement db
-pKeyEv (V.KChar '.')  _ db = D.addStatementAtCursor T.DBWriteOut db
-pKeyEv (V.KChar ',')  _ db = D.addStatementAtCursor T.DBReadIn db
-pKeyEv (V.KChar '[')  _ db = D.addStatementAtCursor (T.DBOpenLoop 0) db
-pKeyEv (V.KChar ']')  _ db = D.addStatementAtCursor (T.DBCloseLoop 0) db
+keyEvent (V.KChar 'x')  _ db = D.deleteStatementAtCursor db
+keyEvent (V.KChar '<')  _ db = D.addStatementAtCursor T.DBBackup db
+keyEvent (V.KChar '>')  _ db = D.addStatementAtCursor T.DBAdvance db
+keyEvent (V.KChar '+')  _ db = D.addStatementAtCursor T.DBIncrement db
+keyEvent (V.KChar '-')  _ db = D.addStatementAtCursor T.DBDecrement db
+keyEvent (V.KChar '.')  _ db = D.addStatementAtCursor T.DBWriteOut db
+keyEvent (V.KChar ',')  _ db = D.addStatementAtCursor T.DBReadIn db
+keyEvent (V.KChar '[')  _ db = D.addStatementAtCursor (T.DBOpenLoop 0) db
+keyEvent (V.KChar ']')  _ db = D.addStatementAtCursor (T.DBCloseLoop 0) db
   -- Entering command mode
-pKeyEv (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
+keyEvent (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
   -- Tabbing between widgets
-pKeyEv (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
-pKeyEv _              _ db = db
+keyEvent (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
+keyEvent _              _ db = db
+
+-- =============================================================== --
+-- Events in any mode but normal mode with program focus
 
 ---------------------------------------------------------------------
--- With Output or Input-UI focus
--- This just supports scrolling around the widget contents.
+-- Router
+
+routeNonProgramNormalEvent :: T.WgtName -> T.Debugger -> EventHandler
+routeNonProgramNormalEvent _ db (B.VtyEvent (V.EvKey V.KEsc _ )) =
+    B.halt db
+
+routeNonProgramNormalEvent _ db (B.VtyEvent (V.EvResize w h )) =
+    B.continue . D.resize w h $ db
+
+routeNonProgramNormalEvent _ db (B.VtyEvent (V.EvKey (V.KChar '\t') _ )) =
+    B.continue $ db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
+
+routeNonProgramNormalEvent _ db (B.VtyEvent (V.EvKey (V.KChar ':') _ )) =
+    B.continue $ db { T.mode = T.CommandMode }
+
+routeNonProgramNormalEvent T.OutputWgt db (B.VtyEvent (V.EvKey k _ )) =
+    scroll (B.viewportScroll T.OutputWgt) k $ db
+
+routeNonProgramNormalEvent T.InputWgt  db (B.VtyEvent (V.EvKey k _ )) =
+    scroll (B.viewportScroll T.InputWgt) k $ db
+
+routeNonProgramNormalEvent _  db _ =
+    B.continue db
+
+---------------------------------------------------------------------
+-- Scrolling of output- and input-UI widgets
 
 scroll :: B.ViewportScroll T.WgtName-> V.Key -> T.Debugger -> DebugEventMonad
 scroll vp V.KUp         db = B.vScrollBy vp (-1) >> B.continue db
@@ -131,6 +140,28 @@ scroll vp (V.KChar 'd') db = B.hScrollBy vp (-1) >> B.continue db
 scroll _  _             db = B.continue db
 
 -- =============================================================== --
+-- Events in command mode
+
+---------------------------------------------------------------------
+-- Router
+
+routeCommandEvent :: T.Debugger -> EventHandler
+routeCommandEvent db (B.VtyEvent (V.EvKey V.KEsc _ )) =
+    abortToNormalMode db
+
+routeCommandEvent db (B.VtyEvent (V.EvResize w h) ) =
+    B.continue . D.resize w h $ db
+
+routeCommandEvent db (B.VtyEvent (V.EvKey V.KEnter _ )) =
+    handleCommand db
+
+routeCommandEvent db (B.VtyEvent ev) =
+    manageCommandEntry db ev
+
+routeCommandEvent db _ =
+    B.continue db
+
+---------------------------------------------------------------------
 -- Command mode event handlers
 
 manageCommandEntry :: T.Debugger -> V.Event -> DebugEventMonad
@@ -149,11 +180,11 @@ abortToNormalMode db = B.continue $
        }
 
 handleCommand :: T.Debugger -> DebugEventMonad
--- ^Read the command entered in normal mode and execute it.
+-- ^Read the command entered and execute it.
 handleCommand db =
     let db'    = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
                     , T.mode        = T.NormalMode }
-        cmdStr =  getEditContents . T.commandEdit $ db
+        cmdStr = getEditContents . T.commandEdit $ db
     in  case getCommand . words . unlines $ cmdStr of
              T.PureCmd f      -> B.continue . f $ db'
              T.SimpleIOCmd f  -> liftIO ( f db') >>= B.continue
