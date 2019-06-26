@@ -96,7 +96,7 @@ keyEvent (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db 
 keyEvent _              _ db = db
 
 -- =============================================================== --
--- Events in any mode but normal mode with program focus
+-- Events in normal mode with non-program widget focus
 
 ---------------------------------------------------------------------
 -- Router
