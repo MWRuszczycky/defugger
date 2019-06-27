@@ -24,8 +24,8 @@ import Numeric   ( showHex   )
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
-chunksOf n xs = chnk : chunksOf n next
-    where (chnk, next) = splitAt n xs
+chunksOf n xs = chunk : chunksOf n rest
+    where (chunk, rest) = splitAt n xs
 
 slice :: (Int, Int) -> [a] -> [a]
 slice (n0, n1) = take (n1 - n0 + 1) . drop n0
