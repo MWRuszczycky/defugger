@@ -15,7 +15,6 @@ module Model.Types
     , VertViewRange
       -- Debugger commands
     , Command         (..)
-    , DebuggerArgCommand
     , DebuggerCommand (..)
       -- Computer/Computation model
     , Computation
@@ -151,7 +150,7 @@ type VertViewRange = (Int, Int)
 -- and run from the debugger.
 data Command = Command {
       cmdNames  :: [String]
-    , cmd       :: DebuggerArgCommand
+    , cmd       :: [String] -> DebuggerCommand
     , shortHelp :: Text
     , longHelp  :: Text
     }
@@ -167,9 +166,6 @@ data DebuggerCommand
     | ComplexIOCmd ( Debugger -> IO Debugger )
     | QuitCmd
     | ErrorCmd ErrString
-
--- |Build a debugger command from arguments.
-type DebuggerArgCommand = [String] -> DebuggerCommand
 
 -- =============================================================== --
 -- Model of a computer for running a BF program/script and the

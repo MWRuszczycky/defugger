@@ -45,7 +45,7 @@ loadCmdSHelp, loadCmdLHelp :: Text
 loadCmdSHelp = "attempt to load a BF script into the defugger"
 loadCmdLHelp = "long help for load command"
 
-loadCmd :: T.DebuggerArgCommand
+loadCmd :: [String] -> T.DebuggerCommand
 loadCmd []      = T.ErrorCmd "A path to a BF script must be specified"
 loadCmd (x:y:_) = T.SimpleIOCmd $ tryLoad (Just x) (Just y)
 loadCmd (x:_)   = T.SimpleIOCmd $ tryLoad (Just x) Nothing
@@ -67,7 +67,7 @@ setCmdSHelp, setCmdLHelp :: Text
 setCmdSHelp = "sets a debugger property"
 setCmdLHelp = "long help for set command"
 
-setCmd :: T.DebuggerArgCommand
+setCmd :: [String] -> T.DebuggerCommand
 setCmd ("hex":_)     = setHex
 setCmd ("dec":_)     = setDec
 setCmd ("ascii":_)   = setAsc
@@ -77,9 +77,9 @@ setCmd (x:_)         = T.ErrorCmd $ "Cannot set property " ++ x
 setCmd []            = T.ErrorCmd   "Nothing to set"
 
 setHex, setDec, setAsc :: T.DebuggerCommand
-setHex = T.PureCmd  $ D.noMessage . D.changeFormat T.Hex
-setDec = T.PureCmd  $ D.noMessage . D.changeFormat T.Dec
-setAsc = T.PureCmd  $ D.noMessage . D.changeFormat T.Asc
+setHex = T.PureCmd $ D.noMessage . D.changeFormat T.Hex
+setDec = T.PureCmd $ D.noMessage . D.changeFormat T.Dec
+setAsc = T.PureCmd $ D.noMessage . D.changeFormat T.Asc
 
 setBreak :: T.DebuggerCommand
 setBreak = T.PureCmd  $ D.noMessage . D.setBreakPoint
@@ -101,7 +101,7 @@ unsetCmdSHelp, unsetCmdLHelp :: Text
 unsetCmdSHelp = "unsets a debugger property"
 unsetCmdLHelp = "long help for unset command"
 
-unsetCmd :: T.DebuggerArgCommand
+unsetCmd :: [String] -> T.DebuggerCommand
 unsetCmd ("break":"all":_) = T.PureCmd  $ D.noMessage . D.unsetAllBreakPoints
 unsetCmd ("break":_)       = T.PureCmd  $ D.noMessage . D.unsetBreakPoint
 unsetCmd (x:_)             = T.ErrorCmd $ "Cannot unset property " ++ x
@@ -117,7 +117,7 @@ writeCmdSHelp, writeCmdLHelp :: Text
 writeCmdSHelp = "write the current script"
 writeCmdLHelp = "long help for write command"
 
-writeCmd :: T.DebuggerArgCommand
+writeCmd :: [String] -> T.DebuggerCommand
 writeCmd []    = T.SimpleIOCmd writeScript
 writeCmd (x:_) = T.SimpleIOCmd $
     \ db -> writeScript $ db { T.scriptPath = Just x }
@@ -148,5 +148,5 @@ quitCmdSHelp, quitCmdLHelp :: Text
 quitCmdSHelp = "quits the defugger"
 quitCmdLHelp = "not much more to say about quitting"
 
-quitCmd :: T.DebuggerArgCommand
+quitCmd :: [String] -> T.DebuggerCommand
 quitCmd _ = T.QuitCmd
