@@ -26,15 +26,16 @@ import Brick.Widgets.Edit           ( editAttr
 attributes :: B.AttrMap
 -- ^The default attribute map.
 attributes = B.attrMap V.defAttr
-    [ ( "background",    B.bg         V.black  )
-    , ( "focus",         B.on V.black V.yellow )
-    , ( "active",        B.on V.green V.black  )
-    , ( "cursor",        B.on V.black V.green  )
-    , ( "lineno",        B.on V.green V.black  )
-    , ( "break",         B.on V.black V.red    )
-    , ( borderAttr,      B.on V.white V.black  )
-    , ( editAttr,        B.on V.white V.black  )
-    , ( editFocusedAttr, B.on V.white V.black  )
+    [ ( "background",    B.bg           V.black  )
+    , ( "focus",         B.on V.black   V.yellow )
+    , ( "active",        B.on V.green   V.black  )
+    , ( "cursor",        B.on V.black   V.green  )
+    , ( "lineno",        B.on V.green   V.black  )
+    , ( "break",         B.on V.black   V.red    )
+    , ( "highlight",     B.on V.magenta V.black  )
+    , ( borderAttr,      B.on V.white   V.black  )
+    , ( editAttr,        B.on V.white   V.black  )
+    , ( editFocusedAttr, B.on V.white   V.black  )
     ]
 
 -- =============================================================== --

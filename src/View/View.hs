@@ -91,10 +91,15 @@ programUI db = let m = length . show . Vec.length . T.program $ db
 formatCode :: T.Debugger -> Int -> T.DebugStatement -> B.Widget T.WgtName
 -- ^Format each BF statement or control structure for display
 formatCode db pos x
-    | pos == getPosition db        = B.withAttr "focus"  . B.str . show $ x
-    | pos == T.cursor db           = B.withAttr "cursor" . B.str . show $ x
-    | Set.member pos (T.breaks db) = B.withAttr "break"  . B.str . show $ x
+    | pos == getPosition db        = B.withAttr "focus"     . B.str . show $ x
+    | pos == T.cursor db           = B.withAttr "cursor"    . B.str . show $ x
+    | Set.member pos (T.breaks db) = B.withAttr "break"     . B.str . show $ x
+    | highlightPair                = B.withAttr "highlight" . B.str . show $ x
     | otherwise                    = B.str . show $ x
+    where highlightPair = case T.program db Vec.! T.cursor db of
+                               T.DBOpenLoop n  -> n == pos
+                               T.DBCloseLoop n -> n == pos
+                               _               -> False
 
 -- =============================================================== --
 -- Rendering the UI for displaying the memory/tape state
