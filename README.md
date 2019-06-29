@@ -113,7 +113,6 @@ So, jumps through multiple BF statements in the debugger can be very slow or eve
 * Improve command handling, especially the `set` command.
 * Implement reloading of scripts.
 * Implement running an editor on a script and automatically reloading it.
-* Implement termination of non-halting loops during break point jumps.
 * Allow a wider range of BF formats and command naming dictionaries.
 * Write a better README.
 * Write more tests, especially for the editing transformations.
