@@ -49,7 +49,7 @@ initDebugger opts (width,height) = do
                     , T.memView     = (0, height - 5)
                       -- Settings
                     , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
-                    , T.histDepth   = 11
+                    , T.histDepth   = 1001
                     , T.progWidth   = 30
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc

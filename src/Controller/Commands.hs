@@ -7,7 +7,9 @@ module Controller.Commands
 import qualified Data.Vector             as Vec
 import qualified Model.Types             as T
 import qualified Model.Debugger.Debugger as D
+import qualified Data.Sequence           as Seq
 import Control.Monad.Except                     ( runExceptT    )
+import Control.Monad                            ( guard         )
 import Text.Read                                ( readMaybe     )
 import Data.Text                                ( Text          )
 import Data.List                                ( find          )
@@ -68,13 +70,14 @@ setCmdSHelp = "sets a debugger property"
 setCmdLHelp = "long help for set command"
 
 setCmd :: [String] -> T.DebuggerCommand
-setCmd ("hex":_)     = setHex
-setCmd ("dec":_)     = setDec
-setCmd ("ascii":_)   = setAsc
-setCmd ("break":_)   = setBreak
-setCmd ("width":x:_) = setWidth x
-setCmd (x:_)         = T.ErrorCmd $ "Cannot set property " ++ x
-setCmd []            = T.ErrorCmd   "Nothing to set"
+setCmd ("hex":_)       = setHex
+setCmd ("dec":_)       = setDec
+setCmd ("ascii":_)     = setAsc
+setCmd ("break":_)     = setBreak
+setCmd ("width":x:_)   = setWidth x
+setCmd ("history":x:_) = setHistDepth x
+setCmd (x:_)           = T.ErrorCmd $ "Cannot set property " ++ x
+setCmd []              = T.ErrorCmd   "Nothing to set"
 
 setHex, setDec, setAsc :: T.DebuggerCommand
 setHex = T.PureCmd $ D.noMessage . D.changeFormat T.Hex
@@ -90,6 +93,17 @@ setWidth x = maybe err (T.PureCmd . go) . readMaybe $ x
           go n | n < 10    = \ db -> db { T.message = "Invalid width" }
                | otherwise = \ db -> db { T.message = ""
                                         , T.progWidth = n }
+
+setHistDepth :: String -> T.DebuggerCommand
+setHistDepth x = maybe err T.PureCmd . go $ x
+    where err  = T.ErrorCmd $ "Cannot set history reversion depth to " ++ x
+          go y = do n <- readMaybe y
+                    guard (n >= 0 )
+                    pure $ \ db -> let h = T.history db
+                                   in  db { T.message = ""
+                                          , T.histDepth = n + 1
+                                          , T.history = Seq.take (n+1) h
+                                          }
 
 ---------------------------------------------------------------------
 -- unset
