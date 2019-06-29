@@ -73,7 +73,10 @@ This will bring up a TUI with four windows and a command/status line as shown he
 #### Debugger mode command summary<a name="commands"></a>
 
 I'm still working on help strings and documentation, but the basic keyboard commands are as follows:
-* Press `<esc>` to quit the program except when entering a command. In this case `<esc>` cancels the command.
+* The `<esc>` key has different functions depending on the debugger mode:
+    + During normal mode, `<esc>` quits the Defugger program.
+    + When entering a command (see below), `<esc>` cancels the command and returns you back to normal mode.
+    + When running a long or even nonhalting jump through a BF script, `<esc>` will abort the jump.
 * Press `<tab>` to cycle focus between the program, memory, output and input windows, press tab. Some commands require the correct window be focused.
 * Use the arrow keys and `hlkjt` (lower case) to move the cursor around in the program window without executing or reverting statements. These keys will also scroll the input and output windows.
 * Use `TL` (upper case) or `<space-bar>` to step forward one BF statement.
@@ -93,17 +96,15 @@ Command phrases can also be entered by first pressing `:`. To quit entering a co
 * `:set history 2000`: Set the reversion history depth to 2000 BF statements. The default depth is 1000.
 * `:write`, `:w`: Overwrite the BF file originally loaded with the currently edited script. Note that this will remove any foramatting, and line breaks will be added as displayed in the program window. You can also specify an alternate file path for writing with `:write filename.bf`, etc.
 
-## Stability and performance<a name="performance"></a>
+## Stability, performance and halting computations<a name="performance"></a>
 
 The Defugger interpreter and debugger execute commands using different algorithms. Therefore, they have different performance characteristics.
 
 The Defugger will correctly execute the [Mandelbrot](https://github.com/pablojorge/brainfuck/blob/master/programs/mandelbrot.bf) script in interpreter mode in about 5 minutes on a Dell Inspiron Core i5 laptop. Not super fast, but at least it doesn't crash or have any space leaks that I can find. In debugger mode, the Mandelbrot script takes much longer (almost three hours on the same computer) to jump to the end; however, it does not crash the computer and does not appear to leak space, though I need to check more carefully. That being said, the Defugger appears to perform just fine with less computationally intensive programs. For example, it quickly (< 1 s) jumps to the end of the reasonably large [99 Bottles of Beer script](https://sange.fi/esoteric/brainfuck/bf-source/prog/BOTTLES.BF) with no problem.
 
+So, jumps through multiple BF statements in the debugger can be very slow or even nonhalting (e.g., `+[]`). The debugger runs such jumps in an isolated thread, so you can abort them at any time while the jump is processing by pressing `<esc>`.
+
 ## Known issues and to do<a name="todo"></a>
-
-### Known issues
-
-* There is presently no way to terminate a non-halting loop in the Defugger if you try to jump all the way through said loop. The Defugger process will need to be killed. This can probably be handled by running jumps in a separate thread that can be killed from within the Defugger.
 
 ### To do
 
