@@ -90,27 +90,24 @@ Command phrases can also be entered by first pressing `:`. To quit entering a co
 * `:unset break all`: Delete all break points.
 * `:set hex`, `:set dec`, `:set ascii`: Set the byte display format for the currently active output or input window.
 * `:set width 20`: Set the maximum program window character width to 20 characters wide (or however wide you want it).
+* `:set history 2000`: Set the reversion history depth to 2000 BF statements. The default depth is 1000.
 * `:write`, `:w`: Overwrite the BF file originally loaded with the currently edited script. Note that this will remove any foramatting, and line breaks will be added as displayed in the program window. You can also specify an alternate file path for writing with `:write filename.bf`, etc.
 
 ## Stability and performance<a name="performance"></a>
 
 The Defugger interpreter and debugger execute commands using different algorithms. Therefore, they have different performance characteristics.
 
-The Defugger will correctly execute the [Mandelbrot](https://github.com/pablojorge/brainfuck/blob/master/programs/mandelbrot.bf) script in interpreter mode in about 5 minutes on a Dell Inspiron Core i5 laptop. Not super fast, but at least it doesn't crash or have any space leaks that I can find. However, **the Mandelbrot script will crash the debugger (and probably your computer) if you try to jump to the end**. Nevertheless, you should be able to load the Mandelbrot script without any issue (**just don't jump to the end**). Likewise, there is currently no way to terminate a non-halting BF script if you try to jump through it other than killing the Defugger process. I hope to fix these issues in the future.
-
-That being said, the Defugger appears to perform just fine with less computationally intensive programs. For example, it quickly (< 1 s) jumps to the end of the reasonably large [99 Bottles of Beer script](https://sange.fi/esoteric/brainfuck/bf-source/prog/BOTTLES.BF) with no problem.
+The Defugger will correctly execute the [Mandelbrot](https://github.com/pablojorge/brainfuck/blob/master/programs/mandelbrot.bf) script in interpreter mode in about 5 minutes on a Dell Inspiron Core i5 laptop. Not super fast, but at least it doesn't crash or have any space leaks that I can find. In debugger mode, the Mandelbrot script takes much longer (almost three hours on the same computer) to jump to the end; however, it does not crash the computer and does not appear to leak space, though I need to check more carefully. That being said, the Defugger appears to perform just fine with less computationally intensive programs. For example, it quickly (< 1 s) jumps to the end of the reasonably large [99 Bottles of Beer script](https://sange.fi/esoteric/brainfuck/bf-source/prog/BOTTLES.BF) with no problem.
 
 ## Known issues and to do<a name="todo"></a>
 
 ### Known issues
 
-* Very large/computationally intensive BF scripts will crash the debugger and computer when jumping to the end. This may be due to space leaks or unchecked expansion of the reversion history and needs to be addressed. Very large scripts do not cause as much of a problem with the interpreter, which uses a more efficient algorithm to execute the script and does not appear to have any space leaks.
 * There is presently no way to terminate a non-halting loop in the Defugger if you try to jump all the way through said loop. The Defugger process will need to be killed. This can probably be handled by running jumps in a separate thread that can be killed from within the Defugger.
 
 ### To do
 
 * Write help strings and command documentation.
-* Fix debugger management of computationally intensive scripts.
 * Write better command line parsing and initialization at startup.
 * Improve command handling, especially the `set` command.
 * Implement reloading of scripts.
