@@ -18,8 +18,10 @@ import qualified Data.Sequence   as Seq
 import Data.Sequence                    ( Seq (..), (<|)        )
 import Data.Word                        ( Word8                 )
 import Data.Vector                      ( (!)                   )
-import Model.Debugger.Query             ( getPosition           )
-import Model.Debugger.Widgets           ( updateViewByPosition  )
+import Model.Debugger.Query             ( getPosition
+                                        , isAtEndOfHistory      )
+import Model.Debugger.Widgets           ( updateViewByPosition
+                                        , noMessage             )
 import Model.Interpreter                ( advance
                                         , backup
                                         , decrement
@@ -65,14 +67,14 @@ executeNextStatement :: T.Debugger -> Either T.ErrString T.Debugger
 executeNextStatement db = advanceHistory db
                           >>= advanceBackup
                           >>= advanceComputer
-                          >>= pure . updateViewByPosition
+                          >>= pure . noMessage . updateViewByPosition
 
 revertLastStatement :: T.Debugger -> Either T.ErrString T.Debugger
 -- ^Revert the last statement executed in the program if possible.
 revertLastStatement db = revertComputer db
                          >>= revertBackup
                          >>= revertHistory
-                         >>= pure . updateViewByPosition
+                         >>= pure . noMessage . updateViewByPosition
 
 executeToNextBreak :: T.Debugger -> Either T.ErrString T.Debugger
 -- ^Execute all statements up to and including the next break point.
@@ -83,8 +85,10 @@ executeToNextBreak db = executeNextStatement db >>= go
 revertToLastBreak :: T.Debugger -> Either T.ErrString T.Debugger
 -- ^Revert all statements after the last break point.
 revertToLastBreak db = revertLastStatement db >>= go
-    where go !db' | Set.member (getPosition db') (T.breaks db') = pure db'
-                  | otherwise = revertToLastBreak db'
+    where msg     = "At end of reversion history"
+          go !db' | Set.member (getPosition db') (T.breaks db') = pure db'
+                  | isAtEndOfHistory db' = pure db' { T.message = msg }
+                  | otherwise            = revertToLastBreak db'
 
 -- =============================================================== --
 -- Combinators for managing the update of each component of the
@@ -141,10 +145,10 @@ revertReadIn (w:_) c = let xs = T.input  c
 
 advanceHistory :: T.Debugger -> Either T.ErrString T.Debugger
 advanceHistory db =
-    let foc  = T.focus . T.memory . T.computer $ db
-        n    = getPosition db
-        go x = let h = x <| T.history db
-               in  db { T.history  = Seq.take (T.histDepth db) h }
+    let foc   = T.focus . T.memory . T.computer $ db
+        n     = getPosition db
+        go !x = let !h = x <| T.history db
+                in  db { T.history  = Seq.take (T.histDepth db) h }
     in  case T.program db ! n of
              T.DBEnd         -> Left "At end of program"
              T.DBCloseLoop y -> pure . go $ y
@@ -153,9 +157,8 @@ advanceHistory db =
 
 revertHistory :: T.Debugger -> Either T.ErrString T.Debugger
 revertHistory db = case T.history db of
-                        Seq.Empty         -> Left "At beginning of program"
-                        (_ :<| Seq.Empty) -> Left "At end of reversion history"
-                        (_ :<| h)         -> pure $ db { T.history  = h }
+                        (  _ :<| Seq.Empty) -> Left "At end of reversion history"
+                        ~( _ :<| h)         -> pure $ db { T.history  = h }
 
 ---------------------------------------------------------------------
 -- Backup Memory

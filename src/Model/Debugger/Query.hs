@@ -6,6 +6,7 @@ module Model.Debugger.Query
     , getCursorRow
     , isAtStart
     , isAtEnd
+    , isAtEndOfHistory
       -- Queries for While (i.e., '[' and ']') loops
     , isBracket
     , getOuterWhile
@@ -59,6 +60,11 @@ isAtEnd :: T.Debugger -> Bool
 isAtEnd db = case T.program db ! getPosition db of
                     T.DBEnd -> True
                     _       -> False
+
+isAtEndOfHistory :: T.Debugger -> Bool
+isAtEndOfHistory db = case T.history db of
+                           (_ :<| _ :<| _ ) -> False
+                           _                -> True
 
 ---------------------------------------------------------------------
 -- User highlighted cursor location in the BF script

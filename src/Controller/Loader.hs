@@ -12,6 +12,7 @@ import qualified Data.Vector     as V
 import qualified Data.Set        as Set
 import qualified Data.Text       as Tx
 import qualified Data.Sequence   as Seq
+import Data.Sequence                    ( (<|)          )
 import Data.Default                     ( def           )
 import Brick.Widgets.Edit               ( editor        )
 import Control.Monad.Except             ( liftEither    )
@@ -36,7 +37,7 @@ initDebugger opts (width,height) = do
                     , T.mode        = T.NormalMode
                     , T.wgtFocus    = T.ProgramWgt
                     , T.cursor      = 0
-                    , T.history     = Seq.Empty
+                    , T.history     = 0 <| Seq.Empty
                     , T.readBackup  = []
                       -- Command and status widgets
                     , T.commandEdit = editor T.CommandWgt (Just 1) ""
@@ -69,7 +70,7 @@ resetDebugger scriptPath inputPath db = do
             , T.program     = p
               -- Positioning, running mode and history
             , T.cursor      = 0
-            , T.history     = Seq.Empty
+            , T.history     = 0 <| Seq.Empty
             , T.readBackup  = []
               -- Settings
             , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
