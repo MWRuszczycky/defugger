@@ -120,6 +120,7 @@ data Debugger = Debugger {
 data Mode
     = NormalMode            -- Normal operation
     | CommandMode           -- User entering commands
+    | ProcessingMode        -- Computiton is running in a separate thread
       deriving ( Eq, Show )
 
 -- |Debugger custom events

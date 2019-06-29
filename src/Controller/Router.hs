@@ -35,6 +35,7 @@ routeEvent db ev =
          (T.NormalMode,  T.ProgramWgt) -> routeProgramNormalEvent db ev
          (T.NormalMode,  w           ) -> routeNonProgramNormalEvent w db ev
          (T.CommandMode, _           ) -> routeCommandEvent  db ev
+         (T.ProcessingMode, _        ) -> routeProcessingEvent db ev
 
 -- =============================================================== --
 -- Events in normal mode with program focus
@@ -193,3 +194,9 @@ handleCommand db =
              T.ComplexIOCmd f -> B.suspendAndResume $ f db'
              T.ErrorCmd e     -> B.continue $ db' { T.message = e }
              T.QuitCmd        -> B.halt db'
+
+-- =============================================================== --
+-- Events when processing a computation on the debugger
+
+routeProcessingEvent :: T.Debugger -> EventHandler
+routeProcessingEvent db _ = B.continue db
