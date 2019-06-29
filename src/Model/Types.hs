@@ -86,8 +86,8 @@ data RunMode
 data Debugger = Debugger {
       -- Core model
       computer    :: {-# UNPACK #-} !Computer    -- The computer
-    , dictionary  :: {-# UNPACK #-} !Dictionary  -- The BF dictionary
-    , program     :: {-# UNPACK #-} !DBProgram   -- The BF program
+    , dictionary  :: Dictionary                  -- The BF dictionary
+    , program     :: DBProgram                   -- The BF program
       -- Positioning, running mode and history
     , mode        :: !Mode                       -- Current debug mode
     , wgtFocus    :: !WgtName                    -- Current focused widget
