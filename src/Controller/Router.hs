@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types        #-}
 
 module Controller.Router
     ( routeEvent
@@ -24,7 +23,7 @@ import Brick.Widgets.Edit                       ( editor
 -- Local helper type synonyms
 
 type DebugEventMonad = B.EventM T.WgtName (B.Next T.Debugger)
-type EventHandler    = forall e. B.BrickEvent T.WgtName e -> DebugEventMonad
+type EventHandler    = B.BrickEvent T.WgtName T.DebugEvent -> DebugEventMonad
 
 -- =============================================================== --
 -- Event router -- This is the controller entry point.
