@@ -7,7 +7,7 @@
 * [BF format](#format)
 * [Interpreter mode](#interpreter)
 * [Debugger mode](#debugger)
-#### [Stability and performance](#performance)
+#### [Performance and halting computations](#performance)
 #### [Known issues and to do](#todo)
 
 ## Installation<a name="installation"></a>
@@ -96,13 +96,13 @@ Command phrases can also be entered by first pressing `:`. To quit entering a co
 * `:set history 2000`: Set the reversion history depth to 2000 BF statements. The default depth is 1000.
 * `:write`, `:w`: Overwrite the BF file originally loaded with the currently edited script. Note that this will remove any foramatting, and line breaks will be added as displayed in the program window. You can also specify an alternate file path for writing with `:write filename.bf`, etc.
 
-## Stability, performance and halting computations<a name="performance"></a>
+## Performance and halting computations<a name="performance"></a>
 
 The Defugger interpreter and debugger execute commands using different algorithms. Therefore, they have different performance characteristics.
 
 The Defugger will correctly execute the [Mandelbrot](https://github.com/pablojorge/brainfuck/blob/master/programs/mandelbrot.bf) script in interpreter mode in about 5 minutes on a Dell Inspiron Core i5 laptop. Not super fast, but at least it doesn't crash or have any space leaks that I can find. In debugger mode, the Mandelbrot script takes much longer (almost three hours on the same computer) to jump to the end; however, it does not crash the computer and does not appear to leak space, though I need to check more carefully. That being said, the Defugger appears to perform just fine with less computationally intensive programs. For example, it quickly (< 1 s) jumps to the end of the reasonably large [99 Bottles of Beer script](https://sange.fi/esoteric/brainfuck/bf-source/prog/BOTTLES.BF) with no problem.
 
-So, jumps through multiple BF statements in the debugger can be very slow or even nonhalting (e.g., `+[]`). The debugger runs such jumps in an isolated thread, so you can abort them at any time while the jump is processing by pressing `<esc>`.
+So, jumps through multiple BF statements in the debugger can be very slow or even nonhalting (e.g., `+[]`). However, the debugger runs such jumps in an isolated thread, so you can abort them at any time while the jump is processing by pressing `<esc>`.
 
 ## Known issues and to do<a name="todo"></a>
 
