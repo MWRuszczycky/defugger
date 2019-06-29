@@ -39,6 +39,7 @@ module Model.Types
 import qualified Data.ByteString as B
 import qualified Data.Text       as Tx
 import qualified Data.Vector     as V
+import Control.Concurrent.Async         ( Async         )
 import Data.Default                     ( Default (..)  )
 import Data.Set                         ( Set           )
 import Data.Sequence                    ( Seq           )
@@ -118,10 +119,9 @@ data Debugger = Debugger {
 
 -- |Debugger operating modes
 data Mode
-    = NormalMode            -- Normal operation
-    | CommandMode           -- User entering commands
-    | ProcessingMode        -- Computiton is running in a separate thread
-      deriving ( Eq, Show )
+    = NormalMode                      -- Normal operation
+    | CommandMode                     -- User entering commands
+    | ProcessingMode (Async Debugger) -- Computiton running in separate thread
 
 -- |Debugger custom events
 data DebugEvent = ComputationDone

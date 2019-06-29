@@ -36,8 +36,9 @@ import Model.Utilities                          ( chunksOf
 drawUI :: T.Debugger -> [ B.Widget T.WgtName ]
 -- ^Route the rendering result based on the debugger mode.
 drawUI db = case T.mode db of
-                 T.NormalMode -> drawNormalUI db
-                 T.CommandMode -> drawCommandUI db
+                 T.NormalMode       -> drawNormalUI db
+                 T.CommandMode      -> drawCommandUI db
+                 T.ProcessingMode _ -> drawNormalUI db
 
 drawNormalUI :: T.Debugger -> [ B.Widget T.WgtName ]
 -- ^Render the UI under normal mode.

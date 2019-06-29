@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns      #-}
 
 module Controller.Router
     ( routeEvent
@@ -13,6 +14,8 @@ import qualified Graphics.Vty             as V
 import qualified Brick                    as B
 import qualified Model.Types              as T
 import qualified Model.Debugger.Debugger  as D
+import Control.Concurrent.Async           as A
+import Brick.BChan                              ( writeBChan        )
 import Control.Monad.IO.Class                   ( liftIO            )
 import Controller.Commands                      ( getCommand        )
 import Brick.Widgets.Edit                       ( editor
@@ -34,7 +37,7 @@ routeEvent db ev =
          (T.NormalMode,  T.ProgramWgt) -> routeProgramNormalEvent db ev
          (T.NormalMode,  w           ) -> routeNonProgramNormalEvent w db ev
          (T.CommandMode, _           ) -> routeCommandEvent  db ev
-         (T.ProcessingMode, _        ) -> routeProcessingEvent db ev
+         (T.ProcessingMode c, _      ) -> routeProcessingEvent c db ev
 
 -- =============================================================== --
 -- Events in normal mode with program focus
@@ -76,10 +79,10 @@ keyEvent (V.KChar 'H')  _ db = B.continue . D.stepBackward $ db
 keyEvent (V.KChar 'T')  _ db = B.continue . D.stepForward  $ db
 keyEvent (V.KChar 'L')  _ db = B.continue . D.stepForward  $ db
   -- Progam jumps: these may be slow or non-halting
-keyEvent (V.KPageDown)  _ db = B.continue . D.jumpForward  $ db
-keyEvent (V.KPageUp  )  _ db = B.continue . D.jumpBackward $ db
-keyEvent (V.KChar 'J')  _ db = B.continue . D.jumpForward  $ db
-keyEvent (V.KChar 'K')  _ db = B.continue . D.jumpBackward $ db
+keyEvent (V.KPageDown)  _ db = isolate D.jumpForward  db
+keyEvent (V.KPageUp  )  _ db = isolate D.jumpBackward db
+keyEvent (V.KChar 'J')  _ db = isolate D.jumpForward  db
+keyEvent (V.KChar 'K')  _ db = isolate D.jumpBackward db
   -- Program editing
 keyEvent (V.KChar 'x')  _ db = B.continue . D.deleteStatementAtCursor       $ db
 keyEvent (V.KChar '<')  _ db = B.continue . D.addAtCursor T.DBBackup        $ db
@@ -197,5 +200,29 @@ handleCommand db =
 -- =============================================================== --
 -- Events when processing a computation on the debugger
 
-routeProcessingEvent :: T.Debugger -> EventHandler
-routeProcessingEvent db _ = B.continue db
+routeProcessingEvent :: Async T.Debugger -> T.Debugger -> EventHandler
+routeProcessingEvent c db (B.VtyEvent (V.EvKey V.KEsc _ )) = do
+    liftIO $ A.cancel c
+    B.continue $ db { T.mode    = T.NormalMode
+                    , T.message = "Jump aborted" }
+
+routeProcessingEvent c _ (B.AppEvent T.ComputationDone) =
+    liftIO ( A.wait c ) >>= B.continue
+
+routeProcessingEvent _ db _ =
+    B.continue db
+
+---------------------------------------------------------------------
+-- Isolating computations on the debugger in their own thread
+
+isolate :: (T.Debugger -> T.Debugger) -> T.Debugger -> DebugEventMonad
+isolate go db = do
+    let jumpMessage = "Esc to abort jump..."
+    c <- liftIO . A.async $ do let !db' = go db
+                               writeBChan (T.channel db) T.ComputationDone
+                               if T.message db' == jumpMessage
+                                  then pure . D.noMessage $ db'
+                                  else pure db'
+    B.continue $ db { T.mode    = T.ProcessingMode c
+                    , T.message = jumpMessage
+                    }
