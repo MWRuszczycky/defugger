@@ -15,6 +15,7 @@ import qualified Data.Sequence   as Seq
 import Data.Sequence                    ( (<|)          )
 import Data.Default                     ( def           )
 import Brick.Widgets.Edit               ( editor        )
+import Brick.BChan                      ( BChan         )
 import Control.Monad.Except             ( liftEither    )
 import Model.Parser                     ( parseDebug    )
 import Model.CoreIO                     ( tryReadFile
@@ -23,8 +24,9 @@ import Model.CoreIO                     ( tryReadFile
 ---------------------------------------------------------------------
 -- Debuggeer initialization and resetting
 
-initDebugger :: T.DefuggerOptions -> (Int, Int) -> T.ErrorIO T.Debugger
-initDebugger opts (width,height) = do
+initDebugger :: BChan T.DebugEvent -> T.DefuggerOptions -> (Int, Int)
+                -> T.ErrorIO T.Debugger
+initDebugger chan opts (width,height) = do
     let dictionary = def
     s  <- maybe (pure Tx.empty) tryReadFile . T.pathToScript $ opts
     x  <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
@@ -33,6 +35,7 @@ initDebugger opts (width,height) = do
                       T.computer    = initComputer x
                     , T.dictionary  = dictionary
                     , T.program     = p
+                    , T.channel     = chan
                       -- Positioning, running mode and history
                     , T.mode        = T.NormalMode
                     , T.wgtFocus    = T.ProgramWgt

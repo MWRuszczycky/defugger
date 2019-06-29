@@ -19,20 +19,21 @@ import qualified Graphics.Vty    as V
 import qualified Data.ByteString as BS
 import qualified Brick           as B
 import qualified Model.Types     as T
-import Data.Default                     ( def           )
-import System.Posix.Env                 ( putEnv        )
+import Brick.BChan                      ( BChan, newBChan )
+import Data.Default                     ( def             )
+import System.Posix.Env                 ( putEnv          )
 import Control.Monad.Except             ( liftEither
                                         , lift
-                                        , throwError    )
-import Model.Interpreter                ( runProgram    )
-import Model.Parser                     ( parse         )
+                                        , throwError      )
+import Model.Interpreter                ( runProgram      )
+import Model.Parser                     ( parse           )
 import Model.CoreIO                     ( tryReadFile
-                                        , tryReadBytes  )
-import View.View                        ( drawUI        )
-import View.Core                        ( attributes    )
-import Controller.Router                ( routeEvent    )
+                                        , tryReadBytes    )
+import View.View                        ( drawUI          )
+import View.Core                        ( attributes      )
+import Controller.Router                ( routeEvent      )
 import Controller.Loader                ( initComputer
-                                        , initDebugger  )
+                                        , initDebugger    )
 
 -- =============================================================== --
 -- Running the interpreter mode
@@ -57,8 +58,9 @@ formatOutput = map ( toEnum . fromIntegral ) . BS.unpack
 debugger :: T.DefuggerOptions -> T.ErrorIO T.Debugger
 debugger opts = do
     lift . putEnv $ "TERM=" ++ T.terminal opts
-    st0 <- initDebugger opts =<< lift getTerminalDimensions
-    lift . B.defaultMain initApp $ st0
+    chan <- ( lift . newBChan $ 10 ) :: T.ErrorIO ( BChan T.DebugEvent )
+    st0  <- initDebugger chan opts =<< lift getTerminalDimensions
+    lift . B.customMain (V.mkVty V.defaultConfig) (Just chan) initApp $ st0
 
 endDebugger :: Either T.ErrString T.Debugger -> IO ()
 endDebugger (Left  e) = putStrLn $ "Error: " ++ e
@@ -84,7 +86,7 @@ parseOptions (x:y:_)         = pure def { T.pathToScript = Just x
 -- =============================================================== --
 -- Brick app initialization
 
-initApp :: B.App T.Debugger e T.WgtName
+initApp :: B.App T.Debugger T.DebugEvent T.WgtName
 initApp = B.App { B.appDraw         = drawUI
                 , B.appHandleEvent  = routeEvent
                 , B.appChooseCursor = \ _ -> B.showCursorNamed T.CommandWgt

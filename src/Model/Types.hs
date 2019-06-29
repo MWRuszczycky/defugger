@@ -10,6 +10,7 @@ module Model.Types
     , RunMode         (..)
       -- Debugger model
     , DataFormat      (..)
+    , DebugEvent      (..)
     , Debugger        (..)
     , Mode            (..)
     , WgtName         (..)
@@ -42,6 +43,7 @@ import Data.Default                     ( Default (..)  )
 import Data.Set                         ( Set           )
 import Data.Sequence                    ( Seq           )
 import Brick.Widgets.Edit               ( Editor        )
+import Brick.BChan                      ( BChan         )
 import Control.Monad.Except             ( ExceptT       )
 import Control.Monad.State.Lazy         ( StateT        )
 import Control.Monad.Reader             ( ReaderT       )
@@ -88,6 +90,8 @@ data Debugger = Debugger {
       computer    :: {-# UNPACK #-} !Computer    -- The computer
     , dictionary  :: Dictionary                  -- The BF dictionary
     , program     :: DBProgram                   -- The BF program
+      -- Interacting with the Brick runtime system
+    , channel     :: BChan DebugEvent            -- Event queue
       -- Positioning, running mode and history
     , mode        :: !Mode                       -- Current debug mode
     , wgtFocus    :: !WgtName                    -- Current focused widget
@@ -117,6 +121,9 @@ data Mode
     = NormalMode            -- Normal operation
     | CommandMode           -- User entering commands
       deriving ( Eq, Show )
+
+-- |Debugger custom events
+data DebugEvent = ComputationDone
 
 -- |Formats for the display of byte-values
 data DataFormat
