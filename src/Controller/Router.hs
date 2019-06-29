@@ -47,7 +47,7 @@ routeProgramNormalEvent db (B.VtyEvent (V.EvKey V.KEsc _ )) =
     B.halt db
 
 routeProgramNormalEvent db (B.VtyEvent (V.EvKey k ms)) =
-    B.continue . keyEvent k ms $ db
+    keyEvent k ms db
 
 routeProgramNormalEvent db (B.VtyEvent (V.EvResize w h) ) =
     B.continue . D.resize w h $ db
@@ -58,42 +58,44 @@ routeProgramNormalEvent db _ =
 ---------------------------------------------------------------------
 -- Key events
 
-keyEvent :: V.Key -> [V.Modifier] -> T.Debugger -> T.Debugger
+keyEvent :: V.Key -> [V.Modifier] -> T.Debugger -> DebugEventMonad
   -- Cursor movements
-keyEvent V.KRight       _ db = D.moveCursorRight db
-keyEvent V.KLeft        _ db = D.moveCursorLeft db
-keyEvent V.KUp          _ db = D.moveCursorUp db
-keyEvent V.KDown        _ db = D.moveCursorDown db
-keyEvent (V.KChar 'h')  _ db = D.moveCursorLeft db
-keyEvent (V.KChar 'l')  _ db = D.moveCursorRight db
-keyEvent (V.KChar 'k')  _ db = D.moveCursorUp db
-keyEvent (V.KChar 'j')  _ db = D.moveCursorDown db
-keyEvent (V.KChar 't')  _ db = D.moveCursorRight db
-  -- Program position movements
-keyEvent (V.KChar ' ')  _ db = D.stepForward db
-keyEvent V.KBS          _ db = D.stepBackward db
-keyEvent (V.KPageDown)  _ db = D.jumpForward db
-keyEvent (V.KPageUp  )  _ db = D.jumpBackward db
-keyEvent (V.KChar 'H')  _ db = D.stepBackward db
-keyEvent (V.KChar 'T')  _ db = D.stepForward db
-keyEvent (V.KChar 'L')  _ db = D.stepForward db
-keyEvent (V.KChar 'J')  _ db = D.jumpForward db
-keyEvent (V.KChar 'K')  _ db = D.jumpBackward db
+keyEvent V.KRight       _ db = B.continue . D.moveCursorRight $ db
+keyEvent V.KLeft        _ db = B.continue . D.moveCursorLeft  $ db
+keyEvent V.KUp          _ db = B.continue . D.moveCursorUp    $ db
+keyEvent V.KDown        _ db = B.continue . D.moveCursorDown  $ db
+keyEvent (V.KChar 'h')  _ db = B.continue . D.moveCursorLeft  $ db
+keyEvent (V.KChar 'l')  _ db = B.continue . D.moveCursorRight $ db
+keyEvent (V.KChar 'k')  _ db = B.continue . D.moveCursorUp    $ db
+keyEvent (V.KChar 'j')  _ db = B.continue . D.moveCursorDown  $ db
+keyEvent (V.KChar 't')  _ db = B.continue . D.moveCursorRight $ db
+  -- Program single steps: these should be fast and will not hang
+keyEvent (V.KChar ' ')  _ db = B.continue . D.stepForward  $ db
+keyEvent V.KBS          _ db = B.continue . D.stepBackward $ db
+keyEvent (V.KChar 'H')  _ db = B.continue . D.stepBackward $ db
+keyEvent (V.KChar 'T')  _ db = B.continue . D.stepForward  $ db
+keyEvent (V.KChar 'L')  _ db = B.continue . D.stepForward  $ db
+  -- Progam jumps: these may be slow or non-halting
+keyEvent (V.KPageDown)  _ db = B.continue . D.jumpForward  $ db
+keyEvent (V.KPageUp  )  _ db = B.continue . D.jumpBackward $ db
+keyEvent (V.KChar 'J')  _ db = B.continue . D.jumpForward  $ db
+keyEvent (V.KChar 'K')  _ db = B.continue . D.jumpBackward $ db
   -- Program editing
-keyEvent (V.KChar 'x')  _ db = D.deleteStatementAtCursor db
-keyEvent (V.KChar '<')  _ db = D.addStatementAtCursor T.DBBackup db
-keyEvent (V.KChar '>')  _ db = D.addStatementAtCursor T.DBAdvance db
-keyEvent (V.KChar '+')  _ db = D.addStatementAtCursor T.DBIncrement db
-keyEvent (V.KChar '-')  _ db = D.addStatementAtCursor T.DBDecrement db
-keyEvent (V.KChar '.')  _ db = D.addStatementAtCursor T.DBWriteOut db
-keyEvent (V.KChar ',')  _ db = D.addStatementAtCursor T.DBReadIn db
-keyEvent (V.KChar '[')  _ db = D.addStatementAtCursor (T.DBOpenLoop 0) db
-keyEvent (V.KChar ']')  _ db = D.addStatementAtCursor (T.DBCloseLoop 0) db
+keyEvent (V.KChar 'x')  _ db = B.continue . D.deleteStatementAtCursor       $ db
+keyEvent (V.KChar '<')  _ db = B.continue . D.addAtCursor T.DBBackup        $ db
+keyEvent (V.KChar '>')  _ db = B.continue . D.addAtCursor T.DBAdvance       $ db
+keyEvent (V.KChar '+')  _ db = B.continue . D.addAtCursor T.DBIncrement     $ db
+keyEvent (V.KChar '-')  _ db = B.continue . D.addAtCursor T.DBDecrement     $ db
+keyEvent (V.KChar '.')  _ db = B.continue . D.addAtCursor T.DBWriteOut      $ db
+keyEvent (V.KChar ',')  _ db = B.continue . D.addAtCursor T.DBReadIn        $ db
+keyEvent (V.KChar '[')  _ db = B.continue . D.addAtCursor (T.DBOpenLoop 0)  $ db
+keyEvent (V.KChar ']')  _ db = B.continue . D.addAtCursor (T.DBCloseLoop 0) $ db
   -- Entering command mode
-keyEvent (V.KChar ':' ) _ db = db { T.mode = T.CommandMode }
+keyEvent (V.KChar ':' ) _ db = B.continue $ db { T.mode = T.CommandMode }
   -- Tabbing between widgets
-keyEvent (V.KChar '\t') _ db = db { T.wgtFocus = D.nextWidget . T.wgtFocus $ db }
-keyEvent _              _ db = db
+keyEvent (V.KChar '\t') _ db = let newFocus = D.nextWidget . T.wgtFocus $ db
+                               in B.continue $ db { T.wgtFocus = newFocus }
+keyEvent _              _ db = B.continue db
 
 -- =============================================================== --
 -- Events in normal mode with non-program widget focus

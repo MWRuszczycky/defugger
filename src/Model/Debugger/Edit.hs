@@ -1,6 +1,6 @@
 module Model.Debugger.Edit
     ( deleteStatementAtCursor
-    , addStatementAtCursor
+    , addAtCursor
     ) where
 
 -- =============================================================== --
@@ -107,12 +107,12 @@ deleteStatement i db =
 ---------------------------------------------------------------------
 -- Exported
 
-addStatementAtCursor :: T.DebugStatement -> T.Debugger -> T.Debugger
+addAtCursor :: T.DebugStatement -> T.Debugger -> T.Debugger
 -- ^Add a given BF statement x to the current cursor position. Do
 -- not allow insertion when the program evaluation may have advanced
 -- beyond the point of insertion.
-addStatementAtCursor x db
-    | cur == 0 && pos == 0  = addStatementAtCursor x $ db { T.cursor = 1 }
+addAtCursor x db
+    | cur == 0 && pos == 0  = addAtCursor x $ db { T.cursor = 1 }
     | pos >= cur            = db { T.message = evalAddErr      }
     | inSameWhile cur pos p = db { T.message = sameWhileAddErr }
     | otherwise             = addStatement cur x db
