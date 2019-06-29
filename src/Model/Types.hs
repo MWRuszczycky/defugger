@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Model.Types
@@ -39,6 +40,7 @@ import qualified Data.Text       as Tx
 import qualified Data.Vector     as V
 import Data.Default                     ( Default (..)  )
 import Data.Set                         ( Set           )
+import Data.Sequence                    ( Seq           )
 import Brick.Widgets.Edit               ( Editor        )
 import Control.Monad.Except             ( ExceptT       )
 import Control.Monad.State.Lazy         ( StateT        )
@@ -90,7 +92,7 @@ data Debugger = Debugger {
     , mode        :: !Mode                       -- Current debug mode
     , wgtFocus    :: !WgtName                    -- Current focused widget
     , cursor      :: !Int                        -- Cursor position in program
-    , history     :: ![Int]                      -- History of statements
+    , history     :: Seq Int                     -- History of statements
     , readBackup  :: ![Word8]                    -- History of reads
       -- Command and status widgets
     , commandEdit :: Editor String WgtName       -- Used to enter commands
@@ -101,7 +103,8 @@ data Debugger = Debugger {
     , progView    :: !VertViewRange              -- BF script rows to render
     , memView     :: !VertViewRange              -- Memory rows to render
       -- Settings
-    , breaks      :: Set Int                     -- User specified break points
+    , breaks      :: Set Int                     -- Break points
+    , histDepth   :: Int                         -- Reversion history depth
     , progWidth   :: !Int                        -- Characters shown per line
     , inFormat    :: !DataFormat                 -- Display format of input
     , outFormat   :: !DataFormat                 -- Display format of output

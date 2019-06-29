@@ -16,9 +16,11 @@ module Model.Debugger.Query
 -- Combinators for querying debugger BF programmatic state         --
 -- =============================================================== --
 
-import qualified Model.Types as T
-import qualified Data.Vector as Vec
-import Data.Vector                ( (!)       )
+import qualified Model.Types   as T
+import qualified Data.Vector   as Vec
+import qualified Data.Sequence as Seq
+import Data.Vector                    ( (!)       )
+import Data.Sequence                  ( Seq (..)  )
 
 -- =============================================================== --
 -- Debugger program, memory & script location queries
@@ -38,8 +40,8 @@ getAddress db = let T.Tape xs _ _ = T.memory . T.computer $ db
 
 getPosition :: T.Debugger -> Int
 getPosition db = case T.history db of
-                      []    -> 0
-                      (x:_) -> x
+                      Seq.Empty -> 0
+                      (x :<| _) -> x
 
 getPositionRow :: T.Debugger -> Int
 -- ^Row in the program widget window where the program is currently

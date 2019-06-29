@@ -14,6 +14,8 @@ module Model.Debugger.Execute
 import qualified Data.ByteString as BS
 import qualified Model.Types     as T
 import qualified Data.Set        as Set
+import qualified Data.Sequence   as Seq
+import Data.Sequence                    ( Seq (..), (<|)        )
 import Data.Word                        ( Word8                 )
 import Data.Vector                      ( (!)                   )
 import Model.Debugger.Query             ( getPosition           )
@@ -94,7 +96,7 @@ revertToLastBreak db = revertLastStatement db >>= go
 
 advanceComputer :: T.Debugger -> Either T.ErrString T.Debugger
 advanceComputer db = ( \ x -> db { T.computer = x } ) <$> c'
-    where n  = getPosition db
+    where n  = getPosition db -- This is the next unexecuted position.
           c  = T.computer db
           c' = case T.program db ! n of
                     T.DBIncrement -> increment c
@@ -107,8 +109,8 @@ advanceComputer db = ( \ x -> db { T.computer = x } ) <$> c'
 
 revertComputer :: T.Debugger -> Either T.ErrString T.Debugger
 revertComputer db = ( \ x -> db { T.computer = x } ) <$> c'
-    where c  = T.computer db
-          n  = getPosition db
+    where n  = getPosition db -- This the position that needs to be undone.
+          c  = T.computer db
           c' = case T.program db ! n of
                     T.DBIncrement -> decrement c
                     T.DBDecrement -> increment c
@@ -138,20 +140,22 @@ revertReadIn (w:_) c = let xs = T.input  c
 -- executed and in what order. This allows back-tracking.
 
 advanceHistory :: T.Debugger -> Either T.ErrString T.Debugger
-advanceHistory db = pure $ db { T.history = h' }
-    where n   = getPosition db
-          h   = T.history db
-          foc = T.focus . T.memory . T.computer $ db
-          h'  = case T.program db ! n of
-                     T.DBEnd         -> h
-                     T.DBCloseLoop y -> y:h
-                     T.DBOpenLoop  y -> if foc == 0 then (y+1):h else (n+1):h
-                     _               -> (n+1):h
+advanceHistory db =
+    let foc  = T.focus . T.memory . T.computer $ db
+        n    = getPosition db
+        go x = let h = x <| T.history db
+               in  db { T.history  = Seq.take (T.histDepth db) h }
+    in  case T.program db ! n of
+             T.DBEnd         -> Left "At end of program"
+             T.DBCloseLoop y -> pure . go $ y
+             T.DBOpenLoop  y -> pure . go $ if foc == 0 then y + 1 else n + 1
+             _               -> pure . go $ n + 1
 
 revertHistory :: T.Debugger -> Either T.ErrString T.Debugger
 revertHistory db = case T.history db of
-                        []    -> pure db
-                        (_:h) -> pure $ db { T.history = h }
+                        Seq.Empty         -> Left "At beginning of program"
+                        (_ :<| Seq.Empty) -> Left "At end of reversion history"
+                        (_ :<| h)         -> pure $ db { T.history  = h }
 
 ---------------------------------------------------------------------
 -- Backup Memory

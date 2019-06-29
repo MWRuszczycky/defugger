@@ -11,6 +11,7 @@ import qualified Model.Types     as T
 import qualified Data.Vector     as V
 import qualified Data.Set        as Set
 import qualified Data.Text       as Tx
+import qualified Data.Sequence   as Seq
 import Data.Default                     ( def           )
 import Brick.Widgets.Edit               ( editor        )
 import Control.Monad.Except             ( liftEither    )
@@ -35,7 +36,7 @@ initDebugger opts (width,height) = do
                     , T.mode        = T.NormalMode
                     , T.wgtFocus    = T.ProgramWgt
                     , T.cursor      = 0
-                    , T.history     = [0]
+                    , T.history     = Seq.Empty
                     , T.readBackup  = []
                       -- Command and status widgets
                     , T.commandEdit = editor T.CommandWgt (Just 1) ""
@@ -47,6 +48,7 @@ initDebugger opts (width,height) = do
                     , T.memView     = (0, height - 5)
                       -- Settings
                     , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
+                    , T.histDepth   = 11
                     , T.progWidth   = 30
                     , T.inFormat    = T.Asc
                     , T.outFormat   = T.Asc
@@ -67,7 +69,7 @@ resetDebugger scriptPath inputPath db = do
             , T.program     = p
               -- Positioning, running mode and history
             , T.cursor      = 0
-            , T.history     = [0]
+            , T.history     = Seq.Empty
             , T.readBackup  = []
               -- Settings
             , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
