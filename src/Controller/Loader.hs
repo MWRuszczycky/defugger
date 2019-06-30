@@ -33,32 +33,33 @@ initDebugger chan opts (width,height) = do
     x  <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
     p  <- liftEither . parseDebug dictionary $ s
     pure T.Debugger { -- Core model
-                      T.computer    = initComputer x
-                    , T.dictionary  = dictionary
-                    , T.program     = p
-                    , T.channel     = chan
+                      T.computer     = initComputer x
+                    , T.dictionary   = dictionary
+                    , T.program      = p
+                    , T.initialInput = x
+                    , T.channel      = chan
                       -- Positioning, running mode and history
-                    , T.mode        = T.NormalMode
-                    , T.wgtFocus    = T.ProgramWgt
-                    , T.cursor      = 0
-                    , T.history     = 0 <| Seq.Empty
-                    , T.readBackup  = []
+                    , T.mode         = T.NormalMode
+                    , T.wgtFocus     = T.ProgramWgt
+                    , T.cursor       = 0
+                    , T.history      = 0 <| Seq.Empty
+                    , T.readBackup   = []
                       -- Command and status widgets
-                    , T.commandEdit = editor T.CommandWgt (Just 1) ""
-                    , T.message     = "Welcome to the Defugger: A BF Debugger!"
+                    , T.commandEdit  = editor T.CommandWgt (Just 1) ""
+                    , T.message      = "Welcome to the Defugger: A BF Debugger!"
                       -- Terminal and display parameters
-                    , T.termWidth   = width
-                    , T.termHeight  = height
-                    , T.progView    = (0, height - 5)
-                    , T.memView     = (0, height - 5)
+                    , T.termWidth    = width
+                    , T.termHeight   = height
+                    , T.progView     = (0, height - 5)
+                    , T.memView      = (0, height - 5)
                       -- Settings
-                    , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
-                    , T.histDepth   = 1001
-                    , T.progWidth   = 30
-                    , T.inFormat    = T.Asc
-                    , T.outFormat   = T.Asc
-                    , T.scriptPath  = T.pathToScript opts
-                    , T.inputPath   = T.pathToInput opts
+                    , T.breaks       = Set.fromList [ 0, V.length p - 1 ]
+                    , T.histDepth    = 1001
+                    , T.progWidth    = 30
+                    , T.inFormat     = T.Asc
+                    , T.outFormat    = T.Asc
+                    , T.scriptPath   = T.pathToScript opts
+                    , T.inputPath    = T.pathToInput opts
                     }
 
 reloadDebugger :: Maybe FilePath -> Maybe FilePath -> T.Debugger
@@ -73,16 +74,17 @@ reloadDebugger scriptPath inputPath db = do
     p <- liftEither . parseDebug (T.dictionary db) $ s
     pure . updateViewByPosition $
         db { -- Core model
-             T.computer    = initComputer x
-           , T.program     = p
+             T.computer     = initComputer x
+           , T.program      = p
+           , T.initialInput = x
              -- Positioning, running mode and history
-           , T.cursor      = 0
-           , T.history     = 0 <| Seq.Empty
-           , T.readBackup  = []
+           , T.cursor       = 0
+           , T.history      = 0 <| Seq.Empty
+           , T.readBackup   = []
              -- Settings
-           , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
-           , T.scriptPath  = scriptPath
-           , T.inputPath   = inputPath
+           , T.breaks       = Set.fromList [ 0, V.length p - 1 ]
+           , T.scriptPath   = scriptPath
+           , T.inputPath    = inputPath
            }
 
 ---------------------------------------------------------------------

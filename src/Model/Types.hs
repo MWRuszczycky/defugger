@@ -88,33 +88,34 @@ data RunMode
 -- |Model of the debugger state
 data Debugger = Debugger {
       -- Core model
-      computer    :: {-# UNPACK #-} !Computer    -- The computer
-    , dictionary  :: Dictionary                  -- The BF dictionary
-    , program     :: DBProgram                   -- The BF program
+      computer     :: {-# UNPACK #-} !Computer    -- The computer
+    , dictionary   :: Dictionary                  -- The BF dictionary
+    , program      :: DBProgram                   -- The BF program
+    , initialInput :: B.ByteString                -- Initial input for resets
       -- Interacting with the Brick runtime system
-    , channel     :: BChan DebugEvent            -- Event queue
+    , channel      :: BChan DebugEvent            -- Event queue
       -- Positioning, running mode and history
-    , mode        :: !Mode                       -- Current debug mode
-    , wgtFocus    :: !WgtName                    -- Current focused widget
-    , cursor      :: !Int                        -- Cursor position in program
-    , history     :: Seq Int                     -- History of statements
-    , readBackup  :: ![Word8]                    -- History of reads
+    , mode         :: !Mode                       -- Current debug mode
+    , wgtFocus     :: !WgtName                    -- Current focused widget
+    , cursor       :: !Int                        -- Cursor position in program
+    , history      :: Seq Int                     -- History of statements
+    , readBackup   :: ![Word8]                    -- History of reads
       -- Command and status widgets
-    , commandEdit :: Editor String WgtName       -- Used to enter commands
-    , message     :: !String                     -- Status message
+    , commandEdit  :: Editor String WgtName       -- Used to enter commands
+    , message      :: !String                     -- Status message
       -- Terminal and display parameters
-    , termWidth   :: !Int                        -- Width of the terminal
-    , termHeight  :: !Int                        -- Height of the terminal
-    , progView    :: !VertViewRange              -- BF script rows to render
-    , memView     :: !VertViewRange              -- Memory rows to render
+    , termWidth    :: !Int                        -- Width of the terminal
+    , termHeight   :: !Int                        -- Height of the terminal
+    , progView     :: !VertViewRange              -- BF script rows to render
+    , memView      :: !VertViewRange              -- Memory rows to render
       -- Settings
-    , breaks      :: Set Int                     -- Break points
-    , histDepth   :: Int                         -- Reversion history depth
-    , progWidth   :: !Int                        -- Characters shown per line
-    , inFormat    :: !DataFormat                 -- Display format of input
-    , outFormat   :: !DataFormat                 -- Display format of output
-    , scriptPath  :: Maybe FilePath              -- Path to the script
-    , inputPath   :: Maybe FilePath              -- Path to the input file
+    , breaks       :: Set Int                     -- Break points
+    , histDepth    :: Int                         -- Reversion history depth
+    , progWidth    :: !Int                        -- Characters shown per line
+    , inFormat     :: !DataFormat                 -- Display format of input
+    , outFormat    :: !DataFormat                 -- Display format of output
+    , scriptPath   :: Maybe FilePath              -- Path to the script
+    , inputPath    :: Maybe FilePath              -- Path to the input file
     }
 
 -- |Debugger operating modes
