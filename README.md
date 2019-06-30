@@ -88,6 +88,8 @@ I'm still working on help strings and documentation, but the basic keyboard comm
 
 Command phrases can also be entered by first pressing `:`. To quit entering a command without executing it, press `<esc>`. Some currently supported commands are
 * `:q`, `:quit`: Quit the Defugger.
+* `:reset`: Reset the debugger to its initial state with the current BF script and originally loaded input.
+* `:load path/to/script.bf path/to/input`: Load the BF script at `path/to/script.bf` and the input at `path/to/input` into the debugger. The latter path is optional. Paths must be specified without spaces.
 * `:set break`: Set a break point at the current cursor position.
 * `:unset break`: Delete the break point at the current cursor position.
 * `:unset break all`: Delete all break points.
