@@ -100,6 +100,7 @@ changeFormat :: T.DataFormat -> T.Debugger -> T.Debugger
 changeFormat fmt db = case T.wgtFocus db of
                            T.OutputWgt -> db { T.outFormat = fmt }
                            T.InputWgt  -> db { T.inFormat  = fmt }
+                           T.MemoryWgt -> db { T.memFormat = fmt }
                            _           -> db
 
 noMessage :: T.Debugger -> T.Debugger

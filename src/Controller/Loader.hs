@@ -59,6 +59,7 @@ initDebugger chan opts (width,height) = do
                     , T.progWidth    = 30
                     , T.inFormat     = T.Asc
                     , T.outFormat    = T.Asc
+                    , T.memFormat    = T.Dec
                     , T.scriptPath   = T.pathToScript opts
                     , T.inputPath    = T.pathToInput opts
                     }

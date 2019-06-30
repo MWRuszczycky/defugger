@@ -114,6 +114,7 @@ data Debugger = Debugger {
     , progWidth    :: !Int                        -- Characters shown per line
     , inFormat     :: !DataFormat                 -- Display format of input
     , outFormat    :: !DataFormat                 -- Display format of output
+    , memFormat    :: !DataFormat                 -- Display format of memory
     , scriptPath   :: Maybe FilePath              -- Path to the script
     , inputPath    :: Maybe FilePath              -- Path to the input file
     }

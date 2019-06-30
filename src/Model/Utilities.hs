@@ -7,6 +7,7 @@ module Model.Utilities
     , vecInsert
       -- Rendering utilities
     , toAscii
+    , toAsciiAll
     , toHex
     , toDec
     ) where
@@ -51,6 +52,11 @@ toAscii :: Word8 -> String
 toAscii w
     | w == 10   = "\n"
     | w < 32    = ""
+    | otherwise = [ toEnum . fromIntegral $ w ]
+
+toAsciiAll :: Word8 -> String
+toAsciiAll w
+    | w < 32    = '?' : toHex w
     | otherwise = [ toEnum . fromIntegral $ w ]
 
 toHex :: Word8 -> String

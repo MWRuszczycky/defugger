@@ -27,6 +27,7 @@ import View.Core                                ( addNumberedRow
 import Model.Utilities                          ( chunksOf
                                                 , slice
                                                 , toAscii
+                                                , toAsciiAll
                                                 , toHex
                                                 , toDec             )
 
@@ -119,9 +120,13 @@ formatMemory :: T.Debugger -> [B.Widget T.WgtName]
 -- ^Format each memory value and highlight the focus.
 formatMemory db = inBack ++ [inFocus] ++ inFront
        where (T.Tape xs u ys) = T.memory . T.computer $ db
-             inBack           = map ( B.str . show ) . reverse $ xs
-             inFocus          = B.withAttr "focus" . B.str . show $ u
-             inFront          = map ( B.str . show ) $ ys
+             inBack           = map ( B.str . format ) . reverse $ xs
+             inFocus          = B.withAttr "focus" . B.str . format $ u
+             inFront          = map ( B.str . format ) $ ys
+             format           = case T.memFormat db of
+                                     T.Asc -> toAsciiAll
+                                     T.Dec -> show
+                                     T.Hex -> toHex
 
 -- =============================================================== --
 -- Rendering the UI for displaying the input and output UIs
