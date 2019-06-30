@@ -50,33 +50,29 @@ library defugger-internal
                       , vector
                       , vty
 
-test-suite bfparser-tests
+test-suite general-tests
   type:                 exitcode-stdio-1.0
-  main-is:              BFParserTests.hs
-  hs-source-dirs:       tests
-  build-depends:        base >=4.7 && <5
-                      , data-default
-                      , defugger-internal
-                      , hspec
-                      , text
+  main-is:              Spec.hs
+  hs-source-dirs:       tests/General
   default-language:     Haskell2010
-
-test-suite bfprogram-tests
-  type:                 exitcode-stdio-1.0
-  main-is:              BFProgramTests.hs
-  hs-source-dirs:       tests
+  ghc-options:          -W
+  other-modules:        InterpreterTests
+                      , ParserTests
   build-depends:        base >=4.7 && <5
                       , bytestring
+                      , data-default
                       , defugger-internal
                       , hspec
                       , mtl
                       , text
-  default-language:     Haskell2010
 
-test-suite bfdebug-tests
+test-suite debugger-tests
   type:                 exitcode-stdio-1.0
-  main-is:              BFDebuggerTests.hs
-  hs-source-dirs:       tests
+  main-is:              Spec.hs
+  hs-source-dirs:       tests/Debugger
+  default-language:     Haskell2010
+  ghc-options:          -W
+  other-modules:        BracketTests
   build-depends:        base >=4.7 && <5
                       , bytestring
                       , data-default
@@ -84,4 +80,3 @@ test-suite bfdebug-tests
                       , hspec
                       , text
                       , vector
-  default-language:     Haskell2010

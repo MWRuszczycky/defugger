@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- Do not add a module declaration or it will fail to compile
+module ParserTests
+    ( spec
+    ) where
 
 -- =============================================================== --
--- This is the bfparser-test test-suite for testing the BF parser
--- defined in the Parser module.
+-- Testing the BF parser defined in the Parser module.             --
 -- =============================================================== --
 
 import qualified Data.Text   as Tx
@@ -12,14 +13,13 @@ import qualified Model.Types as T
 import Data.Default                 ( def       )
 import Data.Text                    ( Text      )
 import Model.Parser                 ( parse     )
-import Test.Hspec                   ( Spec (..)
+import Test.Hspec                   ( Spec
                                     , describe
-                                    , hspec
                                     , it
                                     , shouldBe  )
 
-main :: IO ()
-main = hspec $ do
+spec :: Spec
+spec = do
     describe "Testing the BFParser" $ do
         it "Correctly parses valid programs with dictionary 1" $ do
             testValid bfDict1 testProgV101In testProgV101Out

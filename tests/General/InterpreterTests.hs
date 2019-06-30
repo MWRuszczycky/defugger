@@ -1,30 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
-
--- Do not add a module declaration or it will fail to compile
+module InterpreterTests
+    ( spec
+    ) where
 
 -- =============================================================== --
--- This is the bfprogram-test test-suite for testing BF programs
--- executed with the interepreter
+-- Tests for executing scripts by the interpreter.                 --
 -- =============================================================== --
 
-import qualified Data.Text          as Tx
-import qualified Data.ByteString    as B
 import qualified Model.Types        as T
-import qualified Model.Parser       as P
-import qualified Controller.Router  as C
-import qualified Controller.Loader  as L
 import qualified StartUp            as SU
 import Control.Monad.Except                 ( runExceptT )
-import Data.Text                            ( Text       )
-import Model.Parser                         ( parse      )
-import Test.Hspec                           ( Spec (..)
+import Test.Hspec                           ( Spec
                                             , describe
-                                            , hspec
                                             , it
                                             , shouldBe   )
 
-main :: IO ()
-main = hspec $ do
+spec :: Spec
+spec = do
     describe "Running BF programs with the default dictionary" $ do
         it "Correctly runs HelloWorld.bf" $ do
             scriptNoInput "tests/files/HelloWorld.bf"

@@ -1,10 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+module BracketTests
+    ( spec
+    ) where
+
 -- Do not add a module declaration or it will fail to compile
 
 -- =============================================================== --
--- This is the bfdebugger-test test-suite for testing BF programs
--- and actions thereon executed with the debugger
+-- Testing functions associated with bracket-finding               --
 -- =============================================================== --
 
 import qualified Data.Text               as Tx
@@ -12,21 +15,18 @@ import qualified Data.Vector             as Vec
 import qualified Model.Types             as T
 import qualified Model.Parser            as P
 import qualified Model.Debugger.Debugger as D
-import qualified StartUp                 as S
 import Data.Default                             ( def               )
 import Data.Vector                              ( (!)               )
-import Model.CoreIO                             ( tryReadFile       )
 import Data.Text                                ( Text              )
-import Test.Hspec                               ( Spec (..)
+import Test.Hspec                               ( Spec
                                                 , describe
-                                                , hspec
                                                 , it
                                                 , shouldSatisfy
                                                 , shouldNotSatisfy
                                                 , shouldBe          )
 
-main :: IO ()
-main = hspec $ do
+spec :: Spec
+spec = do
     bracketFinding101
     bracketFinding102
     bracketFinding103
