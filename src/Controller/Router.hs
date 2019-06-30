@@ -136,9 +136,11 @@ routeNonProgramNormalEvent _  db _ =
 
 mKeyEvent :: V.Key -> [V.Modifier] -> T.Debugger -> DebugEventMonad
   -- Cursor movements
---mKeyEvent V.KUp   _ db = B.continue . D.moveCursorUp   $ db
---mKeyEvent V.KDown _ db = B.continue . D.moveCursorDown $ db
-mKeyEvent _       _ db = B.continue db
+mKeyEvent V.KUp         _ db = B.continue . D.scrollMemView (-1) $ db
+mKeyEvent V.KDown       _ db = B.continue . D.scrollMemView ( 1) $ db
+mKeyEvent (V.KChar 'k') _ db = B.continue . D.scrollMemView (-1) $ db
+mKeyEvent (V.KChar 'j') _ db = B.continue . D.scrollMemView ( 1) $ db
+mKeyEvent _             _ db = B.continue db
 
 ---------------------------------------------------------------------
 -- Scrolling of output- and input-UI widgets

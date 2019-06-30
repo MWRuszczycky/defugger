@@ -5,6 +5,7 @@ module Model.Debugger.Widgets
       -- Combinators to manage what to display in the subwidgets
     , updateViewByPosition
     , updateViewByCursor
+    , scrollMemView
     , changeFormat
     , noMessage
       -- Cursor management
@@ -83,11 +84,19 @@ updateViewByCursor :: T.Debugger -> T.Debugger
 updateViewByCursor db = shiftProgView row $ db
     where row = getCursorRow db
 
+scrollMemView :: Int -> T.Debugger -> T.Debugger
+scrollMemView dr db
+    | n0 == 0    && dr < 0 = db
+    | n1 >= nmax && dr > 0 = db
+    | otherwise            = db { T.memView = (n0 + dr, n1 + dr) }
+    where (n0,n1) = T.memView db
+          nmax    = subtract 1 . length . T.memory . T.computer $ db
+
 ---------------------------------------------------------------------
 -- Display formats and messaging
 
 changeFormat :: T.DataFormat -> T.Debugger -> T.Debugger
--- ^Change the data format of the currentl focused widget.
+-- ^Change the data format of the currently focused widget.
 changeFormat fmt db = case T.wgtFocus db of
                            T.OutputWgt -> db { T.outFormat = fmt }
                            T.InputWgt  -> db { T.inFormat  = fmt }
