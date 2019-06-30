@@ -14,7 +14,8 @@ import Text.Read                                ( readMaybe      )
 import Data.Text                                ( Text           )
 import Data.List                                ( find           )
 import Model.Utilities                          ( chunksOf       )
-import Controller.Loader                        ( reloadDebugger )
+import Controller.Loader                        ( reloadDebugger
+                                                , resetDebugger  )
 
 -- =============================================================== --
 -- Command hub and router
@@ -28,6 +29,7 @@ getCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ hub
 hub :: [T.Command]
 -- ^Organizes all the commands that can be run from the debugger.
 hub = [ T.Command loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
+      , T.Command resetNames resetCmd resetCmdSHelp resetCmdLHelp
       , T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
       , T.Command unsetNames unsetCmd unsetCmdSHelp unsetCmdLHelp
       , T.Command writeNames writeCmd writeCmdSHelp writeCmdLHelp
@@ -58,6 +60,19 @@ tryLoad scriptPath inputPath db0 = do
     case result of
          Left errMsg -> pure $ db0 { T.message = errMsg }
          Right db1   -> pure . D.noMessage $ db1
+
+---------------------------------------------------------------------
+-- reset
+
+resetNames :: [String]
+resetNames = [ "reset", "r" ]
+
+resetCmdSHelp, resetCmdLHelp :: Text
+resetCmdSHelp = "reset the debugger to its original state given"
+resetCmdLHelp = "long help for reset command"
+
+resetCmd :: [String] -> T.DebuggerCommand
+resetCmd _ = T.PureCmd $ resetDebugger
 
 ---------------------------------------------------------------------
 -- set
