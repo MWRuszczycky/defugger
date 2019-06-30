@@ -135,7 +135,7 @@ routeNonProgramNormalEvent _  db _ =
 -- Key events in the memory-UI
 
 mKeyEvent :: V.Key -> [V.Modifier] -> T.Debugger -> DebugEventMonad
-  -- Cursor movements
+  -- Scrolling the memory widget
 mKeyEvent V.KUp         _ db = B.continue . D.scrollMemView (-1) $ db
 mKeyEvent V.KDown       _ db = B.continue . D.scrollMemView ( 1) $ db
 mKeyEvent (V.KChar 'k') _ db = B.continue . D.scrollMemView (-1) $ db
