@@ -3,7 +3,7 @@
 module Controller.Loader
     ( initComputer
     , initDebugger
-    , resetDebugger
+    , reloadDebugger
     ) where
 
 import qualified Data.ByteString as BS
@@ -12,14 +12,15 @@ import qualified Data.Vector     as V
 import qualified Data.Set        as Set
 import qualified Data.Text       as Tx
 import qualified Data.Sequence   as Seq
-import Data.Sequence                    ( (<|)          )
-import Data.Default                     ( def           )
-import Brick.Widgets.Edit               ( editor        )
-import Brick.BChan                      ( BChan         )
-import Control.Monad.Except             ( liftEither    )
-import Model.Parser                     ( parseDebug    )
+import Model.Debugger.Debugger          ( updateViewByPosition  )
+import Data.Sequence                    ( (<|)                  )
+import Data.Default                     ( def                   )
+import Brick.Widgets.Edit               ( editor                )
+import Brick.BChan                      ( BChan                 )
+import Control.Monad.Except             ( liftEither            )
+import Model.Parser                     ( parseDebug            )
 import Model.CoreIO                     ( tryReadFile
-                                        , tryReadBytes  )
+                                        , tryReadBytes          )
 
 ---------------------------------------------------------------------
 -- Debuggeer initialization and resetting
@@ -60,26 +61,29 @@ initDebugger chan opts (width,height) = do
                     , T.inputPath   = T.pathToInput opts
                     }
 
-resetDebugger :: Maybe FilePath -> Maybe FilePath -> T.Debugger
+reloadDebugger :: Maybe FilePath -> Maybe FilePath -> T.Debugger
                  -> T.ErrorIO T.Debugger
--- ^Given an already initialized debugger, reset the computer,
--- program, and input keeping everything else the same.
-resetDebugger scriptPath inputPath db = do
+-- ^Given an already initialized debugger, reset the computer, and
+-- reload a program, and an input keeping everything else the same.
+-- Because the input and program may have changed or be brand new,
+-- the break points and history also need to be reset.
+reloadDebugger scriptPath inputPath db = do
     s <- maybe (pure Tx.empty) tryReadFile  scriptPath
     x <- maybe (pure BS.empty) tryReadBytes inputPath
     p <- liftEither . parseDebug (T.dictionary db) $ s
-    pure db { -- Core model
-              T.computer    = initComputer x
-            , T.program     = p
-              -- Positioning, running mode and history
-            , T.cursor      = 0
-            , T.history     = 0 <| Seq.Empty
-            , T.readBackup  = []
-              -- Settings
-            , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
-            , T.scriptPath  = scriptPath
-            , T.inputPath   = inputPath
-            }
+    pure . updateViewByPosition $
+        db { -- Core model
+             T.computer    = initComputer x
+           , T.program     = p
+             -- Positioning, running mode and history
+           , T.cursor      = 0
+           , T.history     = 0 <| Seq.Empty
+           , T.readBackup  = []
+             -- Settings
+           , T.breaks      = Set.fromList [ 0, V.length p - 1 ]
+           , T.scriptPath  = scriptPath
+           , T.inputPath   = inputPath
+           }
 
 ---------------------------------------------------------------------
 -- Computer initialization and resetting

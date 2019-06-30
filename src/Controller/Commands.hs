@@ -8,13 +8,13 @@ import qualified Data.Vector             as Vec
 import qualified Model.Types             as T
 import qualified Model.Debugger.Debugger as D
 import qualified Data.Sequence           as Seq
-import Control.Monad.Except                     ( runExceptT    )
-import Control.Monad                            ( guard         )
-import Text.Read                                ( readMaybe     )
-import Data.Text                                ( Text          )
-import Data.List                                ( find          )
-import Model.Utilities                          ( chunksOf      )
-import Controller.Loader                        ( resetDebugger )
+import Control.Monad.Except                     ( runExceptT     )
+import Control.Monad                            ( guard          )
+import Text.Read                                ( readMaybe      )
+import Data.Text                                ( Text           )
+import Data.List                                ( find           )
+import Model.Utilities                          ( chunksOf       )
+import Controller.Loader                        ( reloadDebugger )
 
 -- =============================================================== --
 -- Command hub and router
@@ -54,7 +54,7 @@ loadCmd (x:_)   = T.SimpleIOCmd $ tryLoad (Just x) Nothing
 
 tryLoad :: Maybe FilePath -> Maybe FilePath -> T.Debugger -> IO T.Debugger
 tryLoad scriptPath inputPath db0 = do
-    result <- runExceptT . resetDebugger scriptPath inputPath $ db0
+    result <- runExceptT . reloadDebugger scriptPath inputPath $ db0
     case result of
          Left errMsg -> pure $ db0 { T.message = errMsg }
          Right db1   -> pure . D.noMessage $ db1
