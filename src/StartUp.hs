@@ -3,7 +3,7 @@ module StartUp
       interpreter
     , endInterpreter
     , formatOutput
-      --  Running the debugger mode mode
+      -- Running the debugger mode
     , debugger
     , endDebugger
       -- Command line arguments parsing

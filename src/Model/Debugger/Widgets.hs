@@ -74,8 +74,9 @@ resizeWgtView h n (n0, n1)
 
 updateViewByPosition :: T.Debugger -> T.Debugger
 -- ^Shift the memory and program views to match the program position.
-updateViewByPosition db = shiftMemView . shiftProgView row $ db
-    where row = getPositionRow db
+updateViewByPosition db = shiftMemView memRow . shiftProgView progRow $ db
+    where progRow = getPositionRow db
+          memRow  = getAddress db
 
 updateViewByCursor :: T.Debugger -> T.Debugger
 -- ^Shift the program view to match the cursor position.
@@ -120,14 +121,13 @@ shiftView (n0,n1) n
 
 shiftProgView :: Int -> T.Debugger -> T.Debugger
 -- ^Shift range of lines to be displayed in the program UI widget.
-shiftProgView pos db = db { T.progView = shiftView oldView pos }
+shiftProgView row db = db { T.progView = shiftView oldView row }
     where oldView = T.progView db
 
-shiftMemView :: T.Debugger -> T.Debugger
+shiftMemView :: Int -> T.Debugger -> T.Debugger
 -- ^Shift range of lines to be displayed in the memory UI widget.
-shiftMemView db = db { T.memView = shiftView oldView memAddress }
-    where oldView    = T.memView db
-          memAddress = getAddress db
+shiftMemView row db = db { T.memView = shiftView oldView row }
+    where oldView = T.memView db
 
 -- =============================================================== --
 -- Cursor management

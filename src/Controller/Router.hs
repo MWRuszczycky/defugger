@@ -119,6 +119,9 @@ routeNonProgramNormalEvent _ db (B.VtyEvent (V.EvKey (V.KChar '\t') _ )) =
 routeNonProgramNormalEvent _ db (B.VtyEvent (V.EvKey (V.KChar ':') _ )) =
     B.continue $ db { T.mode = T.CommandMode }
 
+routeNonProgramNormalEvent T.MemoryWgt db (B.VtyEvent (V.EvKey k ms )) =
+    mKeyEvent k ms db
+
 routeNonProgramNormalEvent T.OutputWgt db (B.VtyEvent (V.EvKey k _ )) =
     scroll (B.viewportScroll T.OutputWgt) k $ db
 
@@ -127,6 +130,15 @@ routeNonProgramNormalEvent T.InputWgt  db (B.VtyEvent (V.EvKey k _ )) =
 
 routeNonProgramNormalEvent _  db _ =
     B.continue db
+
+---------------------------------------------------------------------
+-- Key events in the memory-UI
+
+mKeyEvent :: V.Key -> [V.Modifier] -> T.Debugger -> DebugEventMonad
+  -- Cursor movements
+--mKeyEvent V.KUp   _ db = B.continue . D.moveCursorUp   $ db
+--mKeyEvent V.KDown _ db = B.continue . D.moveCursorDown $ db
+mKeyEvent _       _ db = B.continue db
 
 ---------------------------------------------------------------------
 -- Scrolling of output- and input-UI widgets
