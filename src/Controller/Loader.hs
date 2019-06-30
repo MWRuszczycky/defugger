@@ -4,6 +4,7 @@ module Controller.Loader
     ( initComputer
     , initDebugger
     , reloadDebugger
+    , resetDebugger
     ) where
 
 import qualified Data.ByteString as BS
@@ -86,6 +87,16 @@ reloadDebugger scriptPath inputPath db = do
            , T.scriptPath   = scriptPath
            , T.inputPath    = inputPath
            }
+
+resetDebugger :: T.Debugger -> T.Debugger
+-- ^Return the debugger to its initial state with the current script
+-- and input keeping all settings the same.
+resetDebugger db = updateViewByPosition $
+    db { T.computer   = initComputer $ T.initialInput  db
+       , T.cursor     = 0
+       , T.history    = 0 <| Seq.Empty
+       , T.readBackup = []
+       }
 
 ---------------------------------------------------------------------
 -- Computer initialization and resetting
