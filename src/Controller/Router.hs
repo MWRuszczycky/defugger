@@ -38,6 +38,26 @@ routeEvent db ev =
          (T.NormalMode,  w           ) -> routeNonProgramNormalEvent w db ev
          (T.CommandMode, _           ) -> routeCommandEvent  db ev
          (T.ProcessingMode c, _      ) -> routeProcessingEvent c db ev
+         (T.HelpMode _, _            ) -> routeHelpEvent db ev
+
+-- =============================================================== --
+-- Events in help mode
+
+---------------------------------------------------------------------
+-- Router
+
+routeHelpEvent :: T.Debugger -> EventHandler
+routeHelpEvent db (B.VtyEvent (V.EvKey V.KEsc _ )) =
+    B.continue $ db { T.mode = T.NormalMode }
+
+routeHelpEvent db (B.VtyEvent (V.EvResize w h) ) =
+    B.continue . D.resize w h $ db
+
+routeHelpEvent db (B.VtyEvent (V.EvKey k _ )) =
+    scroll (B.viewportScroll T.HelpWgt) k $ db
+
+routeHelpEvent db _ =
+    B.continue db
 
 -- =============================================================== --
 -- Events in normal mode with program focus

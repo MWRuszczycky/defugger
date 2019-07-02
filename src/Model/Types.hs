@@ -123,6 +123,7 @@ data Debugger = Debugger {
 data Mode
     = NormalMode                      -- Normal operation
     | CommandMode                     -- User entering commands
+    | HelpMode [String]               -- Display help for the given commands
     | ProcessingMode (Async Debugger) -- Computiton running in separate thread
 
 -- |Debugger custom events
@@ -143,6 +144,7 @@ data WgtName
     | InputWgt              -- Widget that displays the input left
     | StatusWgt             -- Widget that dislays status messages
     | CommandWgt            -- Editor widget for entering commands
+    | HelpWgt               -- Widget that displays help information
       deriving ( Eq, Ord )
 
 instance Show WgtName where
@@ -152,6 +154,7 @@ instance Show WgtName where
     show InputWgt   = "Input"
     show StatusWgt  = "Status"
     show CommandWgt = "Command Line"
+    show HelpWgt    = "Help"
 
 -- |Vertical range of lines of a wiget that are in view for display.
 type VertViewRange = (Int, Int)

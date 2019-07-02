@@ -116,6 +116,7 @@ nextWidget T.OutputWgt  = T.InputWgt
 nextWidget T.InputWgt   = T.ProgramWgt
 nextWidget T.StatusWgt  = T.StatusWgt
 nextWidget T.CommandWgt = T.CommandWgt
+nextWidget T.HelpWgt    = T.HelpWgt
 
 ---------------------------------------------------------------------
 -- Helpers

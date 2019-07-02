@@ -28,7 +28,8 @@ getCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ hub
 
 hub :: [T.Command]
 -- ^Organizes all the commands that can be run from the debugger.
-hub = [ T.Command loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
+hub = [ T.Command helpNames  helpCmd  helpCmdSHelp  helpCmdLHelp
+      , T.Command loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
       , T.Command resetNames resetCmd resetCmdSHelp resetCmdLHelp
       , T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
       , T.Command unsetNames unsetCmd unsetCmdSHelp unsetCmdLHelp
@@ -38,6 +39,19 @@ hub = [ T.Command loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
 
 -- =============================================================== --
 -- Commands
+
+---------------------------------------------------------------------
+-- help
+
+helpNames :: [String]
+helpNames = [ "help", "h"]
+
+helpCmdSHelp, helpCmdLHelp :: Text
+helpCmdSHelp = "display help"
+helpCmdLHelp = "long help for help command"
+
+helpCmd :: [String] -> T.DebuggerCommand
+helpCmd _ = T.PureCmd $ \ db -> db { T.mode = T.HelpMode ["help"] }
 
 ---------------------------------------------------------------------
 -- load

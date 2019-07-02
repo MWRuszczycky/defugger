@@ -40,6 +40,7 @@ drawUI db = case T.mode db of
                  T.NormalMode       -> drawNormalUI db
                  T.CommandMode      -> drawCommandUI db
                  T.ProcessingMode _ -> drawNormalUI db
+                 T.HelpMode cs      -> drawHelpUI cs
 
 drawNormalUI :: T.Debugger -> [ B.Widget T.WgtName ]
 -- ^Render the UI under normal mode.
@@ -50,6 +51,10 @@ drawCommandUI :: T.Debugger -> [ B.Widget T.WgtName ]
 -- ^Render the UI under command mode.
 drawCommandUI db = [ B.withAttr "background" $
                      mainWidgets db <=> commandUI db ]
+
+drawHelpUI :: [String] -> [ B.Widget T.WgtName ]
+drawHelpUI cs = [ B.withAttr "background" $
+                  helpWidgets cs ]
 
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
 -- ^Helper function for assembling the widgets that are rendered the
@@ -201,3 +206,10 @@ statusUI db
 commandUI :: T.Debugger -> B.Widget T.WgtName
 commandUI db = ( B.withAttr "background" $ B.str ":" )
                <+> ( renderEditor (B.str . unlines) True . T.commandEdit $ db )
+
+-- =============================================================== --
+-- Rendering the help UI for displaying help and other information
+
+helpWidgets :: [String] -> B.Widget T.WgtName
+helpWidgets _ = B.viewport T.HelpWgt B.Both
+                . B.txt $ "Help is still being implemented.\nEsc to return."
