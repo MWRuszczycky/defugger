@@ -14,8 +14,7 @@ import qualified Brick                  as B
 import qualified Data.Vector            as Vec
 import qualified Data.Set               as Set
 import qualified Model.Types            as T
-import Data.List                                ( intercalate
-                                                , intersperse       )
+import Data.List                                ( intersperse       )
 import Brick.Widgets.Edit                       ( renderEditor      )
 import Data.Word                                ( Word8             )
 import Brick                                    ( (<+>), (<=>)      )
@@ -189,7 +188,7 @@ formatLine :: Int -> (Word8 -> String) -> Int -> [Word8] -> String
 -- concatenate them separated by a single space such that the string
 -- begins with the label number fit into m spaces.
 formatLine m f n xs = rightPadStr m (show n) ++ ' ' : ys
-    where ys = intercalate " " . map f $ xs
+    where ys = unwords . map f $ xs
 
 rightPadStr :: Int -> String -> String
 -- ^Pad a string on the right with spaces to a length n.
