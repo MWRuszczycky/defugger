@@ -33,6 +33,7 @@ attributes = B.attrMap V.defAttr
     , ( "lineno",        B.on V.green   V.black  )
     , ( "break",         B.on V.black   V.red    )
     , ( "highlight",     B.on V.magenta V.black  )
+    , ( "command",       B.on V.green   V.black  )
     , ( borderAttr,      B.on V.white   V.black  )
     , ( editAttr,        B.on V.white   V.black  )
     , ( editFocusedAttr, B.on V.white   V.black  )

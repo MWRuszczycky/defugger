@@ -2,6 +2,7 @@
 
 module Controller.Commands
     ( getCommand
+    , hub
     ) where
 
 import qualified Data.Vector             as Vec
@@ -82,7 +83,7 @@ resetNames :: [String]
 resetNames = [ "reset", "r" ]
 
 resetCmdSHelp, resetCmdLHelp :: Text
-resetCmdSHelp = "reset the debugger to its original state given"
+resetCmdSHelp = "reset the debugger to its original state"
 resetCmdLHelp = "long help for reset command"
 
 resetCmd :: [String] -> T.DebuggerCommand

@@ -14,16 +14,18 @@ import qualified Brick                  as B
 import qualified Data.Vector            as Vec
 import qualified Data.Set               as Set
 import qualified Model.Types            as T
-import Data.List                                ( intercalate       )
+import Data.List                                ( intercalate
+                                                , intersperse       )
 import Brick.Widgets.Edit                       ( renderEditor      )
 import Data.Word                                ( Word8             )
 import Brick                                    ( (<+>), (<=>)      )
 import Brick.Widgets.Border                     ( vBorder
                                                 , border
                                                 , hBorder           )
-import Model.Debugger.Debugger                  ( getPosition       )
 import View.Core                                ( addNumberedRow
                                                 , renderTitle       )
+import Controller.Commands                      ( hub               )
+import Model.Debugger.Debugger                  ( getPosition       )
 import Model.Utilities                          ( chunksOf
                                                 , slice
                                                 , toAscii
@@ -212,4 +214,11 @@ commandUI db = ( B.withAttr "background" $ B.str ":" )
 
 helpWidgets :: [String] -> B.Widget T.WgtName
 helpWidgets _ = B.viewport T.HelpWgt B.Both
-                . B.txt $ "Help is still being implemented.\nEsc to return."
+                $ B.txt "Help is still being implemented.\nEsc to return.\n"
+                <=> (B.vBox . map shortHelp) hub
+
+shortHelp :: T.Command -> B.Widget T.WgtName
+shortHelp (T.Command ns _ sh _) = names <+> B.txt " " <+> summary
+    where summary = B.txt sh
+          names   = B.hBox . intersperse (B.str "/")
+                    . map (B.withAttr "command" . B.str) $ ns
