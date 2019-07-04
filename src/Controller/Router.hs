@@ -223,7 +223,7 @@ handleCommand :: T.Debugger -> DebugEventMonad
 -- ^Read the command entered and execute it.
 handleCommand db0 =
     let db1        = db0 { T.commandEdit = editor T.CommandWgt (Just 1) ""
-                         , T.mode         = T.NormalMode }
+                         , T.mode        = T.NormalMode }
         cmdStr     = getEditContents . T.commandEdit $ db0
         goIO f db  = runExceptT (f db) >>= pure . either (err db) id
         err db msg = db { T.message = msg }
