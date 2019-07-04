@@ -5,10 +5,12 @@ module Controller.Commands
     , hub
     ) where
 
-import qualified Data.Vector             as Vec
 import qualified Model.Types             as T
 import qualified Model.Debugger.Debugger as D
 import qualified Data.Sequence           as Seq
+import Control.Applicative                      ( (<|>)          )
+import Data.Maybe                               ( listToMaybe    )
+import Data.Foldable                            ( toList         )
 import Control.Monad.Except                     ( throwError
                                                 , liftIO         )
 import Control.Monad                            ( guard          )
@@ -156,24 +158,14 @@ writeCmdSHelp = "write the current script"
 writeCmdLHelp = "long help for write command"
 
 writeCmd :: [String] -> T.DebuggerCommand
-writeCmd []    = T.SimpleIOCmd writeScript
-writeCmd (x:_) = T.SimpleIOCmd $
-    \ db -> writeScript $ db { T.scriptPath = Just x }
-
-writeScript :: T.Debugger -> T.ErrorIO T.Debugger
-writeScript db = do
-    case T.scriptPath db of
-         Nothing -> throwError "Save path required"
-         Just fp -> do let x = formatScript ( T.progWidth db ) . T.program $ db
-                       liftIO . writeFile fp $ x
-                       pure $ db { T.message = "Saved to " ++ fp }
-
-formatScript :: Int -> T.DBProgram -> String
--- ^Format a BF debug program to a string with n characters per line.
-formatScript n = unlines . chunksOf n
-                 . init . tail
-                 . concatMap show
-                 . Vec.toList
+writeCmd xs = T.SimpleIOCmd $ \ db -> go db $ listToMaybe xs <|> T.scriptPath db
+    where fmt n = unlines . chunksOf n . init . tail . concatMap show . toList
+          go _  Nothing   = throwError "Save path required"
+          go db (Just fp) = do let s = fmt ( T.progWidth db ) . T.program $ db
+                               liftIO . writeFile fp $ s
+                               pure $ db { T.message    = "saved to " ++ fp
+                                         , T.scriptPath = Just fp
+                                         }
 
 ---------------------------------------------------------------------
 -- quit | exit | q
