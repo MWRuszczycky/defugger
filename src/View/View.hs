@@ -14,7 +14,6 @@ import qualified Brick                  as B
 import qualified Data.Vector            as Vec
 import qualified Data.Set               as Set
 import qualified Model.Types            as T
-import Data.List                                ( intersperse       )
 import Brick.Widgets.Edit                       ( renderEditor      )
 import Data.Word                                ( Word8             )
 import Brick                                    ( (<+>), (<=>)      )
@@ -23,7 +22,7 @@ import Brick.Widgets.Border                     ( vBorder
                                                 , hBorder           )
 import View.Core                                ( addNumberedRow
                                                 , renderTitle       )
-import Controller.Commands                      ( commands          )
+import View.Help                                ( helpWidget        )
 import Model.Debugger.Debugger                  ( getPosition       )
 import Model.Utilities                          ( chunksOf
                                                 , slice
@@ -54,8 +53,7 @@ drawCommandUI db = [ B.withAttr "background" $
                      mainWidgets db <=> commandUI db ]
 
 drawHelpUI :: [String] -> [ B.Widget T.WgtName ]
-drawHelpUI cs = [ B.withAttr "background" $
-                  helpWidgets cs ]
+drawHelpUI cs = [ B.withAttr "background" $ helpWidget cs ]
 
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
 -- ^Helper function for assembling the widgets that are rendered the
@@ -207,17 +205,3 @@ statusUI db
 commandUI :: T.Debugger -> B.Widget T.WgtName
 commandUI db = ( B.withAttr "background" $ B.str ":" )
                <+> ( renderEditor (B.str . unlines) True . T.commandEdit $ db )
-
--- =============================================================== --
--- Rendering the help UI for displaying help and other information
-
-helpWidgets :: [String] -> B.Widget T.WgtName
-helpWidgets _ = B.viewport T.HelpWgt B.Both
-                $ B.txt "Help is still being implemented.\nEsc to return.\n"
-                <=> (B.vBox . map shortHelp) commands
-
-shortHelp :: T.Command -> B.Widget T.WgtName
-shortHelp (T.Command ns _ sh _) = names <+> B.txt " " <+> summary
-    where summary = B.txt sh
-          names   = B.hBox . intersperse (B.str "/")
-                    . map (B.withAttr "command" . B.str) $ ns

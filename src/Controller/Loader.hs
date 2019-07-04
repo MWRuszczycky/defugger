@@ -27,10 +27,14 @@ import Model.CoreIO                     ( tryReadFile
 ---------------------------------------------------------------------
 -- Debuggeer initialization and resetting
 
+initMessage :: String
+initMessage = concat [ "Welcome to the Defugger! A BF Debugger!"
+                     , " (to display help, :help)" ]
+
 initDebugger :: BChan T.DebugEvent -> T.DefuggerOptions -> (Int, Int)
                 -> T.ErrorIO T.Debugger
 initDebugger chan opts (width,height) = do
-    let dictionary = def
+    let dictionary  = def
     s  <- maybe (pure Tx.empty) tryReadFile . T.pathToScript $ opts
     x  <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
     p  <- liftEither . parseDebug dictionary $ s
@@ -48,7 +52,7 @@ initDebugger chan opts (width,height) = do
                     , T.readBackup   = []
                       -- Command and status widgets
                     , T.commandEdit  = editor T.CommandWgt (Just 1) ""
-                    , T.message      = "Welcome to the Defugger: A BF Debugger!"
+                    , T.message      = initMessage
                       -- Terminal and display parameters
                     , T.termWidth    = width
                     , T.termHeight   = height

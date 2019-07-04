@@ -57,7 +57,7 @@ helpCmdSHelp = "display help"
 helpCmdLHelp = "long help for help command"
 
 helpCmd :: [String] -> T.DebuggerCommand
-helpCmd _ = T.PureCmd $ \ db -> db { T.mode = T.HelpMode ["help"] }
+helpCmd xs = T.PureCmd $ \ db -> db { T.mode = T.HelpMode xs }
 
 -- load -------------------------------------------------------------
 
