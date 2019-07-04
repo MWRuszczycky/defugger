@@ -177,9 +177,9 @@ data Command = Command {
 -- system. Complex IO commands require that the Brick runtime system
 -- be suspended while they are executed.
 data DebuggerCommand
-    = PureCmd      ( Debugger -> Debugger    )
-    | SimpleIOCmd  ( Debugger -> IO Debugger )
-    | ComplexIOCmd ( Debugger -> IO Debugger )
+    = PureCmd      ( Debugger -> Debugger         )
+    | SimpleIOCmd  ( Debugger -> ErrorIO Debugger )
+    | ComplexIOCmd ( Debugger -> ErrorIO Debugger )
     | QuitCmd
     | ErrorCmd ErrString
 

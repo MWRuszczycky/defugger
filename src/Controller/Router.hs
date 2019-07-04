@@ -16,7 +16,8 @@ import qualified Model.Types              as T
 import qualified Model.Debugger.Debugger  as D
 import Control.Concurrent.Async           as A
 import Brick.BChan                              ( writeBChan        )
-import Control.Monad.IO.Class                   ( liftIO            )
+import Control.Monad.Except                     ( runExceptT
+                                                , liftIO            )
 import Controller.Commands                      ( getCommand        )
 import Brick.Widgets.Edit                       ( editor
                                                 , getEditContents
@@ -220,16 +221,18 @@ abortToNormalMode db = B.continue $
 
 handleCommand :: T.Debugger -> DebugEventMonad
 -- ^Read the command entered and execute it.
-handleCommand db =
-    let db'    = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
-                    , T.mode        = T.NormalMode }
-        cmdStr = getEditContents . T.commandEdit $ db
+handleCommand db0 =
+    let db1        = db0 { T.commandEdit = editor T.CommandWgt (Just 1) ""
+                         , T.mode         = T.NormalMode }
+        cmdStr     = getEditContents . T.commandEdit $ db0
+        goIO f db  = runExceptT (f db) >>= pure . either (err db) id
+        err db msg = db { T.message = msg }
     in  case getCommand . words . unlines $ cmdStr of
-             T.PureCmd f      -> B.continue . f $ db'
-             T.SimpleIOCmd f  -> liftIO ( f db') >>= B.continue
-             T.ComplexIOCmd f -> B.suspendAndResume $ f db'
-             T.ErrorCmd e     -> B.continue $ db' { T.message = e }
-             T.QuitCmd        -> B.halt db'
+             T.PureCmd f      -> B.continue . f $ db1
+             T.SimpleIOCmd f  -> liftIO ( goIO f db1 ) >>= B.continue
+             T.ComplexIOCmd f -> B.suspendAndResume $ goIO f db1
+             T.ErrorCmd e     -> B.continue $ db1 { T.message = e }
+             T.QuitCmd        -> B.halt db1
 
 -- =============================================================== --
 -- Events when processing a computation on the debugger

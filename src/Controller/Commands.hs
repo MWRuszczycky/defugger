@@ -9,7 +9,8 @@ import qualified Data.Vector             as Vec
 import qualified Model.Types             as T
 import qualified Model.Debugger.Debugger as D
 import qualified Data.Sequence           as Seq
-import Control.Monad.Except                     ( runExceptT     )
+import Control.Monad.Except                     ( throwError
+                                                , liftIO         )
 import Control.Monad                            ( guard          )
 import Text.Read                                ( readMaybe      )
 import Data.Text                                ( Text           )
@@ -66,15 +67,8 @@ loadCmdLHelp = "long help for load command"
 
 loadCmd :: [String] -> T.DebuggerCommand
 loadCmd []      = T.ErrorCmd "A path to a BF script must be specified"
-loadCmd (x:y:_) = T.SimpleIOCmd $ tryLoad (Just x) (Just y)
-loadCmd (x:_)   = T.SimpleIOCmd $ tryLoad (Just x) Nothing
-
-tryLoad :: Maybe FilePath -> Maybe FilePath -> T.Debugger -> IO T.Debugger
-tryLoad scriptPath inputPath db0 = do
-    result <- runExceptT . reloadDebugger scriptPath inputPath $ db0
-    case result of
-         Left errMsg -> pure $ db0 { T.message = errMsg }
-         Right db1   -> pure . D.noMessage $ db1
+loadCmd (x:y:_) = T.SimpleIOCmd $ reloadDebugger (Just x) (Just y)
+loadCmd (x:_)   = T.SimpleIOCmd $ reloadDebugger (Just x) Nothing
 
 ---------------------------------------------------------------------
 -- reset
@@ -166,13 +160,12 @@ writeCmd []    = T.SimpleIOCmd writeScript
 writeCmd (x:_) = T.SimpleIOCmd $
     \ db -> writeScript $ db { T.scriptPath = Just x }
 
-writeScript :: T.Debugger -> IO T.Debugger
+writeScript :: T.Debugger -> T.ErrorIO T.Debugger
 writeScript db = do
-    let mbFp = T.scriptPath db
-    case mbFp of
-         Nothing -> pure $ db { T.message = "Save path required" }
-         Just fp -> do let x = formatScript (T.progWidth db) . T.program $ db
-                       writeFile fp x
+    case T.scriptPath db of
+         Nothing -> throwError "Save path required"
+         Just fp -> do let x = formatScript ( T.progWidth db ) . T.program $ db
+                       liftIO . writeFile fp $ x
                        pure $ db { T.message = "Saved to " ++ fp }
 
 formatScript :: Int -> T.DBProgram -> String

@@ -13,7 +13,8 @@ import qualified Data.Vector     as V
 import qualified Data.Set        as Set
 import qualified Data.Text       as Tx
 import qualified Data.Sequence   as Seq
-import Model.Debugger.Debugger          ( updateViewByPosition  )
+import Model.Debugger.Debugger          ( updateViewByPosition
+                                        , noMessage             )
 import Data.Sequence                    ( (<|)                  )
 import Data.Default                     ( def                   )
 import Brick.Widgets.Edit               ( editor                )
@@ -74,7 +75,7 @@ reloadDebugger scriptPath inputPath db = do
     s <- maybe (pure Tx.empty) tryReadFile  scriptPath
     x <- maybe (pure BS.empty) tryReadBytes inputPath
     p <- liftEither . parseDebug (T.dictionary db) $ s
-    pure . updateViewByPosition $
+    pure . noMessage . updateViewByPosition $
         db { -- Core model
              T.computer     = initComputer x
            , T.program      = p
