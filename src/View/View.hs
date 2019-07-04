@@ -23,7 +23,7 @@ import Brick.Widgets.Border                     ( vBorder
                                                 , hBorder           )
 import View.Core                                ( addNumberedRow
                                                 , renderTitle       )
-import Controller.Commands                      ( hub               )
+import Controller.Commands                      ( commands          )
 import Model.Debugger.Debugger                  ( getPosition       )
 import Model.Utilities                          ( chunksOf
                                                 , slice
@@ -214,7 +214,7 @@ commandUI db = ( B.withAttr "background" $ B.str ":" )
 helpWidgets :: [String] -> B.Widget T.WgtName
 helpWidgets _ = B.viewport T.HelpWgt B.Both
                 $ B.txt "Help is still being implemented.\nEsc to return.\n"
-                <=> (B.vBox . map shortHelp) hub
+                <=> (B.vBox . map shortHelp) commands
 
 shortHelp :: T.Command -> B.Widget T.WgtName
 shortHelp (T.Command ns _ sh _) = names <+> B.txt " " <+> summary

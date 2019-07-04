@@ -18,7 +18,7 @@ import Control.Concurrent.Async           as A
 import Brick.BChan                              ( writeBChan        )
 import Control.Monad.Except                     ( runExceptT
                                                 , liftIO            )
-import Controller.Commands                      ( getCommand        )
+import Controller.Commands                      ( parseCommand      )
 import Brick.Widgets.Edit                       ( editor
                                                 , getEditContents
                                                 , handleEditorEvent )
@@ -227,7 +227,7 @@ handleCommand db0 =
         cmdStr     = getEditContents . T.commandEdit $ db0
         goIO f db  = runExceptT (f db) >>= pure . either (err db) id
         err db msg = db { T.message = msg }
-    in  case getCommand . words . unlines $ cmdStr of
+    in  case parseCommand . words . unlines $ cmdStr of
              T.PureCmd f      -> B.continue . f $ db1
              T.SimpleIOCmd f  -> liftIO ( goIO f db1 ) >>= B.continue
              T.ComplexIOCmd f -> B.suspendAndResume $ goIO f db1

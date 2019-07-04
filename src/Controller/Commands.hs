@@ -1,52 +1,53 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Controller.Commands
-    ( getCommand
-    , hub
+    ( parseCommand
+    , commands
     ) where
 
+-- =============================================================== --
+-- User commands that can be entered and run in debugger mode      --
+-- =============================================================== --
+
 import qualified Model.Types             as T
-import qualified Model.Debugger.Debugger as D
-import qualified Data.Sequence           as Seq
 import qualified Data.Text               as Tx
 import Control.Applicative                      ( (<|>)          )
 import Data.Maybe                               ( listToMaybe    )
 import Data.Foldable                            ( toList         )
 import Control.Monad.Except                     ( throwError     )
-import Control.Monad                            ( guard          )
-import Text.Read                                ( readMaybe      )
 import Data.Text                                ( Text           )
 import Data.List                                ( find           )
 import Model.Utilities                          ( chunksOf       )
 import Model.CoreIO                             ( tryWriteFile   )
+import Controller.Settings                      ( parseSet
+                                                , parseUnset     )
 import Controller.Loader                        ( reloadDebugger
                                                 , resetDebugger  )
 
 -- =============================================================== --
 -- Command hub and router
 
-getCommand :: [String] -> T.DebuggerCommand
-getCommand []     = T.PureCmd $ id
-getCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ hub
+parseCommand :: [String] -> T.DebuggerCommand
+parseCommand []     = T.PureCmd $ id
+parseCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ commands
     where err  = T.ErrorCmd "Command unrecognized"
           go c = T.cmd c xs
 
-hub :: [T.Command]
+commands :: [T.Command]
 -- ^Organizes all the commands that can be run from the debugger.
-hub = [ T.Command helpNames  helpCmd  helpCmdSHelp  helpCmdLHelp
-      , T.Command loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
-      , T.Command resetNames resetCmd resetCmdSHelp resetCmdLHelp
-      , T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
-      , T.Command unsetNames unsetCmd unsetCmdSHelp unsetCmdLHelp
-      , T.Command writeNames writeCmd writeCmdSHelp writeCmdLHelp
-      , T.Command quitNames  quitCmd  quitCmdSHelp  quitCmdLHelp
-      ]
+commands = [ T.Command helpNames  helpCmd  helpCmdSHelp  helpCmdLHelp
+           , T.Command loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
+           , T.Command resetNames resetCmd resetCmdSHelp resetCmdLHelp
+           , T.Command setNames   setCmd   setCmdSHelp   setCmdLHelp
+           , T.Command unsetNames unsetCmd unsetCmdSHelp unsetCmdLHelp
+           , T.Command writeNames writeCmd writeCmdSHelp writeCmdLHelp
+           , T.Command quitNames  quitCmd  quitCmdSHelp  quitCmdLHelp
+           ]
 
 -- =============================================================== --
 -- Commands
 
----------------------------------------------------------------------
--- help
+-- help -------------------------------------------------------------
 
 helpNames :: [String]
 helpNames = [ "help", "h"]
@@ -58,8 +59,7 @@ helpCmdLHelp = "long help for help command"
 helpCmd :: [String] -> T.DebuggerCommand
 helpCmd _ = T.PureCmd $ \ db -> db { T.mode = T.HelpMode ["help"] }
 
----------------------------------------------------------------------
--- load
+-- load -------------------------------------------------------------
 
 loadNames :: [String]
 loadNames = [ "load", "l" ]
@@ -73,8 +73,7 @@ loadCmd []      = T.ErrorCmd "A path to a BF script must be specified"
 loadCmd (x:y:_) = T.SimpleIOCmd $ reloadDebugger (Just x) (Just y)
 loadCmd (x:_)   = T.SimpleIOCmd $ reloadDebugger (Just x) Nothing
 
----------------------------------------------------------------------
--- reset
+-- reset ------------------------------------------------------------
 
 resetNames :: [String]
 resetNames = [ "reset", "r" ]
@@ -86,8 +85,7 @@ resetCmdLHelp = "long help for reset command"
 resetCmd :: [String] -> T.DebuggerCommand
 resetCmd _ = T.PureCmd $ resetDebugger
 
----------------------------------------------------------------------
--- set
+-- set --------------------------------------------------------------
 
 setNames :: [String]
 setNames = [ "set", "s" ]
@@ -97,43 +95,19 @@ setCmdSHelp = "sets a debugger property"
 setCmdLHelp = "long help for set command"
 
 setCmd :: [String] -> T.DebuggerCommand
-setCmd ("hex":_)       = setHex
-setCmd ("dec":_)       = setDec
-setCmd ("ascii":_)     = setAsc
-setCmd ("break":_)     = setBreak
-setCmd ("width":x:_)   = setWidth x
-setCmd ("history":x:_) = setHistDepth x
-setCmd (x:_)           = T.ErrorCmd $ "Cannot set property " ++ x
-setCmd []              = T.ErrorCmd   "Nothing to set"
+setCmd = either T.ErrorCmd T.PureCmd . parseSet
 
-setHex, setDec, setAsc :: T.DebuggerCommand
-setHex = T.PureCmd $ D.noMessage . D.changeFormat T.Hex
-setDec = T.PureCmd $ D.noMessage . D.changeFormat T.Dec
-setAsc = T.PureCmd $ D.noMessage . D.changeFormat T.Asc
+--setCmd :: [String] -> T.DebuggerCommand
+--setCmd ("hex":_)       = setHex
+--setCmd ("dec":_)       = setDec
+--setCmd ("ascii":_)     = setAsc
+--setCmd ("break":_)     = setBreak
+--setCmd ("width":x:_)   = setWidth x
+--setCmd ("history":x:_) = setHistDepth x
+--setCmd (x:_)           = T.ErrorCmd $ "Cannot set property " ++ x
+--setCmd []              = T.ErrorCmd   "Nothing to set"
 
-setBreak :: T.DebuggerCommand
-setBreak = T.PureCmd  $ D.noMessage . D.setBreakPoint
-
-setWidth :: String -> T.DebuggerCommand
-setWidth x = maybe err (T.PureCmd . go) . readMaybe $ x
-    where err  = T.ErrorCmd $ "Cannot set width to " ++ x
-          go n | n < 10    = \ db -> db { T.message = "Invalid width" }
-               | otherwise = \ db -> db { T.message = ""
-                                        , T.progWidth = n }
-
-setHistDepth :: String -> T.DebuggerCommand
-setHistDepth x = maybe err T.PureCmd . go $ x
-    where err  = T.ErrorCmd $ "Cannot set history reversion depth to " ++ x
-          go y = do n <- readMaybe y
-                    guard (n >= 0 )
-                    pure $ \ db -> let h = T.history db
-                                   in  db { T.message = ""
-                                          , T.histDepth = n + 1
-                                          , T.history = Seq.take (n+1) h
-                                          }
-
----------------------------------------------------------------------
--- unset
+-- unset ------------------------------------------------------------
 
 unsetNames :: [String]
 unsetNames = [ "unset", "u" ]
@@ -143,13 +117,15 @@ unsetCmdSHelp = "unsets a debugger property"
 unsetCmdLHelp = "long help for unset command"
 
 unsetCmd :: [String] -> T.DebuggerCommand
-unsetCmd ("break":"all":_) = T.PureCmd  $ D.noMessage . D.unsetAllBreakPoints
-unsetCmd ("break":_)       = T.PureCmd  $ D.noMessage . D.unsetBreakPoint
-unsetCmd (x:_)             = T.ErrorCmd $ "Cannot unset property " ++ x
-unsetCmd []                = T.ErrorCmd   "Nothing to unset"
+unsetCmd = either T.ErrorCmd T.PureCmd . parseUnset
 
----------------------------------------------------------------------
--- write
+--unsetCmd :: [String] -> T.DebuggerCommand
+--unsetCmd ("break":"all":_) = T.PureCmd  $ D.noMessage . D.unsetAllBreakPoints
+--unsetCmd ("break":_)       = T.PureCmd  $ D.noMessage . D.unsetBreakPoint
+--unsetCmd (x:_)             = T.ErrorCmd $ "Cannot unset property " ++ x
+--unsetCmd []                = T.ErrorCmd   "Nothing to unset"
+
+-- write ------------------------------------------------------------
 
 writeNames :: [String]
 writeNames = [ "write", "w" ]
@@ -168,8 +144,7 @@ writeCmd xs = T.SimpleIOCmd $ \ db -> go db $ listToMaybe xs <|> T.scriptPath db
                                          , T.scriptPath = Just fp
                                          }
 
----------------------------------------------------------------------
--- quit | exit | q
+-- quit -------------------------------------------------------------
 
 quitNames :: [String]
 quitNames = [ "quit", "exit", "q" ]

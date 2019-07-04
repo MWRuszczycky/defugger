@@ -18,6 +18,7 @@ module Model.Types
       -- Debugger commands
     , Command         (..)
     , DebuggerCommand (..)
+    , Setting         (..)
       -- Computer/Computation model
     , Computation
     , Computer        (..)
@@ -169,6 +170,15 @@ data Command = Command {
     , cmd       :: [String] -> DebuggerCommand
     , shortHelp :: Text
     , longHelp  :: Text
+    }
+
+-- |Subcommands used with the <set> and <unset> commands to modify
+-- the debugger. Settings only map to pure functions on the debugger.
+data Setting = Setting {
+      settingName :: String
+    , setting     :: [String] -> Either ErrString ( Debugger -> Debugger )
+    , unsetting   :: [String] -> Either ErrString ( Debugger -> Debugger )
+    , settingHelp :: Text
     }
 
 -- |Commands that can be executed while running the debugger. Pure

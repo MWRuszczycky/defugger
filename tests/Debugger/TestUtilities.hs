@@ -76,7 +76,7 @@ mockIOHandler f db = runExceptT ( f db' ) >>= pure . either ( err db' ) id
 
 handleAsError :: [String] -> T.Debugger -> IO T.Debugger
 handleAsError commands db = do
-    case CC.getCommand . words . unlines $ commands of
+    case CC.parseCommand . words . unlines $ commands of
          T.PureCmd _      -> error "Expected ErrorCmd command got PureCmd"
          T.ComplexIOCmd _ -> error "Expected ErrorCmd command got ComplexIOCmd"
          T.QuitCmd        -> error "Expected ErrorCmd command got QuitCmd"
@@ -85,7 +85,7 @@ handleAsError commands db = do
 
 handleAsSimpleIO :: [String] -> T.Debugger -> IO T.Debugger
 handleAsSimpleIO commands db = do
-    case CC.getCommand . words . unlines $ commands of
+    case CC.parseCommand . words . unlines $ commands of
          T.PureCmd _      -> error "Expected SimpleIO command got PureCmd"
          T.ComplexIOCmd _ -> error "Expected SimpleIO command got ComplexIOCmd"
          T.ErrorCmd _     -> error "Expected SimpleIO command got ErrorCmd"

@@ -23,6 +23,7 @@ library defugger-internal
   exposed-modules:      Controller.Commands
                       , Controller.Loader
                       , Controller.Router
+                      , Controller.Settings
                       , Model.Debugger.Debugger
                       , Model.Debugger.Edit
                       , Model.Debugger.Execute
