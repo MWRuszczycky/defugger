@@ -8,16 +8,17 @@ module Controller.Commands
 import qualified Model.Types             as T
 import qualified Model.Debugger.Debugger as D
 import qualified Data.Sequence           as Seq
+import qualified Data.Text               as Tx
 import Control.Applicative                      ( (<|>)          )
 import Data.Maybe                               ( listToMaybe    )
 import Data.Foldable                            ( toList         )
-import Control.Monad.Except                     ( throwError
-                                                , liftIO         )
+import Control.Monad.Except                     ( throwError     )
 import Control.Monad                            ( guard          )
 import Text.Read                                ( readMaybe      )
 import Data.Text                                ( Text           )
 import Data.List                                ( find           )
 import Model.Utilities                          ( chunksOf       )
+import Model.CoreIO                             ( tryWriteFile   )
 import Controller.Loader                        ( reloadDebugger
                                                 , resetDebugger  )
 
@@ -162,7 +163,7 @@ writeCmd xs = T.SimpleIOCmd $ \ db -> go db $ listToMaybe xs <|> T.scriptPath db
     where fmt n = unlines . chunksOf n . init . tail . concatMap show . toList
           go _  Nothing   = throwError "Save path required"
           go db (Just fp) = do let s = fmt ( T.progWidth db ) . T.program $ db
-                               liftIO . writeFile fp $ s
+                               tryWriteFile fp (Tx.pack s)
                                pure $ db { T.message    = "saved to " ++ fp
                                          , T.scriptPath = Just fp
                                          }
