@@ -70,33 +70,20 @@ This will bring up a TUI with four windows and a command/status line as shown he
 4. **The Input Window.** This displays the remaining input that your script has yet to consume. As in the case of the output window, you can toggle between different number formats.
 5. **The Command/Status Line.** Messages are displayed in the bottom row of the TUI. Likewise, you can enter commands here by first pressing `:`.
 
-#### Debugger mode command summary<a name="commands"></a>
+#### Debugger mode commands and key-bindings <a name="commands"></a>
 
-I'm still working on help strings and documentation, but the basic keyboard commands are as follows:
-* The `<esc>` key has different functions depending on the debugger mode:
-    + During normal mode, `<esc>` quits the Defugger program.
-    + When entering a command (see below), `<esc>` cancels the command and returns you back to normal mode.
-    + When running a long or even nonhalting jump through a BF script, `<esc>` will abort the jump.
-* Press `<tab>` to cycle focus between the program, memory, output and input windows, press tab. Some commands require the correct window be focused.
-* Use the arrow keys and `hlkjt` (lower case) to move the cursor around in the program window without executing or reverting statements. These keys will also scroll the input and output windows.
-* Use `TL` (upper case) or `<space-bar>` to step forward one BF statement.
-* Use `H` (upper case) or `<backspace>` to step backward one BF statement.
-* Use `J` (upper case) or `<page-down>` to jump to the next break point.
-* Use `K` (upper case) or `<page-up>` to jump to the previous break point.
-* Use `<>+-.,[]` to insert the corresponding BF statement. Note, that this will not work if the evaluation point is ahead of the insertion point or if they are in a common while-block.
-* Use `x` to delete the current statement, the same rules apply as with adding statements.
+You can list help information by typing a colon (`:`) and then `help` (i.e., `:help`). The colon enters you into Command Mode where you can run typed commands. The `help` command can also take arguments to provide additional information. For example,
+* `:help keys` lists all the current key-bindings.
+* `:help commands` lists all the current typed commands available in Command Mode.
+* `:help settings` lists all the setable parameters using the `set`/`unset` commands.
 
-Command phrases can also be entered by first pressing `:`. To quit entering a command without executing it, press `<esc>`. Some currently supported commands are
-* `:q`, `:quit`: Quit the Defugger.
-* `:reset`: Reset the debugger to its initial state with the current BF script and originally loaded input.
-* `:load path/to/script.bf path/to/input`: Load the BF script at `path/to/script.bf` and the input at `path/to/input` into the debugger. The latter path is optional. Paths must be specified without spaces.
-* `:set break`: Set a break point at the current cursor position.
-* `:unset break`: Delete the break point at the current cursor position.
-* `:unset break all`: Delete all break points.
-* `:set hex`, `:set dec`, `:set ascii`: Set the byte display format for the currently active output or input window.
-* `:set width 20`: Set the maximum program window character width to 20 characters wide (or however wide you want it).
-* `:set history 2000`: Set the reversion history depth to 2000 BF statements. The default depth is 1000.
-* `:write`, `:w`: Overwrite the BF file originally loaded with the currently edited script. Note that this will remove any foramatting, and line breaks will be added as displayed in the program window. You can also specify an alternate file path for writing with `:write filename.bf`, etc.
+The `<esc>` key lets you cancel various actions as well as quit the program:
+* During Normal Mode, `<esc>` quits the Defugger program. You can also run `:q` or `:quit` to quit the Defugger.
+* When entering a command, `<esc>` cancels the command and returns you back to Normal Mode.
+* When running a long or even nonhalting jump through a BF script, `<esc>` will abort the jump (see below).
+* During Help Mode, `<esc>` returns you back to Normal Mode (`q` will also do this).
+
+The `<tab>` key is used to cycle focus between the Program, Memory, Output and Input Windows.
 
 ## Performance and halting computations<a name="performance"></a>
 
@@ -110,9 +97,8 @@ So, jumps through multiple BF statements in the debugger can be very slow or eve
 
 ### To do
 
-* Write help strings and command documentation.
+* Write help strings and command documentation. Help data structures may also need to be further refactored.
 * Write better command line parsing and initialization at startup.
-* Improve command handling, especially the `set` command.
 * Implement reloading of scripts.
 * Implement running an editor on a script and automatically reloading it.
 * Allow a wider range of BF formats and command naming dictionaries.
