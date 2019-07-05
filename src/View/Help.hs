@@ -94,21 +94,27 @@ keyBindingSummaryWidget (ks, x) = header <=> ( spacer 2 <+> action )
 
 keyBindings :: [([Text], Text)]
 keyBindings = [ ( [ "<esc>" ],
-                    "Normal mode: quit the Defugger or abort jump.\n"
-                    <> "Command mode: abort command.\n"
+                    "Normal Mode: quit the Defugger or abort jump.\n"
+                    <> "Command Mode: abort command.\n"
                     <> "Help Mode: return to Normal Mode." )
+              , ( [ "q" ],
+                    "Return to Normal Mode from Help Mode." )
               , ( [ "<right-arrow>", "l", "t" ],
                     "Move cursor one statement forward in Program Window.\n"
-                    <> "Scroll Output and Input Windows." )
+                    <> "Scroll Output and Input Windows.\n"
+                    <> "Scroll through help." )
               , ( [ "<left-arrow>", "h" ],
                     "Move cursor one statement backward in Program Window.\n"
-                    <> "Scroll Output and Input Windows." )
+                    <> "Scroll Output and Input Windows.\n"
+                    <> "Scroll through help." )
               , ( [ "<down-arrow>", "j" ],
                     "Move cursor to the next row in Program Window.\n"
-                    <> "Scroll Memory, Output and Input Windows." )
+                    <> "Scroll Memory, Output and Input Windows.\n"
+                    <> "Scroll through help." )
               , ( [ "<up-arrow>", "k" ],
                     "Move cursor to previous row in Program Window.\n"
-                    <> "Scroll Memory, Output and Input Windows" )
+                    <> "Scroll Memory, Output and Input Windows.\n"
+                    <> "Scroll through help." )
               , ( [ "<space>", "L", "T" ],
                     "Advance program execution one statement forward." )
               , ( [ "<back-space>", "H" ],
