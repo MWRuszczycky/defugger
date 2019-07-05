@@ -51,6 +51,9 @@ routeHelpEvent :: T.Debugger -> EventHandler
 routeHelpEvent db (B.VtyEvent (V.EvKey V.KEsc _ )) =
     B.continue $ db { T.mode = T.NormalMode }
 
+routeHelpEvent db (B.VtyEvent (V.EvKey (V.KChar 'q') _ )) =
+    B.continue $ db { T.mode = T.NormalMode }
+
 routeHelpEvent db (B.VtyEvent (V.EvResize w h) ) =
     B.continue . D.resize w h $ db
 
