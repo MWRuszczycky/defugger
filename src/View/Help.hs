@@ -11,11 +11,11 @@ module View.Help
 import qualified Data.Text   as Tx
 import qualified Brick       as B
 import qualified Model.Types as T
-import Data.Text                    ( Text         )
-import Data.List                    ( intersperse  )
-import Brick                        ( (<=>), (<+>) )
-import Controller.Commands          ( commands     )
-import Controller.Settings          ( settings     )
+import Data.Text                    ( Text                   )
+import Data.List                    ( intersperse, intersect )
+import Brick                        ( (<=>), (<+>)           )
+import Controller.Commands          ( commands               )
+import Controller.Settings          ( settings               )
 
 -- =============================================================== --
 -- The main help-UI widget
@@ -53,9 +53,11 @@ helpWidget ("commands":_) =
              <=> spacer 1
              <=> ( spacer 2 <+> summaries )
 
-helpWidget _ =
-    B.viewport T.HelpWgt B.Both
-        $ B.txt "Sorry! This is still being implement."
+helpWidget cs = let ws      = filter matches commands
+                    matches = not . null . intersect cs . T.cmdNames
+                in  B.viewport T.HelpWgt B.Both
+                    $ B.vBox . intersperse (spacer 1)
+                      . map commandDetailsWidget $ ws
 
 -- =============================================================== --
 -- Widget constructors
@@ -73,6 +75,11 @@ settingSummaryWidget :: T.Setting -> B.Widget T.WgtName
 settingSummaryWidget (T.Setting n _ _ h) = name <=> ( spacer 2 <+> summary )
     where summary = B.txt h
           name    = B.withAttr "setting" . B.str $ n
+
+commandDetailsWidget :: T.Command -> B.Widget T.WgtName
+commandDetailsWidget c = header <=> spacer 1 <=> ( spacer 2 <+> details )
+    where header  = commandSummaryWidget c
+          details = B.txt . T.longHelp $ c
 
 -- =============================================================== --
 -- Large help strings
