@@ -84,8 +84,8 @@ unsetAsc _ = pure D.noMessage
 setBreakHelp :: Text
 setBreakHelp = Tx.unlines hs
     where hs = [ "Insert or remove a break point at the cursor position."
-               , "To remove all break points, use:\n"
-               , "  unset break all"
+               , "To remove all break points, use:"
+               , "  :unset break all"
                ]
 
 setBreak :: SettingFunction
@@ -100,8 +100,8 @@ unsetBreak _         = pure $ D.noMessage . D.unsetBreakPoint
 setHistoryHelp :: Text
 setHistoryHelp = Tx.unlines hs
     where hs = [ "The number of individual debug steps to save in history for"
-               , "reversion (i.e., stepping or jumping back). For example,\n"
-               , "  set history 5000\n"
+               , "reversion (i.e., stepping or jumping back). For example,"
+               , "  :set history 5000"
                , "ensures that you will be able to revert or 'undo' the last"
                , "5000 BF statements executed. Larger histories allow you to"
                , "to step back further in the program; however, they will also"
@@ -131,7 +131,9 @@ unsetHistory _ = pure D.noMessage
 setWidthHelp :: Text
 setWidthHelp = Tx.unlines hs
     where hs = [ "The number of characters to display per line in the program"
-               , "window. The minimum character width is 10." ]
+               , "window. For example, to set the width to 50 characters,"
+               , "  :set width 50"
+               , "The minimum character width is 10." ]
 
 setWidth :: SettingFunction
 setWidth []    = Left "A value for the new program width must be supplied"

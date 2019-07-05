@@ -4,6 +4,10 @@ module View.Help
     ( helpWidget
     ) where
 
+-- =============================================================== --
+-- Rendering the help UI for displaying help and other information --
+-- =============================================================== --
+
 import qualified Data.Text   as Tx
 import qualified Brick       as B
 import qualified Model.Types as T
@@ -11,9 +15,10 @@ import Data.Text                    ( Text         )
 import Data.List                    ( intersperse  )
 import Brick                        ( (<=>), (<+>) )
 import Controller.Commands          ( commands     )
+import Controller.Settings          ( settings     )
 
 -- =============================================================== --
--- Rendering the help UI for displaying help and other information
+-- The main help-UI widget
 
 helpWidget :: [String] -> B.Widget T.WgtName
 helpWidget [] =
@@ -29,10 +34,14 @@ helpWidget ("keys":_) =
           <=> B.txt "Esc to return."
 
 helpWidget ("settings":_) =
-    B.viewport T.HelpWgt B.Both
-        $ B.txt "Help for settings is still being implemented."
-          <=> spacer 1
-          <=> B.txt "Esc to return."
+    let header = B.txt "List of settings currently available"
+        note   = B.txt "Settings used as arguments to the set & unset commands"
+        summaries = B.vBox . map settingSummaryWidget $ settings
+    in  B.viewport T.HelpWgt B.Both
+            $ B.withAttr "header" header
+              <=> note
+              <=> spacer 1
+              <=> ( spacer 2 <+> summaries )
 
 helpWidget ("commands":_) =
     let header    = B.txt "List of commands currently available"
@@ -48,7 +57,11 @@ helpWidget _ =
     B.viewport T.HelpWgt B.Both
         $ B.txt "Sorry! This is still being implement."
 
----------------------------------------------------------------------
+-- =============================================================== --
+-- Widget constructors
+
+spacer :: Int -> B.Widget T.WgtName
+spacer n = B.txt . Tx.replicate n $ " "
 
 commandSummaryWidget :: T.Command -> B.Widget T.WgtName
 commandSummaryWidget (T.Command ns _ sh _) = names <=> ( spacer 2 <+> summary )
@@ -56,8 +69,13 @@ commandSummaryWidget (T.Command ns _ sh _) = names <=> ( spacer 2 <+> summary )
           names   = B.hBox . intersperse (B.str " | ")
                     . map (B.withAttr "command" . B.str) $ ns
 
-spacer :: Int -> B.Widget T.WgtName
-spacer n = B.txt . Tx.replicate n $ " "
+settingSummaryWidget :: T.Setting -> B.Widget T.WgtName
+settingSummaryWidget (T.Setting n _ _ h) = name <=> ( spacer 2 <+> summary )
+    where summary = B.txt h
+          name    = B.withAttr "setting" . B.str $ n
+
+-- =============================================================== --
+-- Large help strings
 
 mainHelpTxt :: Text
 mainHelpTxt = Tx.unlines hs
