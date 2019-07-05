@@ -20,27 +20,29 @@ helpWidget [] =
     let hdr = B.txt "Welcome to the Defugger! A BF Debugger!"
         bdy = B.txt mainHelpTxt
     in  B.viewport T.HelpWgt B.Both $
-        B.withAttr "header" hdr <=> spacer <=> bdy
+        B.withAttr "header" hdr <=> spacer 1 <=> bdy
 
 helpWidget ("keys":_) =
     B.viewport T.HelpWgt B.Both
-        $ B.txt "Help for key-bindings is still being implement."
-          <=> spacer
+        $ B.txt "Help for key-bindings is still being implemented."
+          <=> spacer 1
           <=> B.txt "Esc to return."
 
 helpWidget ("settings":_) =
     B.viewport T.HelpWgt B.Both
         $ B.txt "Help for settings is still being implemented."
-          <=> spacer
+          <=> spacer 1
           <=> B.txt "Esc to return."
 
 helpWidget ("commands":_) =
-    B.viewport T.HelpWgt B.Both
-        $ B.txt "Help is still being implemented, so this is incomplete."
-          <=> spacer
-          <=> B.txt "Esc to return."
-          <=> spacer
-          <=> (B.vBox . map shortHelp) commands
+    let header    = B.txt "List of commands currently available"
+        note      = B.txt "For details about a command, :help command-name"
+        summaries = B.vBox . map commandSummaryWidget $ commands
+    in B.viewport T.HelpWgt B.Both
+           $ B.withAttr "header" header
+             <=> note
+             <=> spacer 1
+             <=> ( spacer 2 <+> summaries )
 
 helpWidget _ =
     B.viewport T.HelpWgt B.Both
@@ -48,14 +50,14 @@ helpWidget _ =
 
 ---------------------------------------------------------------------
 
-shortHelp :: T.Command -> B.Widget T.WgtName
-shortHelp (T.Command ns _ sh _) = names <+> B.txt " " <+> summary
+commandSummaryWidget :: T.Command -> B.Widget T.WgtName
+commandSummaryWidget (T.Command ns _ sh _) = names <=> ( spacer 2 <+> summary )
     where summary = B.txt sh
-          names   = B.hBox . intersperse (B.str "/")
+          names   = B.hBox . intersperse (B.str " | ")
                     . map (B.withAttr "command" . B.str) $ ns
 
-spacer :: B.Widget T.WgtName
-spacer = B.txt " "
+spacer :: Int -> B.Widget T.WgtName
+spacer n = B.txt . Tx.replicate n $ " "
 
 mainHelpTxt :: Text
 mainHelpTxt = Tx.unlines hs

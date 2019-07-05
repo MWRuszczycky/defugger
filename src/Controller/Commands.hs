@@ -53,7 +53,7 @@ helpNames :: [String]
 helpNames = [ "help", "h"]
 
 helpCmdSHelp, helpCmdLHelp :: Text
-helpCmdSHelp = "display help"
+helpCmdSHelp = "Display help information."
 helpCmdLHelp = "long help for help command"
 
 helpCmd :: [String] -> T.DebuggerCommand
@@ -65,7 +65,7 @@ loadNames :: [String]
 loadNames = [ "load", "l" ]
 
 loadCmdSHelp, loadCmdLHelp :: Text
-loadCmdSHelp = "attempt to load a BF script into the defugger"
+loadCmdSHelp = "Load a BF script into the Defugger."
 loadCmdLHelp = "long help for load command"
 
 loadCmd :: [String] -> T.DebuggerCommand
@@ -79,7 +79,7 @@ resetNames :: [String]
 resetNames = [ "reset", "r" ]
 
 resetCmdSHelp, resetCmdLHelp :: Text
-resetCmdSHelp = "reset the debugger to its original state"
+resetCmdSHelp = "Reset the Defugger to its original state."
 resetCmdLHelp = "long help for reset command"
 
 resetCmd :: [String] -> T.DebuggerCommand
@@ -91,21 +91,11 @@ setNames :: [String]
 setNames = [ "set", "s" ]
 
 setCmdSHelp, setCmdLHelp :: Text
-setCmdSHelp = "sets a debugger property"
+setCmdSHelp = "Sets a debug property in the Defugger."
 setCmdLHelp = "long help for set command"
 
 setCmd :: [String] -> T.DebuggerCommand
 setCmd = either T.ErrorCmd T.PureCmd . parseSet
-
---setCmd :: [String] -> T.DebuggerCommand
---setCmd ("hex":_)       = setHex
---setCmd ("dec":_)       = setDec
---setCmd ("ascii":_)     = setAsc
---setCmd ("break":_)     = setBreak
---setCmd ("width":x:_)   = setWidth x
---setCmd ("history":x:_) = setHistDepth x
---setCmd (x:_)           = T.ErrorCmd $ "Cannot set property " ++ x
---setCmd []              = T.ErrorCmd   "Nothing to set"
 
 -- unset ------------------------------------------------------------
 
@@ -113,17 +103,11 @@ unsetNames :: [String]
 unsetNames = [ "unset", "u" ]
 
 unsetCmdSHelp, unsetCmdLHelp :: Text
-unsetCmdSHelp = "unsets a debugger property"
+unsetCmdSHelp = "Unsets a debug property in the Defugger."
 unsetCmdLHelp = "long help for unset command"
 
 unsetCmd :: [String] -> T.DebuggerCommand
 unsetCmd = either T.ErrorCmd T.PureCmd . parseUnset
-
---unsetCmd :: [String] -> T.DebuggerCommand
---unsetCmd ("break":"all":_) = T.PureCmd  $ D.noMessage . D.unsetAllBreakPoints
---unsetCmd ("break":_)       = T.PureCmd  $ D.noMessage . D.unsetBreakPoint
---unsetCmd (x:_)             = T.ErrorCmd $ "Cannot unset property " ++ x
---unsetCmd []                = T.ErrorCmd   "Nothing to unset"
 
 -- write ------------------------------------------------------------
 
@@ -131,7 +115,7 @@ writeNames :: [String]
 writeNames = [ "write", "w" ]
 
 writeCmdSHelp, writeCmdLHelp :: Text
-writeCmdSHelp = "write the current script"
+writeCmdSHelp = "Write the current script to memory."
 writeCmdLHelp = "long help for write command"
 
 writeCmd :: [String] -> T.DebuggerCommand
@@ -150,7 +134,7 @@ quitNames :: [String]
 quitNames = [ "quit", "exit", "q" ]
 
 quitCmdSHelp, quitCmdLHelp :: Text
-quitCmdSHelp = "quits the defugger"
+quitCmdSHelp = "Quits the Defugger."
 quitCmdLHelp = "not much more to say about quitting"
 
 quitCmd :: [String] -> T.DebuggerCommand
