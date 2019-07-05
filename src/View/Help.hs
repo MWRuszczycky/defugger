@@ -22,16 +22,18 @@ import Controller.Settings          ( settings               )
 
 helpWidget :: [String] -> B.Widget T.WgtName
 helpWidget [] =
-    let hdr = B.txt "Welcome to the Defugger! A BF Debugger!"
-        bdy = B.txt mainHelpTxt
+    let header = B.txt "Welcome to the Defugger! A BF Debugger!"
+        body   = B.txt mainHelpTxt
     in  B.viewport T.HelpWgt B.Both $
-        B.withAttr "header" hdr <=> spacer 1 <=> bdy
+        B.withAttr "header" header <=> spacer 1 <=> body
 
 helpWidget ("keys":_) =
-    B.viewport T.HelpWgt B.Both
-        $ B.txt "Help for key-bindings is still being implemented."
-          <=> spacer 1
-          <=> B.txt "Esc to return."
+    let header = B.txt "List of key-bindings currently available."
+        body   = B.vBox . map keyBindingSummaryWidget $ keyBindings
+    in  B.viewport T.HelpWgt B.Both
+            $ B.withAttr "header" header
+              <=> spacer 1
+              <=> ( spacer 2 <+> body )
 
 helpWidget ("settings":_) =
     let header = B.txt "List of settings currently available"
@@ -68,7 +70,7 @@ spacer n = B.txt . Tx.replicate n $ " "
 commandSummaryWidget :: T.Command -> B.Widget T.WgtName
 commandSummaryWidget (T.Command ns _ sh _) = names <=> ( spacer 2 <+> summary )
     where summary = B.txt sh
-          names   = B.hBox . intersperse (B.str " | ")
+          names   = B.hBox . intersperse (B.txt " | ")
                     . map (B.withAttr "command" . B.str) $ ns
 
 settingSummaryWidget :: T.Setting -> B.Widget T.WgtName
@@ -80,6 +82,62 @@ commandDetailsWidget :: T.Command -> B.Widget T.WgtName
 commandDetailsWidget c = header <=> spacer 1 <=> ( spacer 2 <+> details )
     where header  = commandSummaryWidget c
           details = B.txt . T.longHelp $ c
+
+keyBindingSummaryWidget :: ([Text], Text) -> B.Widget T.WgtName
+keyBindingSummaryWidget (ks, x) = header <=> ( spacer 2 <+> action )
+    where action = B.txt x
+          header = B.hBox . intersperse (B.txt " | ")
+                   . map (B.withAttr "keybinding" . B.txt) $ ks
+
+-- =============================================================== --
+-- Default key binding help strings
+
+keyBindings :: [([Text], Text)]
+keyBindings = [ ( [ "<esc>" ],
+                    "Normal mode: quit the Defugger or abort jump.\n"
+                    <> "Command mode: abort command.\n"
+                    <> "Help Mode: return to Normal Mode." )
+              , ( [ "<right-arrow>", "l", "t" ],
+                    "Move cursor one statement forward in Program Window.\n"
+                    <> "Scroll Output and Input Windows." )
+              , ( [ "<left-arrow>", "h" ],
+                    "Move cursor one statement backward in Program Window.\n"
+                    <> "Scroll Output and Input Windows." )
+              , ( [ "<down-arrow>", "j" ],
+                    "Move cursor to the next row in Program Window.\n"
+                    <> "Scroll Memory, Output and Input Windows." )
+              , ( [ "<up-arrow>", "k" ],
+                    "Move cursor to previous row in Program Window.\n"
+                    <> "Scroll Memory, Output and Input Windows" )
+              , ( [ "<space>", "L", "T" ],
+                    "Advance program execution one statement forward." )
+              , ( [ "<back-space>", "H" ],
+                    "Revert program execution one statement backward." )
+              , ( [ "<page-down>", "J" ],
+                    "Jump forward to next break point." )
+              , ( [ "<page-up>", "K" ],
+                    "Jump backward to previous break point." )
+              , ( [ "x" ],
+                    "Delete statement at cursor." )
+              , ( [ ">" ],
+                    "Insert 'advance'/'>' BF statement at cursor." )
+              , ( [ "<" ],
+                    "Insert 'backup'/'<' BF statement at cursor." )
+              , ( [ "+" ],
+                    "Insert 'increment'/'+' BF statement at cursor." )
+              , ( [ "-" ],
+                    "Insert 'decrement'/'-' BF statement at cursor." )
+              , ( [ "." ],
+                    "Insert 'write'/'.' BF statement at cursor." )
+              , ( [ "," ],
+                    "Insert 'read'/',' BF statement at cursor." )
+              , ( [ "[", "]" ],
+                    "Insert 'loop'/'[]' BF condition loop at cursor." )
+              , ( [ ":" ],
+                    "Enter Command Mode to run a typed command." )
+              , ( [ "<tab>" ],
+                    "Cycle between windows in Normal Mode." )
+              ]
 
 -- =============================================================== --
 -- Large help strings
