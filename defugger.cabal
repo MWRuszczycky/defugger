@@ -21,6 +21,7 @@ executable defugger
 
 library defugger-internal
   exposed-modules:      Controller.Commands
+                      , Controller.KeyBindings
                       , Controller.Loader
                       , Controller.Router
                       , Controller.Settings

@@ -19,6 +19,8 @@ module Model.Types
     , Command         (..)
     , DebuggerCommand (..)
     , Setting         (..)
+    , KeyBinding      (..)
+    , HelpInfo
       -- Computer/Computation model
     , Computation
     , Computer        (..)
@@ -40,6 +42,7 @@ module Model.Types
 import qualified Data.ByteString as B
 import qualified Data.Text       as Tx
 import qualified Data.Vector     as V
+import qualified Graphics.Vty    as Vty
 import Control.Concurrent.Async         ( Async         )
 import Data.Default                     ( Default (..)  )
 import Data.Set                         ( Set           )
@@ -181,15 +184,27 @@ data Setting = Setting {
     , settingHelp :: Text
     }
 
+-- |Keybindings
+data KeyBinding = KeyBinding {
+      keyBind   :: Vty.Key
+    , keyAction :: Mode -> WgtName -> DebuggerCommand
+    , keyHelp   :: HelpInfo
+    }
+
+type HelpInfo = Text
+
 -- |Commands that can be executed while running the debugger. Pure
 -- commands have no side effects. Simple IO commands involve IO
 -- actions; however, they can run concurrently with the Brick runtime
 -- system. Complex IO commands require that the Brick runtime system
--- be suspended while they are executed.
+-- be suspended while they are executed. Tandem IO commands are the
+-- same as Simple IO commands; however, they should be run isolated
+-- in their own thread.
 data DebuggerCommand
     = PureCmd      ( Debugger -> Debugger         )
     | SimpleIOCmd  ( Debugger -> ErrorIO Debugger )
     | ComplexIOCmd ( Debugger -> ErrorIO Debugger )
+    | TandemIOCmd  ( Debugger -> ErrorIO Debugger )
     | QuitCmd
     | ErrorCmd ErrString
 
