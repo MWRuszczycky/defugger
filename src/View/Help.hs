@@ -14,7 +14,7 @@ import qualified Model.Types as T
 import Data.Text                    ( Text                   )
 import Data.List                    ( intersperse, intersect )
 import Brick                        ( (<=>), (<+>)           )
-import Controller.Commands          ( commands               )
+import Controller.CommandBindings   ( commands               )
 import Controller.Settings          ( settings               )
 
 -- =============================================================== --
@@ -67,18 +67,19 @@ helpWidget cs = let ws      = filter matches commands
 spacer :: Int -> B.Widget T.WgtName
 spacer n = B.txt . Tx.replicate n $ " "
 
-commandSummaryWidget :: T.Command -> B.Widget T.WgtName
-commandSummaryWidget (T.Command ns _ sh _) = names <=> ( spacer 2 <+> summary )
-    where summary = B.txt sh
-          names   = B.hBox . intersperse (B.txt " | ")
-                    . map (B.withAttr "command" . B.str) $ ns
+commandSummaryWidget :: T.CommandBinding -> B.Widget T.WgtName
+commandSummaryWidget (T.CommandBinding ns _ sh _) =
+    let summary = B.txt sh
+        names   = B.hBox . intersperse (B.txt " | ")
+                  . map (B.withAttr "command" . B.str) $ ns
+    in  names <=> ( spacer 2 <+> summary )
 
 settingSummaryWidget :: T.Setting -> B.Widget T.WgtName
 settingSummaryWidget (T.Setting n _ _ h) = name <=> ( spacer 2 <+> summary )
     where summary = B.txt h
           name    = B.withAttr "setting" . B.str $ n
 
-commandDetailsWidget :: T.Command -> B.Widget T.WgtName
+commandDetailsWidget :: T.CommandBinding -> B.Widget T.WgtName
 commandDetailsWidget c = header <=> spacer 1 <=> ( spacer 2 <+> details )
     where header  = commandSummaryWidget c
           details = B.txt . T.longHelp $ c

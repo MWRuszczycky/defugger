@@ -20,7 +20,7 @@ executable defugger
                       , defugger-internal
 
 library defugger-internal
-  exposed-modules:      Controller.Commands
+  exposed-modules:      Controller.CommandBindings
                       , Controller.KeyBindings
                       , Controller.Loader
                       , Controller.Router

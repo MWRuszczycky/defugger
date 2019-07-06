@@ -18,7 +18,7 @@ import Control.Concurrent.Async           as A
 import Brick.BChan                              ( writeBChan        )
 import Control.Monad.Except                     ( runExceptT
                                                 , liftIO            )
-import Controller.Commands                      ( parseCommand      )
+import Controller.CommandBindings               ( parseCommand      )
 import Controller.KeyBindings                   ( parseKey          )
 import Brick.Widgets.Edit                       ( editor
                                                 , getEditContents

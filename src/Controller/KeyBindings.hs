@@ -52,14 +52,12 @@ keyBindings = [ T.KeyBinding V.KEsc         esc_action    esc_help
               , T.KeyBinding (V.KChar ']')  rbra_action   rbra_help
               ]
 
-type KeyAction = T.Mode -> T.WgtName -> T.DebuggerCommand
-
 -- right ------------------------------------------------------------
 
 right_help :: T.HelpInfo
 right_help = "help for <right>"
 
-right_action :: KeyAction
+right_action :: T.KeyAction
 right_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorRight
 right_action T.NormalMode   T.InputWgt   = T.HScrollCmd T.InputWgt  1
 right_action T.NormalMode   T.OutputWgt  = T.HScrollCmd T.OutputWgt 1
@@ -71,7 +69,7 @@ right_action _              _            = T.PureCmd id
 left_help :: T.HelpInfo
 left_help = "help for <left>"
 
-left_action :: KeyAction
+left_action :: T.KeyAction
 left_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorLeft
 left_action T.NormalMode   T.InputWgt   = T.HScrollCmd T.InputWgt  (-1)
 left_action T.NormalMode   T.OutputWgt  = T.HScrollCmd T.OutputWgt (-1)
@@ -83,7 +81,7 @@ left_action _              _            = T.PureCmd id
 up_help :: T.HelpInfo
 up_help = "help for <up>"
 
-up_action :: KeyAction
+up_action :: T.KeyAction
 up_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorUp
 up_action T.NormalMode   T.InputWgt   = T.VScrollCmd T.InputWgt  (-1)
 up_action T.NormalMode   T.OutputWgt  = T.VScrollCmd T.OutputWgt (-1)
@@ -96,7 +94,7 @@ up_action _              _            = T.PureCmd id
 down_help :: T.HelpInfo
 down_help = "help for <down>"
 
-down_action :: KeyAction
+down_action :: T.KeyAction
 down_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorDown
 down_action T.NormalMode   T.InputWgt   = T.VScrollCmd T.InputWgt  1
 down_action T.NormalMode   T.OutputWgt  = T.VScrollCmd T.OutputWgt 1
@@ -109,7 +107,7 @@ down_action _              _            = T.PureCmd id
 pgUp_help :: T.HelpInfo
 pgUp_help = "help for <page-up>"
 
-pgUp_action :: KeyAction
+pgUp_action :: T.KeyAction
 pgUp_action T.NormalMode T.ProgramWgt = T.TandemCmd D.jumpBackward
 pgUp_action _            _            = T.PureCmd id
 
@@ -118,7 +116,7 @@ pgUp_action _            _            = T.PureCmd id
 pgDown_help :: T.HelpInfo
 pgDown_help = "help for <page-down>"
 
-pgDown_action :: KeyAction
+pgDown_action :: T.KeyAction
 pgDown_action T.NormalMode T.ProgramWgt = T.TandemCmd D.jumpForward
 pgDown_action _            _            = T.PureCmd id
 
@@ -127,7 +125,7 @@ pgDown_action _            _            = T.PureCmd id
 space_help :: T.HelpInfo
 space_help = "help for <space>"
 
-space_action :: KeyAction
+space_action :: T.KeyAction
 space_action T.NormalMode T.ProgramWgt = T.PureCmd D.stepForward
 space_action _            _            = T.PureCmd id
 
@@ -136,7 +134,7 @@ space_action _            _            = T.PureCmd id
 bs_help :: T.HelpInfo
 bs_help = "help for <back-space>"
 
-bs_action :: KeyAction
+bs_action :: T.KeyAction
 bs_action T.NormalMode T.ProgramWgt = T.PureCmd D.stepBackward
 bs_action _            _            = T.PureCmd id
 
@@ -145,7 +143,7 @@ bs_action _            _            = T.PureCmd id
 tab_help :: T.HelpInfo
 tab_help = "help for <tab>"
 
-tab_action :: KeyAction
+tab_action :: T.KeyAction
 tab_action T.NormalMode w = T.PureCmd $ \ db -> db {T.wgtFocus = D.nextWidget w}
 tab_action _            _ = T.PureCmd id
 
@@ -166,7 +164,7 @@ esc_action _              _ = T.QuitCmd
 shiftH_help :: T.HelpInfo
 shiftH_help = "help for H"
 
-shiftH_action :: KeyAction
+shiftH_action :: T.KeyAction
 shiftH_action T.NormalMode T.ProgramWgt = T.PureCmd D.stepBackward
 shiftH_action _            _            = T.PureCmd id
 
@@ -175,7 +173,7 @@ shiftH_action _            _            = T.PureCmd id
 shiftJ_help :: T.HelpInfo
 shiftJ_help = "help for J"
 
-shiftJ_action :: KeyAction
+shiftJ_action :: T.KeyAction
 shiftJ_action T.NormalMode T.ProgramWgt = T.TandemCmd D.jumpForward
 shiftJ_action _            _            = T.PureCmd id
 
@@ -184,7 +182,7 @@ shiftJ_action _            _            = T.PureCmd id
 shiftK_help :: T.HelpInfo
 shiftK_help = "help for K"
 
-shiftK_action :: KeyAction
+shiftK_action :: T.KeyAction
 shiftK_action T.NormalMode T.ProgramWgt = T.TandemCmd D.jumpBackward
 shiftK_action _            _            = T.PureCmd id
 
@@ -193,7 +191,7 @@ shiftK_action _            _            = T.PureCmd id
 shiftL_help :: T.HelpInfo
 shiftL_help = "help for L"
 
-shiftL_action :: KeyAction
+shiftL_action :: T.KeyAction
 shiftL_action T.NormalMode T.ProgramWgt = T.PureCmd D.stepForward
 shiftL_action _            _            = T.PureCmd id
 
@@ -202,7 +200,7 @@ shiftL_action _            _            = T.PureCmd id
 shiftT_help :: T.HelpInfo
 shiftT_help = "help for T"
 
-shiftT_action :: KeyAction
+shiftT_action :: T.KeyAction
 shiftT_action T.NormalMode T.ProgramWgt = T.PureCmd D.stepForward
 shiftT_action _            _            = T.PureCmd id
 
@@ -285,7 +283,7 @@ t_action _              _            = T.PureCmd id
 x_help :: T.HelpInfo
 x_help = "help for x"
 
-x_action :: KeyAction
+x_action :: T.KeyAction
 x_action T.NormalMode T.ProgramWgt = T.PureCmd D.deleteStatementAtCursor
 x_action _            _            = T.PureCmd id
 
@@ -297,7 +295,7 @@ x_action _            _            = T.PureCmd id
 plus_help :: T.HelpInfo
 plus_help = "help for +"
 
-plus_action :: KeyAction
+plus_action :: T.KeyAction
 plus_action T.NormalMode T.ProgramWgt = T.PureCmd $ D.addAtCursor T.DBIncrement
 plus_action _            _            = T.PureCmd id
 
@@ -306,7 +304,7 @@ plus_action _            _            = T.PureCmd id
 minus_help :: T.HelpInfo
 minus_help = "help for -"
 
-minus_action :: KeyAction
+minus_action :: T.KeyAction
 minus_action T.NormalMode T.ProgramWgt = T.PureCmd $ D.addAtCursor T.DBDecrement
 minus_action _            _            = T.PureCmd id
 
@@ -315,7 +313,7 @@ minus_action _            _            = T.PureCmd id
 dot_help :: T.HelpInfo
 dot_help = "help for ."
 
-dot_action :: KeyAction
+dot_action :: T.KeyAction
 dot_action T.NormalMode T.ProgramWgt = T.PureCmd $ D.addAtCursor T.DBWriteOut
 dot_action _            _            = T.PureCmd id
 
@@ -324,7 +322,7 @@ dot_action _            _            = T.PureCmd id
 comma_help :: T.HelpInfo
 comma_help = "help for ,"
 
-comma_action :: KeyAction
+comma_action :: T.KeyAction
 comma_action T.NormalMode T.ProgramWgt = T.PureCmd $ D.addAtCursor T.DBReadIn
 comma_action _            _            = T.PureCmd id
 
@@ -333,7 +331,7 @@ comma_action _            _            = T.PureCmd id
 colon_help :: T.HelpInfo
 colon_help = "help for :"
 
-colon_action :: KeyAction
+colon_action :: T.KeyAction
 colon_action T.NormalMode _ = T.PureCmd $ \ db -> db { T.mode = T.CommandMode }
 colon_action _            _ = T.PureCmd id
 
@@ -342,7 +340,7 @@ colon_action _            _ = T.PureCmd id
 langle_help :: T.HelpInfo
 langle_help = "help for <"
 
-langle_action :: KeyAction
+langle_action :: T.KeyAction
 langle_action T.NormalMode T.ProgramWgt = T.PureCmd $ D.addAtCursor T.DBBackup
 langle_action _            _            = T.PureCmd id
 
@@ -351,7 +349,7 @@ langle_action _            _            = T.PureCmd id
 rangle_help :: T.HelpInfo
 rangle_help = "help for >"
 
-rangle_action :: KeyAction
+rangle_action :: T.KeyAction
 rangle_action T.NormalMode T.ProgramWgt = T.PureCmd $ D.addAtCursor T.DBAdvance
 rangle_action _            _            = T.PureCmd id
 

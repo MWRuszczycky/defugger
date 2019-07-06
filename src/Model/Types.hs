@@ -16,11 +16,13 @@ module Model.Types
     , WgtName         (..)
     , VertViewRange
       -- Debugger commands
-    , Command         (..)
+    , HelpInfo
+    , CommandBinding  (..)
+    , CommandAction
     , DebuggerCommand (..)
     , Setting         (..)
+    , KeyAction
     , KeyBinding      (..)
-    , HelpInfo
       -- Computer/Computation model
     , Computation
     , Computer        (..)
@@ -164,43 +166,26 @@ instance Show WgtName where
 type VertViewRange = (Int, Int)
 
 -- =============================================================== --
--- Debugger commands
+-- Debugger commands and help
 
--- |Everything you need to manage a command to be read, document and
--- and run from the debugger.
-data Command = Command {
-      cmdNames  :: [String]
-    , cmd       :: [String] -> DebuggerCommand
-    , shortHelp :: Text
-    , longHelp  :: Text
-    }
-
--- |Subcommands used with the <set> and <unset> commands to modify
--- the debugger. Settings only map to pure functions on the debugger.
-data Setting = Setting {
-      settingName :: String
-    , setting     :: [String] -> Either ErrString ( Debugger -> Debugger )
-    , unsetting   :: [String] -> Either ErrString ( Debugger -> Debugger )
-    , settingHelp :: Text
-    }
-
--- |Keybindings
-data KeyBinding = KeyBinding {
-      keyBind   :: Vty.Key
-    , keyAction :: Mode -> WgtName -> DebuggerCommand
-    , keyHelp   :: HelpInfo
-    }
+---------------------------------------------------------------------
+-- General help type used to document and display help information
 
 type HelpInfo = Text
 
+---------------------------------------------------------------------
+-- Commands
+
 -- |Commands that can be executed while running the debugger. Pure
 -- commands have no side effects. Simple IO commands involve IO
--- actions; however, they can run concurrently with the Brick runtime
+-- actions; however, they can be run serially with the Brick runtime
 -- system. Complex IO commands require that the Brick runtime system
 -- be suspended while they are executed. Tandem commands are the same
 -- same as pure commands; however, they should be run isolated in
--- their own thread. HScrollCmd and VScrollCmd are for scrolling
--- widgets horizontally and victically by a given amount.
+-- their own thread. HScrollCmd and VScrollCmd commonds denote
+-- generalized horizontal and vertical scrolling commands.
+-- Seet the Controller.Commands, Controller.Settings and
+-- Controller.KeyBindings for mappings between events and commands.
 data DebuggerCommand
     = PureCmd      ( Debugger -> Debugger         )
     | TandemCmd    ( Debugger -> Debugger         )
@@ -210,6 +195,38 @@ data DebuggerCommand
     | VScrollCmd WgtName Int
     | QuitCmd
     | ErrorCmd ErrString
+
+-- |A KeyBinding associates a key event with a DebuggerCommand that
+-- can be executed. KeyBindings are managed in Controller.KeyBindings.
+data KeyBinding = KeyBinding {
+      keyBind   :: Vty.Key
+    , keyAction :: KeyAction
+    , keyHelp   :: HelpInfo
+    }
+
+type KeyAction = Mode -> WgtName -> DebuggerCommand
+
+-- |A CommandBinding associates a command that can be entered in
+-- Command Mode with a DebuggerCommand that can be executed.
+-- CommandBindings are managed in the Controller.CommandBindings
+-- module.
+data CommandBinding = CommandBinding {
+      cmdNames  :: [String]
+    , cmdAction :: [String] -> DebuggerCommand
+    , shortHelp :: Text
+    , longHelp  :: Text
+    }
+
+type CommandAction = [String] -> DebuggerCommand
+
+-- |Subcommands used with the <set> and <unset> commands to modify
+-- the debugger. Settings only map to pure functions on the debugger.
+data Setting = Setting {
+      settingName :: String
+    , setting     :: [String] -> Either ErrString ( Debugger -> Debugger )
+    , unsetting   :: [String] -> Either ErrString ( Debugger -> Debugger )
+    , settingHelp :: Text
+    }
 
 -- =============================================================== --
 -- Model of a computer for running a BF program/script and the
