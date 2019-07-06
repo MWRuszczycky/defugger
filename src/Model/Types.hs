@@ -197,14 +197,17 @@ type HelpInfo = Text
 -- commands have no side effects. Simple IO commands involve IO
 -- actions; however, they can run concurrently with the Brick runtime
 -- system. Complex IO commands require that the Brick runtime system
--- be suspended while they are executed. Tandem IO commands are the
--- same as Simple IO commands; however, they should be run isolated
--- in their own thread.
+-- be suspended while they are executed. Tandem commands are the same
+-- same as pure commands; however, they should be run isolated in
+-- their own thread. HScrollCmd and VScrollCmd are for scrolling
+-- widgets horizontally and victically by a given amount.
 data DebuggerCommand
     = PureCmd      ( Debugger -> Debugger         )
+    | TandemCmd    ( Debugger -> Debugger         )
     | SimpleIOCmd  ( Debugger -> ErrorIO Debugger )
     | ComplexIOCmd ( Debugger -> ErrorIO Debugger )
-    | TandemIOCmd  ( Debugger -> ErrorIO Debugger )
+    | HScrollCmd WgtName Int
+    | VScrollCmd WgtName Int
     | QuitCmd
     | ErrorCmd ErrString
 
