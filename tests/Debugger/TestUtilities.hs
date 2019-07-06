@@ -81,6 +81,9 @@ handleAsError commands db = do
          T.ComplexIOCmd _ -> error "Expected ErrorCmd command got ComplexIOCmd"
          T.QuitCmd        -> error "Expected ErrorCmd command got QuitCmd"
          T.SimpleIOCmd _  -> error "Expected ErrorCmd command got SimpleIOCmd"
+         T.TandemCmd _    -> error "Expected ErrorCmd command got TandemCmd"
+         T.HScrollCmd _ _ -> error "Expected ErrorCmd command got HScrollCmd"
+         T.VScrollCmd _ _ -> error "Expected ErrorCmd command got VScrollCmd"
          T.ErrorCmd e     -> pure $ db { T.message = e }
 
 handleAsSimpleIO :: [String] -> T.Debugger -> IO T.Debugger
@@ -90,4 +93,7 @@ handleAsSimpleIO commands db = do
          T.ComplexIOCmd _ -> error "Expected SimpleIO command got ComplexIOCmd"
          T.ErrorCmd _     -> error "Expected SimpleIO command got ErrorCmd"
          T.QuitCmd        -> error "Expected SimpleIO command got QuitCmd"
+         T.TandemCmd _    -> error "Expected SimpleIO command got TandemCmd"
+         T.HScrollCmd _ _ -> error "Expected SimpleIO command got HScrollCmd"
+         T.VScrollCmd _ _ -> error "Expected SimpleIO command got VScrollCmd"
          T.SimpleIOCmd f  -> mockIOHandler f db
