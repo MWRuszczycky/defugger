@@ -208,6 +208,16 @@ data DebuggerCommand
     | QuitCmd
     | ErrorCmd ErrString
 
+instance Show DebuggerCommand where
+    show ( PureCmd _      ) = "PureCmd"
+    show ( TandemCmd _    ) = "TandemCmd"
+    show ( SimpleIOCmd _  ) = "SimpleIOCmd"
+    show ( ComplexIOCmd _ ) = "ComplexIOCmd"
+    show ( HScrollCmd w n ) = "HScrollCmd" ++ show w ++ show n
+    show ( VScrollCmd w n ) = "VScrollCmd" ++ show w ++ show n
+    show ( QuitCmd        ) = "QuitCmd"
+    show ( ErrorCmd e     ) = "ErrorCmd" ++ e
+
 ---------------------------------------------------------------------
 -- Key bindings
 
