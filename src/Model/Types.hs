@@ -110,7 +110,7 @@ data Debugger = Debugger {
     , history      :: Seq Int                     -- History of statements
     , readBackup   :: ![Word8]                    -- History of reads
       -- Command and status widgets
-    , commandEdit  :: Editor String WgtName       -- Used to enter commands
+    , commandEdit  :: Editor Text WgtName         -- Used to enter commands
     , message      :: !String                     -- Status message
       -- Terminal and display parameters
     , termWidth    :: !Int                        -- Width of the terminal
@@ -132,7 +132,7 @@ data Debugger = Debugger {
 data Mode
     = NormalMode                      -- Normal operation
     | CommandMode                     -- User entering commands
-    | HelpMode [String]               -- Display help for the given commands
+    | HelpMode [Text]                 -- Display help for the given commands
     | ProcessingMode (Async Debugger) -- Computiton running in separate thread
 
 -- |Debugger custom events
@@ -243,12 +243,12 @@ instance HasHelp KeyBinding where
 -- CommandBindings are managed in the Controller.CommandBindings
 -- module.
 data CommandBinding = CommandBinding {
-      cmdNames  :: [String]      -- The names the command is bound to
+      cmdNames  :: [Text]        -- The names the command is bound to
     , cmdAction :: CommandAction -- What the bound command does
     , cmdHelp   :: HelpInfo      -- Help for the bindisg and command
     }
 
-type CommandAction = [String] -> DebuggerCommand
+type CommandAction = [Text] -> DebuggerCommand
 
 instance HasHelp CommandBinding where
     getHelp     = cmdHelp
@@ -260,13 +260,13 @@ instance HasHelp CommandBinding where
 -- |Subcommands used with the <set> and <unset> commands to modify
 -- the debugger. Settings only map to pure functions on the debugger.
 data Setting = Setting {
-      settingName :: String         -- Name the setting is bound to
+      settingName :: Text           -- Name the setting is bound to
     , setting     :: SettingAction  -- What it does under <set>
     , unsetting   :: SettingAction  -- What it does under <unset>
     , settingHelp :: HelpInfo       -- Help for the setting
     }
 
-type SettingAction = [String] -> Either ErrString ( Debugger -> Debugger )
+type SettingAction = [Text] -> Either ErrString ( Debugger -> Debugger )
 
 instance HasHelp Setting where
     getHelp     = settingHelp

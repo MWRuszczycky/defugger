@@ -11,6 +11,7 @@ module Controller.CommandBindings
 
 import qualified Model.Types             as T
 import qualified Data.Text               as Tx
+import Data.Text                                ( Text           )
 import Control.Applicative                      ( (<|>)          )
 import Data.Maybe                               ( listToMaybe    )
 import Data.Foldable                            ( toList         )
@@ -26,7 +27,7 @@ import Controller.Loader                        ( reloadDebugger
 -- =============================================================== --
 -- Command hub and router
 
-parseCommand :: [String] -> T.DebuggerCommand
+parseCommand :: [Text] -> T.DebuggerCommand
 parseCommand []     = T.PureCmd $ id
 parseCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ commands
     where err  = T.ErrorCmd "Command unrecognized"
@@ -71,8 +72,10 @@ load_help = T.HelpInfo ns us sh (Tx.unlines lh)
 
 load_action :: T.CommandAction
 load_action []      = T.ErrorCmd "A path to a BF script must be specified"
-load_action (x:y:_) = T.SimpleIOCmd $ reloadDebugger (Just x) (Just y)
-load_action (x:_)   = T.SimpleIOCmd $ reloadDebugger (Just x) Nothing
+load_action (x:y:_) = T.SimpleIOCmd $ reloadDebugger ( Just . Tx.unpack $ x )
+                                                     ( Just . Tx.unpack $ y )
+load_action (x:_)   = T.SimpleIOCmd $ reloadDebugger ( Just . Tx.unpack $ x )
+                                                     Nothing
 
 -- reset ------------------------------------------------------------
 
@@ -124,8 +127,8 @@ write_help = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 write_action :: T.CommandAction
-write_action xs = T.SimpleIOCmd $
-                      \ db -> go db $ listToMaybe xs <|> T.scriptPath db
+write_action xs = T.SimpleIOCmd $ \ db -> go db $
+                      Tx.unpack <$> listToMaybe xs <|> T.scriptPath db
     where fmt n = unlines . chunksOf n . init . tail . concatMap show . toList
           go _  Nothing   = throwError "Save path required"
           go db (Just fp) = do let s = fmt ( T.progWidth db ) . T.program $ db

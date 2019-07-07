@@ -23,7 +23,7 @@ import Controller.KeyBindings       ( keyBindings            )
 
 -- This still needs a lot work!
 
-helpWidget :: [String] -> B.Widget T.WgtName
+helpWidget :: [Text] -> B.Widget T.WgtName
 helpWidget [] = mainHelpWidget
 
 helpWidget ("keys":_) =

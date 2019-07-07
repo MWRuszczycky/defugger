@@ -14,6 +14,8 @@ import qualified Brick                  as B
 import qualified Data.Vector            as Vec
 import qualified Data.Set               as Set
 import qualified Model.Types            as T
+import qualified Data.Text              as Tx
+import Data.Text                                ( Text              )
 import Brick.Widgets.Edit                       ( renderEditor      )
 import Data.Word                                ( Word8             )
 import Brick                                    ( (<+>), (<=>)      )
@@ -52,7 +54,7 @@ drawCommandUI :: T.Debugger -> [ B.Widget T.WgtName ]
 drawCommandUI db = [ B.withAttr "background" $
                      mainWidgets db <=> commandUI db ]
 
-drawHelpUI :: [String] -> [ B.Widget T.WgtName ]
+drawHelpUI :: [Text] -> [ B.Widget T.WgtName ]
 drawHelpUI cs = [ B.withAttr "background" $ helpWidget cs ]
 
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
@@ -203,5 +205,6 @@ statusUI db
     where msg = T.message db
 
 commandUI :: T.Debugger -> B.Widget T.WgtName
-commandUI db = ( B.withAttr "background" $ B.str ":" )
-               <+> ( renderEditor (B.str . unlines) True . T.commandEdit $ db )
+commandUI db = ( B.withAttr "background" $ B.txt ":" )
+               <+> ( renderEditor (B.txt . Tx.unlines) True
+                     . T.commandEdit $ db )

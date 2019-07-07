@@ -15,6 +15,7 @@ import qualified Data.Sequence           as Seq
 import qualified Data.Text               as Tx
 import qualified Model.Types             as T
 import qualified Model.Debugger.Debugger as D
+import Data.Text                                ( Text           )
 import Control.Monad                            ( guard          )
 import Text.Read                                ( readMaybe      )
 import Data.List                                ( find           )
@@ -22,16 +23,16 @@ import Data.List                                ( find           )
 -- =============================================================== --
 -- Settings hub and router
 
-parseSet :: [String] -> Either T.ErrString (T.Debugger -> T.Debugger)
+parseSet :: [Text] -> Either T.ErrString (T.Debugger -> T.Debugger)
 parseSet []     = Left "Nothing to set"
 parseSet (x:xs) = maybe err go . find ( (==x) . T.settingName ) $ settings
-    where err  = Left $ "Cannot set: " ++ x ++ ", so such setting"
+    where err  = Left $ "Cannot set: " ++ Tx.unpack x ++ ", so such setting"
           go s = T.setting s $ xs
 
-parseUnset :: [String] -> Either T.ErrString (T.Debugger -> T.Debugger)
+parseUnset :: [Text] -> Either T.ErrString (T.Debugger -> T.Debugger)
 parseUnset []     = Left "Nothing to unset"
 parseUnset (x:xs) = maybe err go . find ( (==x) . T.settingName ) $ settings
-    where err  = Left $ "Cannot unset: " ++ x ++ ", no such setting"
+    where err  = Left $ "Cannot unset: " ++ Tx.unpack x ++ ", no such setting"
           go s = T.unsetting s $ xs
 
 settings :: [T.Setting]
@@ -127,8 +128,8 @@ history_help = T.HelpInfo ns us sh (Tx.unlines lh)
 
 set_history :: T.SettingAction
 set_history []    = pure D.noMessage
-set_history (x:_) = maybe err pure . go $ x
-    where err  = Left $ "Cannot set history reversion depth to " ++ x
+set_history (x:_) = maybe err pure . go . Tx.unpack $ x
+    where err  = Left $ "Cannot set history reversion depth to " ++ Tx.unpack x
           go y = do n <- readMaybe y
                     guard (n >= 0 )
                     pure $ \ db -> let h = T.history db
@@ -155,8 +156,8 @@ width_help = T.HelpInfo ns us sh (Tx.unlines lh)
 
 set_width :: T.SettingAction
 set_width []    = Left "A value for the new program width must be supplied"
-set_width (x:_) = maybe err (pure . go) . readMaybe $ x
-    where err  = Left $ "Cannot set width to " ++ x
+set_width (x:_) = maybe err (pure . go) . readMaybe . Tx.unpack $ x
+    where err  = Left $ "Cannot set width to " ++ Tx.unpack x
           go n | n < 10    = \ db -> db { T.message = "Invalid width" }
                | otherwise = \ db -> db { T.message = "", T.progWidth = n }
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Model.Debugger.Widgets
     ( -- Managing widget dimensions for the debugger display
       resize
@@ -33,7 +35,9 @@ module Model.Debugger.Widgets
 
 import qualified Model.Types as T
 import qualified Data.Vector as Vec
+import qualified Data.Text   as Tx
 import qualified Data.Set    as Set
+import Data.Text                    ( Text            )
 import Brick.Widgets.Edit           ( editor
                                     , getEditContents )
 import Model.Debugger.Query         ( getPositionRow
@@ -152,8 +156,8 @@ resetCommandEdit :: T.Debugger -> T.Debugger
 resetCommandEdit db = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
                          , T.mode        = T.NormalMode}
 
-getCommandFromEdit :: T.Debugger -> [String]
-getCommandFromEdit = words . unlines . getEditContents . T.commandEdit
+getCommandFromEdit :: T.Debugger -> [Text]
+getCommandFromEdit = Tx.words . Tx.unlines . getEditContents . T.commandEdit
 
 -- =============================================================== --
 -- Cursor management
