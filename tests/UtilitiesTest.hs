@@ -1,6 +1,7 @@
 module UtilitiesTest
     ( newDebugger
     , checkDebugger
+    , checkCommandEdit
     , tempTestDir
     , getTempTestPath
     , manageTempTestDir
@@ -11,6 +12,7 @@ import qualified Model.Debugger.Debugger    as D
 import qualified Brick.BChan                as Br
 import qualified Controller.Loader          as L
 import qualified Data.ByteString            as BS
+import Data.Text                                  ( Text                      )
 import Control.Exception                          ( bracket_                  )
 import Control.Monad                              ( when                      )
 import Data.Default                               ( def                       )
@@ -43,6 +45,9 @@ checkDebugger db input output memory position = do
     (T.output . T.computer) db       `shouldBe` output
     (show. T.memory . T.computer) db `shouldBe` memory
     D.getPosition db                 `shouldBe` position
+
+checkCommandEdit :: [Text] -> T.Debugger -> IO ()
+checkCommandEdit expected db = D.getCommandFromEdit db `shouldBe` expected
 
 -- =============================================================== --
 -- Utilities for handling a tempory test directory
