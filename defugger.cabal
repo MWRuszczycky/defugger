@@ -53,40 +53,44 @@ library defugger-internal
                       , vector
                       , vty
 
-test-suite general-tests
+test-suite model-tests
   type:                 exitcode-stdio-1.0
-  main-is:              Spec.hs
-  hs-source-dirs:       tests/General
+  main-is:              ModelTest/Spec.hs
+  hs-source-dirs:       tests
   default-language:     Haskell2010
   ghc-options:          -W
-  other-modules:        InterpreterTests
-                      , ParserTests
-  build-depends:        base >=4.7 && <5
-                      , bytestring
-                      , data-default
-                      , defugger-internal
-                      , hspec
-                      , mtl
-                      , text
-
-test-suite debugger-tests
-  type:                 exitcode-stdio-1.0
-  main-is:              Spec.hs
-  hs-source-dirs:       tests/Debugger
-  default-language:     Haskell2010
-  ghc-options:          -W
-  other-modules:        BracketTests
-                      , CommandTests
-                      , ExecuteTests
-                      , TestUtilities
+  other-modules:        ModelTest.DebuggerTest.BracketTests
+                      , ModelTest.DebuggerTest.ExecuteTests
+                      , ModelTest.DebuggerTest.Spec
+                      , ModelTest.InterpreterTests
+                      , ModelTest.ParserTests
+                      , UtilitiesTest
   build-depends:        base >=4.7 && <5
                       , brick
                       , bytestring
-                      , containers
+                      , defugger-internal
+                      , data-default
+                      , directory
+                      , hspec
+                      , mtl
+                      , text
+                      , vector
+
+test-suite controller-tests
+  type:                 exitcode-stdio-1.0
+  main-is:              ControllerTest/Spec.hs
+  hs-source-dirs:       tests
+  default-language:     Haskell2010
+  ghc-options:          -W
+  other-modules:        ControllerTest.CommandBindingsTest
+                      , ControllerTest.MockRouter
+                      , UtilitiesTest
+  build-depends:        base >=4.7 && <5
+                      , brick
+                      , bytestring
                       , directory
                       , data-default
                       , defugger-internal
                       , hspec
                       , mtl
                       , text
-                      , vector

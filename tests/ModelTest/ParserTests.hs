@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ParserTests
+module ModelTest.ParserTests
     ( spec
     ) where
 

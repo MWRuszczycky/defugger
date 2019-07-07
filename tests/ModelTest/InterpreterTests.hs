@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module InterpreterTests
+module ModelTest.InterpreterTests
     ( spec
     ) where
 

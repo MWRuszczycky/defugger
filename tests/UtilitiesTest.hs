@@ -1,4 +1,4 @@
-module TestUtilities
+module UtilitiesTest
     ( newDebugger
     , checkDebugger
     , tempTestDir
