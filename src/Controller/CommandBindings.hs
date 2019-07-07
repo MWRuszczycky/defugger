@@ -15,7 +15,6 @@ import Control.Applicative                      ( (<|>)          )
 import Data.Maybe                               ( listToMaybe    )
 import Data.Foldable                            ( toList         )
 import Control.Monad.Except                     ( throwError     )
-import Data.Text                                ( Text           )
 import Data.List                                ( find           )
 import Model.Utilities                          ( chunksOf       )
 import Model.CoreIO                             ( tryWriteFile   )
@@ -35,13 +34,13 @@ parseCommand (x:xs) = maybe err go . find ( elem x . T.cmdNames ) $ commands
 
 commands :: [T.CommandBinding]
 -- ^Organizes all the commands that can be run from the debugger.
-commands = [ T.CommandBinding helpNames  helpCmd  helpCmdSHelp  helpCmdLHelp
-           , T.CommandBinding loadNames  loadCmd  loadCmdSHelp  loadCmdLHelp
-           , T.CommandBinding resetNames resetCmd resetCmdSHelp resetCmdLHelp
-           , T.CommandBinding setNames   setCmd   setCmdSHelp   setCmdLHelp
-           , T.CommandBinding unsetNames unsetCmd unsetCmdSHelp unsetCmdLHelp
-           , T.CommandBinding writeNames writeCmd writeCmdSHelp writeCmdLHelp
-           , T.CommandBinding quitNames  quitCmd  quitCmdSHelp  quitCmdLHelp
+commands = [ T.CommandBinding ["help",  "h"] help_action  help_help
+           , T.CommandBinding ["load",  "l"] load_action  load_help
+           , T.CommandBinding ["reset", "r"] reset_action reset_help
+           , T.CommandBinding ["set",   "s"] set_action   set_help
+           , T.CommandBinding ["unset", "u"] unset_action unset_help
+           , T.CommandBinding ["write", "w"] write_action write_help
+           , T.CommandBinding ["quit",  "q"] quit_action  quit_help
            ]
 
 -- =============================================================== --
@@ -49,77 +48,84 @@ commands = [ T.CommandBinding helpNames  helpCmd  helpCmdSHelp  helpCmdLHelp
 
 -- help -------------------------------------------------------------
 
-helpNames :: [String]
-helpNames = [ "help", "h"]
+help_help :: T.HelpInfo
+help_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "help", "h" ]
+          us = "[COMMAND | KEY]"
+          sh = "Display help information"
+          lh = [ "Details for help"
+               ]
 
-helpCmdSHelp, helpCmdLHelp :: Text
-helpCmdSHelp = "Display help information."
-helpCmdLHelp = "long help for help command"
-
-helpCmd :: T.CommandAction
-helpCmd xs = T.PureCmd $ \ db -> db { T.mode = T.HelpMode xs }
+help_action :: T.CommandAction
+help_action xs = T.PureCmd $ \ db -> db { T.mode = T.HelpMode xs }
 
 -- load -------------------------------------------------------------
 
-loadNames :: [String]
-loadNames = [ "load", "l" ]
+load_help :: T.HelpInfo
+load_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "load", "l" ]
+          us = "FILEPATH-BF [FILEPATH-INPUT]"
+          sh = "Load BF script and input file into the Defugger"
+          lh = [ "Details for load"
+               ]
 
-loadCmdSHelp, loadCmdLHelp :: Text
-loadCmdSHelp = "Load a BF script into the Defugger."
-loadCmdLHelp = "long help for load command"
-
-loadCmd :: T.CommandAction
-loadCmd []      = T.ErrorCmd "A path to a BF script must be specified"
-loadCmd (x:y:_) = T.SimpleIOCmd $ reloadDebugger (Just x) (Just y)
-loadCmd (x:_)   = T.SimpleIOCmd $ reloadDebugger (Just x) Nothing
+load_action :: T.CommandAction
+load_action []      = T.ErrorCmd "A path to a BF script must be specified"
+load_action (x:y:_) = T.SimpleIOCmd $ reloadDebugger (Just x) (Just y)
+load_action (x:_)   = T.SimpleIOCmd $ reloadDebugger (Just x) Nothing
 
 -- reset ------------------------------------------------------------
 
-resetNames :: [String]
-resetNames = [ "reset", "r" ]
+reset_help :: T.HelpInfo
+reset_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "reset", "r" ]
+          us = Tx.empty
+          sh = "Reset the Defugger to its original state."
+          lh = [ "Details for reset"
+               ]
 
-resetCmdSHelp, resetCmdLHelp :: Text
-resetCmdSHelp = "Reset the Defugger to its original state."
-resetCmdLHelp = "long help for reset command"
-
-resetCmd :: T.CommandAction
-resetCmd _ = T.PureCmd $ resetDebugger
+reset_action :: T.CommandAction
+reset_action _ = T.PureCmd $ resetDebugger
 
 -- set --------------------------------------------------------------
 
-setNames :: [String]
-setNames = [ "set", "s" ]
+set_help :: T.HelpInfo
+set_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "set", "s" ]
+          us = "[SETTING [VALUE..]]"
+          sh = "Sets a property in the Defugger"
+          lh = [ "Details for set"
+               ]
 
-setCmdSHelp, setCmdLHelp :: Text
-setCmdSHelp = "Sets a debug property in the Defugger."
-setCmdLHelp = "long help for set command"
-
-setCmd :: T.CommandAction
-setCmd = either T.ErrorCmd T.PureCmd . parseSet
+set_action :: T.CommandAction
+set_action = either T.ErrorCmd T.PureCmd . parseSet
 
 -- unset ------------------------------------------------------------
 
-unsetNames :: [String]
-unsetNames = [ "unset", "u" ]
+unset_help :: T.HelpInfo
+unset_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "unset", "u" ]
+          us = "[SETTING [VALUE..]]"
+          sh = "Unsets a property in the Defugger"
+          lh = [ "Details for unset"
+               ]
 
-unsetCmdSHelp, unsetCmdLHelp :: Text
-unsetCmdSHelp = "Unsets a debug property in the Defugger."
-unsetCmdLHelp = "long help for unset command"
-
-unsetCmd :: T.CommandAction
-unsetCmd = either T.ErrorCmd T.PureCmd . parseUnset
+unset_action :: T.CommandAction
+unset_action = either T.ErrorCmd T.PureCmd . parseUnset
 
 -- write ------------------------------------------------------------
 
-writeNames :: [String]
-writeNames = [ "write", "w" ]
+write_help :: T.HelpInfo
+write_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "write", "w" ]
+          us = "[FILEPATH]"
+          sh = "Write the current BF script to memory"
+          lh = [ "Details for write"
+               ]
 
-writeCmdSHelp, writeCmdLHelp :: Text
-writeCmdSHelp = "Write the current script to memory."
-writeCmdLHelp = "long help for write command"
-
-writeCmd :: T.CommandAction
-writeCmd xs = T.SimpleIOCmd $ \ db -> go db $ listToMaybe xs <|> T.scriptPath db
+write_action :: T.CommandAction
+write_action xs = T.SimpleIOCmd $
+                      \ db -> go db $ listToMaybe xs <|> T.scriptPath db
     where fmt n = unlines . chunksOf n . init . tail . concatMap show . toList
           go _  Nothing   = throwError "Save path required"
           go db (Just fp) = do let s = fmt ( T.progWidth db ) . T.program $ db
@@ -130,12 +136,13 @@ writeCmd xs = T.SimpleIOCmd $ \ db -> go db $ listToMaybe xs <|> T.scriptPath db
 
 -- quit -------------------------------------------------------------
 
-quitNames :: [String]
-quitNames = [ "quit", "exit", "q" ]
+quit_help :: T.HelpInfo
+quit_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "quit", "q" ]
+          us = Tx.empty
+          sh = "Quits the Defugger"
+          lh = [ "Details for quit"
+               ]
 
-quitCmdSHelp, quitCmdLHelp :: Text
-quitCmdSHelp = "Quits the Defugger."
-quitCmdLHelp = "not much more to say about quitting"
-
-quitCmd :: T.CommandAction
-quitCmd _ = T.QuitCmd
+quit_action :: T.CommandAction
+quit_action _ = T.QuitCmd

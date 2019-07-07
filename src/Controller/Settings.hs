@@ -18,7 +18,6 @@ import qualified Model.Debugger.Debugger as D
 import Control.Monad                            ( guard          )
 import Text.Read                                ( readMaybe      )
 import Data.List                                ( find           )
-import Data.Text                                ( Text           )
 
 -- =============================================================== --
 -- Settings hub and router
@@ -36,70 +35,85 @@ parseUnset (x:xs) = maybe err go . find ( (==x) . T.settingName ) $ settings
           go s = T.unsetting s $ xs
 
 settings :: [T.Setting]
-settings = [ T.Setting "hex"     setHex     unsetHex     setHexHelp
-           , T.Setting "dec"     setDec     unsetDec     setDecHelp
-           , T.Setting "ascii"   setAsc     unsetAsc     setAscHelp
-           , T.Setting "break"   setBreak   unsetBreak   setBreakHelp
-           , T.Setting "history" setHistory unsetHistory setHistoryHelp
-           , T.Setting "width"   setWidth   unsetWidth   setWidthHelp
+settings = [ T.Setting "hex"     set_hex     unset_hex     hex_help
+           , T.Setting "dec"     set_dec     unset_dec     dec_help
+           , T.Setting "ascii"   set_asc     unset_asc     asc_help
+           , T.Setting "break"   set_break   unset_break   break_help
+           , T.Setting "history" set_history unset_history history_help
+           , T.Setting "width"   set_width   unset_width   width_help
            ]
 
 -- =============================================================== --
 -- Settings hub and router
 
----------------------------------------------------------------------
--- local type abbreviation
-
-type SettingFunction = [String] -> Either T.ErrString (T.Debugger -> T.Debugger)
-
 -- hex --------------------------------------------------------------
 
-setHexHelp :: Text
-setHexHelp = "Set byte display format in the current window to hexdecimal.\n"
+hex_help ::T.HelpInfo
+hex_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "hex" ]
+          us = Tx.empty
+          sh = "Set byte display format in the current window to hexadecimal"
+          lh = [ "Details for hex setting"
+               ]
 
-setHex, unsetHex :: SettingFunction
-setHex _   = pure $ D.noMessage . D.changeFormat T.Hex
-unsetHex _ = pure D.noMessage
+set_hex, unset_hex :: T.SettingAction
+set_hex _   = pure $ D.noMessage . D.changeFormat T.Hex
+unset_hex _ = pure D.noMessage
 
 -- dec --------------------------------------------------------------
 
-setDecHelp :: Text
-setDecHelp = "Set the byte display format in the current window to decimal.\n"
+dec_help :: T.HelpInfo
+dec_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "dec" ]
+          us = Tx.empty
+          sh = "Set the byte display format in the current window to decimal"
+          lh = [ "Details for dec setting"
+               ]
 
-setDec, unsetDec :: SettingFunction
-setDec _   = pure $ D.noMessage . D.changeFormat T.Dec
-unsetDec _ = pure D.noMessage
+set_dec, unset_dec :: T.SettingAction
+set_dec _   = pure $ D.noMessage . D.changeFormat T.Dec
+unset_dec _ = pure D.noMessage
 
 -- ascii ------------------------------------------------------------
 
-setAscHelp :: Text
-setAscHelp = "Set the byte display format in the current window to ascii.\n"
+asc_help :: T.HelpInfo
+asc_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "ascii" ]
+          us = Tx.empty
+          sh = "Set the byte display format in the current window to ascii"
+          lh = [ "Details for asc setting"
+               ]
 
-setAsc, unsetAsc :: SettingFunction
-setAsc _   = pure $ D.noMessage . D.changeFormat T.Asc
-unsetAsc _ = pure D.noMessage
+set_asc, unset_asc :: T.SettingAction
+set_asc _   = pure $ D.noMessage . D.changeFormat T.Asc
+unset_asc _ = pure D.noMessage
 
 -- break ------------------------------------------------------------
 
-setBreakHelp :: Text
-setBreakHelp = Tx.unlines hs
-    where hs = [ "Insert or remove a break point at the cursor position."
-               , "To remove all break points, use:"
-               , "  :unset break all"
+break_help :: T.HelpInfo
+break_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "break" ]
+          us = "[all]"
+          sh = "Set or unset a break point at cursor"
+          lh = [ "Insert or remove a break point at the cursor position."
+               , "To remove all break points, use :unset break all"
                ]
 
-setBreak :: SettingFunction
-setBreak _ = pure $ D.noMessage . D.setBreakPoint
+set_break :: T.SettingAction
+set_break _ = pure $ D.noMessage . D.setBreakPoint
 
-unsetBreak :: SettingFunction
-unsetBreak ("all":_) = pure $ D.noMessage . D.unsetAllBreakPoints
-unsetBreak _         = pure $ D.noMessage . D.unsetBreakPoint
+unset_break :: T.SettingAction
+unset_break ("all":_) = pure $ D.noMessage . D.unsetAllBreakPoints
+unset_break _         = pure $ D.noMessage . D.unsetBreakPoint
 
 -- history ----------------------------------------------------------
 
-setHistoryHelp :: Text
-setHistoryHelp = Tx.unlines hs
-    where hs = [ "The number of individual debug steps to save in history for"
+history_help :: T.HelpInfo
+history_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "history" ]
+          us = "DEPTH"
+          sh = "Set the reversion history depth"
+          lh = [ "The number of individual debug steps to save in history for"
                , "reversion (i.e., stepping or jumping back). For example,"
                , "  :set history 5000"
                , "ensures that you will be able to revert or 'undo' the last"
@@ -111,9 +125,9 @@ setHistoryHelp = Tx.unlines hs
                , "revert the entire program by using the <reset> command."
                ]
 
-setHistory :: SettingFunction
-setHistory []    = pure D.noMessage
-setHistory (x:_) = maybe err pure . go $ x
+set_history :: T.SettingAction
+set_history []    = pure D.noMessage
+set_history (x:_) = maybe err pure . go $ x
     where err  = Left $ "Cannot set history reversion depth to " ++ x
           go y = do n <- readMaybe y
                     guard (n >= 0 )
@@ -123,26 +137,30 @@ setHistory (x:_) = maybe err pure . go $ x
                                           , T.history   = Seq.take (n+1) h
                                           }
 
-unsetHistory :: SettingFunction
-unsetHistory _ = pure D.noMessage
+unset_history :: T.SettingAction
+unset_history _ = pure D.noMessage
 
 -- width ------------------------------------------------------------
 
-setWidthHelp :: Text
-setWidthHelp = Tx.unlines hs
-    where hs = [ "The number of characters to display per line in the program"
+width_help :: T.HelpInfo
+width_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "width" ]
+          us = "WIDTH"
+          sh = "The number WIDTH of characters per line in the program window"
+          lh = [ "The number of characters to display per line in the program"
                , "window. For example, to set the width to 50 characters,"
                , "  :set width 50"
-               , "The minimum character width is 10." ]
+               , "The minimum character width is 10."
+               ]
 
-setWidth :: SettingFunction
-setWidth []    = Left "A value for the new program width must be supplied"
-setWidth (x:_) = maybe err (pure . go) . readMaybe $ x
+set_width :: T.SettingAction
+set_width []    = Left "A value for the new program width must be supplied"
+set_width (x:_) = maybe err (pure . go) . readMaybe $ x
     where err  = Left $ "Cannot set width to " ++ x
           go n | n < 10    = \ db -> db { T.message = "Invalid width" }
                | otherwise = \ db -> db { T.message = "", T.progWidth = n }
 
-unsetWidth :: SettingFunction
-unsetWidth _ = pure D.noMessage
+unset_width :: T.SettingAction
+unset_width _ = pure D.noMessage
 
 ---------------------------------------------------------------------

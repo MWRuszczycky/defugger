@@ -16,11 +16,12 @@ module Model.Types
     , WgtName         (..)
     , VertViewRange
       -- Debugger commands
-    , HelpInfo
+    , HelpInfo        (..)
     , CommandBinding  (..)
     , CommandAction
     , DebuggerCommand (..)
     , Setting         (..)
+    , SettingAction
     , KeyAction
     , KeyBinding      (..)
       -- Computer/Computation model
@@ -171,7 +172,14 @@ type VertViewRange = (Int, Int)
 ---------------------------------------------------------------------
 -- General help type used to document and display help information
 
-type HelpInfo = Text
+-- |General data type for storing help information for key-bindings
+-- and command bindings.
+data HelpInfo = HelpInfo {
+      names     :: [ Text ] -- Ways to envoke the command
+    , usage     :: Text     -- How the command is to be used
+    , shortHelp :: Text     -- One-line summary information
+    , longHelp  :: Text     -- Detailed help information
+    }
 
 ---------------------------------------------------------------------
 -- Commands
@@ -199,9 +207,9 @@ data DebuggerCommand
 -- |A KeyBinding associates a key event with a DebuggerCommand that
 -- can be executed. KeyBindings are managed in Controller.KeyBindings.
 data KeyBinding = KeyBinding {
-      keyBind   :: Vty.Key
-    , keyAction :: KeyAction
-    , keyHelp   :: HelpInfo
+      keyName   :: Vty.Key      -- The key the command is bound to
+    , keyAction :: KeyAction    -- What the bound command does
+    , keyHelp   :: HelpInfo     -- Help for the binding and command
     }
 
 type KeyAction = Mode -> WgtName -> DebuggerCommand
@@ -211,10 +219,9 @@ type KeyAction = Mode -> WgtName -> DebuggerCommand
 -- CommandBindings are managed in the Controller.CommandBindings
 -- module.
 data CommandBinding = CommandBinding {
-      cmdNames  :: [String]
-    , cmdAction :: [String] -> DebuggerCommand
-    , shortHelp :: Text
-    , longHelp  :: Text
+      cmdNames  :: [String]      -- The names the command is bound to
+    , cmdAction :: CommandAction -- What the bound command does
+    , cmdHelp   :: HelpInfo      -- Help for the bindisg and command
     }
 
 type CommandAction = [String] -> DebuggerCommand
@@ -222,11 +229,13 @@ type CommandAction = [String] -> DebuggerCommand
 -- |Subcommands used with the <set> and <unset> commands to modify
 -- the debugger. Settings only map to pure functions on the debugger.
 data Setting = Setting {
-      settingName :: String
-    , setting     :: [String] -> Either ErrString ( Debugger -> Debugger )
-    , unsetting   :: [String] -> Either ErrString ( Debugger -> Debugger )
-    , settingHelp :: Text
+      settingName :: String         -- Name the setting is bound to
+    , setting     :: SettingAction  -- What it does under <set>
+    , unsetting   :: SettingAction  -- What it does under <unset>
+    , settingHelp :: HelpInfo       -- Help for the setting
     }
+
+type SettingAction = [String] -> Either ErrString ( Debugger -> Debugger )
 
 -- =============================================================== --
 -- Model of a computer for running a BF program/script and the

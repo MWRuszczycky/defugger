@@ -16,6 +16,7 @@ import Data.List                    ( intersperse, intersect )
 import Brick                        ( (<=>), (<+>)           )
 import Controller.CommandBindings   ( commands               )
 import Controller.Settings          ( settings               )
+import Controller.KeyBindings       ( keyBindings            )
 
 -- =============================================================== --
 -- The main help-UI widget
@@ -29,7 +30,7 @@ helpWidget [] =
 
 helpWidget ("keys":_) =
     let header = B.txt "List of key-bindings currently available."
-        body   = B.vBox . map keyBindingSummaryWidget $ keyBindings
+        body   = B.vBox . map ( summaryHelp . T.keyHelp ) $ keyBindings
     in  B.viewport T.HelpWgt B.Both
             $ B.withAttr "header" header
               <=> spacer 1
@@ -38,7 +39,7 @@ helpWidget ("keys":_) =
 helpWidget ("settings":_) =
     let header = B.txt "List of settings currently available"
         note   = B.txt "Settings used as arguments to the set & unset commands"
-        summaries = B.vBox . map settingSummaryWidget $ settings
+        summaries = B.vBox . map ( summaryHelp . T.settingHelp ) $ settings
     in  B.viewport T.HelpWgt B.Both
             $ B.withAttr "header" header
               <=> note
@@ -48,7 +49,7 @@ helpWidget ("settings":_) =
 helpWidget ("commands":_) =
     let header    = B.txt "List of commands currently available"
         note      = B.txt "For details about a command, :help command-name"
-        summaries = B.vBox . map commandSummaryWidget $ commands
+        summaries = B.vBox . map ( summaryHelp . T.cmdHelp ) $ commands
     in B.viewport T.HelpWgt B.Both
            $ B.withAttr "header" header
              <=> note
@@ -59,7 +60,7 @@ helpWidget cs = let ws      = filter matches commands
                     matches = not . null . intersect cs . T.cmdNames
                 in  B.viewport T.HelpWgt B.Both
                     $ B.vBox . intersperse (spacer 1)
-                      . map commandDetailsWidget $ ws
+                      . map ( detailsHelp . T.cmdHelp ) $ ws
 
 -- =============================================================== --
 -- Widget constructors
@@ -67,84 +68,17 @@ helpWidget cs = let ws      = filter matches commands
 spacer :: Int -> B.Widget T.WgtName
 spacer n = B.txt . Tx.replicate n $ " "
 
-commandSummaryWidget :: T.CommandBinding -> B.Widget T.WgtName
-commandSummaryWidget (T.CommandBinding ns _ sh _) =
-    let summary = B.txt sh
-        names   = B.hBox . intersperse (B.txt " | ")
-                  . map (B.withAttr "command" . B.str) $ ns
-    in  names <=> ( spacer 2 <+> summary )
+summaryHelp :: T.HelpInfo -> B.Widget T.WgtName
+summaryHelp h = names <=> ( spacer 2 <+> summary )
+    where summary = B.txt . T.shortHelp $ h
+          names   = B.hBox . intersperse (B.txt " | ")
+                    . map (B.withAttr "command" . B.txt)
+                    . T.names $ h
 
-settingSummaryWidget :: T.Setting -> B.Widget T.WgtName
-settingSummaryWidget (T.Setting n _ _ h) = name <=> ( spacer 2 <+> summary )
-    where summary = B.txt h
-          name    = B.withAttr "setting" . B.str $ n
-
-commandDetailsWidget :: T.CommandBinding -> B.Widget T.WgtName
-commandDetailsWidget c = header <=> spacer 1 <=> ( spacer 2 <+> details )
-    where header  = commandSummaryWidget c
-          details = B.txt . T.longHelp $ c
-
-keyBindingSummaryWidget :: ([Text], Text) -> B.Widget T.WgtName
-keyBindingSummaryWidget (ks, x) = header <=> ( spacer 2 <+> action )
-    where action = B.txt x
-          header = B.hBox . intersperse (B.txt " | ")
-                   . map (B.withAttr "keybinding" . B.txt) $ ks
-
--- =============================================================== --
--- Default key binding help strings
-
-keyBindings :: [([Text], Text)]
-keyBindings = [ ( [ "<esc>" ],
-                    "Normal Mode: quit the Defugger or abort jump.\n"
-                    <> "Command Mode: abort command.\n"
-                    <> "Help Mode: return to Normal Mode." )
-              , ( [ "q" ],
-                    "Return to Normal Mode from Help Mode." )
-              , ( [ "<right-arrow>", "l", "t" ],
-                    "Move cursor one statement forward in Program Window.\n"
-                    <> "Scroll Output and Input Windows.\n"
-                    <> "Scroll through help." )
-              , ( [ "<left-arrow>", "h" ],
-                    "Move cursor one statement backward in Program Window.\n"
-                    <> "Scroll Output and Input Windows.\n"
-                    <> "Scroll through help." )
-              , ( [ "<down-arrow>", "j" ],
-                    "Move cursor to the next row in Program Window.\n"
-                    <> "Scroll Memory, Output and Input Windows.\n"
-                    <> "Scroll through help." )
-              , ( [ "<up-arrow>", "k" ],
-                    "Move cursor to previous row in Program Window.\n"
-                    <> "Scroll Memory, Output and Input Windows.\n"
-                    <> "Scroll through help." )
-              , ( [ "<space>", "L", "T" ],
-                    "Advance program execution one statement forward." )
-              , ( [ "<back-space>", "H" ],
-                    "Revert program execution one statement backward." )
-              , ( [ "<page-down>", "J" ],
-                    "Jump forward to next break point." )
-              , ( [ "<page-up>", "K" ],
-                    "Jump backward to previous break point." )
-              , ( [ "x" ],
-                    "Delete statement at cursor." )
-              , ( [ ">" ],
-                    "Insert 'advance'/'>' BF statement at cursor." )
-              , ( [ "<" ],
-                    "Insert 'backup'/'<' BF statement at cursor." )
-              , ( [ "+" ],
-                    "Insert 'increment'/'+' BF statement at cursor." )
-              , ( [ "-" ],
-                    "Insert 'decrement'/'-' BF statement at cursor." )
-              , ( [ "." ],
-                    "Insert 'write'/'.' BF statement at cursor." )
-              , ( [ "," ],
-                    "Insert 'read'/',' BF statement at cursor." )
-              , ( [ "[", "]" ],
-                    "Insert 'loop'/'[]' BF condition loop at cursor." )
-              , ( [ ":" ],
-                    "Enter Command Mode to run a typed command." )
-              , ( [ "<tab>" ],
-                    "Cycle between windows in Normal Mode." )
-              ]
+detailsHelp :: T.HelpInfo -> B.Widget T.WgtName
+detailsHelp h = header <=> spacer 1 <=> ( spacer 2 <+> details )
+    where header  = summaryHelp h
+          details = B.txt . T.longHelp $ h
 
 -- =============================================================== --
 -- Large help strings
