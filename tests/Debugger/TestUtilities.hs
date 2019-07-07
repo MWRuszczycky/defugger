@@ -8,21 +8,21 @@ module TestUtilities
     , handleAsError
     ) where
 
-import qualified Model.Types             as T
-import qualified Model.Debugger.Debugger as D
-import qualified Brick.BChan             as Br
-import qualified Controller.Loader       as L
-import qualified Data.ByteString         as BS
-import qualified Controller.Commands     as CC
-import qualified Brick.Widgets.Edit      as Br
-import Control.Exception                        ( bracket_                  )
-import Control.Monad                            ( when                      )
-import Data.Default                             ( def                       )
-import Control.Monad.Except                     ( runExceptT                )
-import Test.Hspec                               ( shouldBe                  )
-import System.Directory                         ( createDirectory
-                                                , doesDirectoryExist
-                                                , removeDirectoryRecursive  )
+import qualified Model.Types                as T
+import qualified Model.Debugger.Debugger    as D
+import qualified Brick.BChan                as Br
+import qualified Controller.Loader          as L
+import qualified Data.ByteString            as BS
+import qualified Controller.CommandBindings as CB
+import qualified Brick.Widgets.Edit         as Br
+import Control.Exception                          ( bracket_                  )
+import Control.Monad                              ( when                      )
+import Data.Default                               ( def                       )
+import Control.Monad.Except                       ( runExceptT                )
+import Test.Hspec                                 ( shouldBe                  )
+import System.Directory                           ( createDirectory
+                                                  , doesDirectoryExist
+                                                  , removeDirectoryRecursive  )
 
 
 -- =============================================================== --
@@ -76,7 +76,7 @@ mockIOHandler f db = runExceptT ( f db' ) >>= pure . either ( err db' ) id
 
 handleAsError :: [String] -> T.Debugger -> IO T.Debugger
 handleAsError commands db = do
-    case CC.parseCommand . words . unlines $ commands of
+    case CB.parseCommand . words . unlines $ commands of
          T.PureCmd _      -> error "Expected ErrorCmd command got PureCmd"
          T.ComplexIOCmd _ -> error "Expected ErrorCmd command got ComplexIOCmd"
          T.QuitCmd        -> error "Expected ErrorCmd command got QuitCmd"
@@ -88,7 +88,7 @@ handleAsError commands db = do
 
 handleAsSimpleIO :: [String] -> T.Debugger -> IO T.Debugger
 handleAsSimpleIO commands db = do
-    case CC.parseCommand . words . unlines $ commands of
+    case CB.parseCommand . words . unlines $ commands of
          T.PureCmd _      -> error "Expected SimpleIO command got PureCmd"
          T.ComplexIOCmd _ -> error "Expected SimpleIO command got ComplexIOCmd"
          T.ErrorCmd _     -> error "Expected SimpleIO command got ErrorCmd"

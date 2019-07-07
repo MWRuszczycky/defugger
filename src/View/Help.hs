@@ -21,46 +21,31 @@ import Controller.KeyBindings       ( keyBindings            )
 -- =============================================================== --
 -- The main help-UI widget
 
+-- This still needs a lot work!
+
 helpWidget :: [String] -> B.Widget T.WgtName
-helpWidget [] =
-    let header = B.txt "Welcome to the Defugger! A BF Debugger!"
-        body   = B.txt mainHelpTxt
-    in  B.viewport T.HelpWgt B.Both $
-        B.withAttr "header" header <=> spacer 1 <=> body
+helpWidget [] = mainHelpWidget
 
 helpWidget ("keys":_) =
-    let header = B.txt "List of key-bindings currently available."
-        body   = B.vBox . map ( summaryHelp . T.keyHelp ) $ keyBindings
-    in  B.viewport T.HelpWgt B.Both
-            $ B.withAttr "header" header
-              <=> spacer 1
-              <=> ( spacer 2 <+> body )
+    summaryListHelp keyBindings
+    "List of key-bindings currently available."
+    Tx.empty
 
 helpWidget ("settings":_) =
-    let header = B.txt "List of settings currently available"
-        note   = B.txt "Settings used as arguments to the set & unset commands"
-        summaries = B.vBox . map ( summaryHelp . T.settingHelp ) $ settings
-    in  B.viewport T.HelpWgt B.Both
-            $ B.withAttr "header" header
-              <=> note
-              <=> spacer 1
-              <=> ( spacer 2 <+> summaries )
+    summaryListHelp settings
+    "List of settings currently available"
+    "Settings used as arguments to the set & unset commands"
 
 helpWidget ("commands":_) =
-    let header    = B.txt "List of commands currently available"
-        note      = B.txt "For details about a command, :help command-name"
-        summaries = B.vBox . map ( summaryHelp . T.cmdHelp ) $ commands
-    in B.viewport T.HelpWgt B.Both
-           $ B.withAttr "header" header
-             <=> note
-             <=> spacer 1
-             <=> ( spacer 2 <+> summaries )
+    summaryListHelp commands
+    "List of commands currently available"
+    "For details about a command, :help command-name"
 
 helpWidget cs = let ws      = filter matches commands
                     matches = not . null . intersect cs . T.cmdNames
                 in  B.viewport T.HelpWgt B.Both
                     $ B.vBox . intersperse (spacer 1)
-                      . map ( detailsHelp . T.cmdHelp ) $ ws
+                      . map detailsHelp $ ws
 
 -- =============================================================== --
 -- Widget constructors
@@ -68,17 +53,35 @@ helpWidget cs = let ws      = filter matches commands
 spacer :: Int -> B.Widget T.WgtName
 spacer n = B.txt . Tx.replicate n $ " "
 
-summaryHelp :: T.HelpInfo -> B.Widget T.WgtName
-summaryHelp h = names <=> ( spacer 2 <+> summary )
-    where summary = B.txt . T.shortHelp $ h
-          names   = B.hBox . intersperse (B.txt " | ")
-                    . map (B.withAttr "command" . B.txt)
-                    . T.names $ h
+summaryListHelp :: T.HasHelp a => [a] -> Text -> Text -> B.Widget T.WgtName
+summaryListHelp xs header note =
+    let body = B.vBox . map summaryHelp $ xs
+    in  B.viewport T.HelpWgt B.Both
+            $ ( B.withAttr "header" . B.txt $ header )
+              <=> B.txt note
+              <=> spacer 1
+              <=> ( spacer 2 <+> body )
 
-detailsHelp :: T.HelpInfo -> B.Widget T.WgtName
-detailsHelp h = header <=> spacer 1 <=> ( spacer 2 <+> details )
-    where header  = summaryHelp h
-          details = B.txt . T.longHelp $ h
+summaryHelp :: T.HasHelp a => a -> B.Widget T.WgtName
+summaryHelp x = names <=> ( spacer 2 <+> summary )
+    where helpInfo = T.getHelp x
+          style    = T.helpStyle x
+          summary  = B.txt . T.shortHelp $ helpInfo
+          names    = B.hBox . intersperse (B.txt " | ")
+                     . map (B.withAttr style . B.txt)
+                     . T.names $ helpInfo
+
+detailsHelp :: T.HasHelp a => a -> B.Widget T.WgtName
+detailsHelp x = header <=> spacer 1 <=> ( spacer 2 <+> details )
+    where header  = summaryHelp x
+          details = B.txt . T.longHelp . T.getHelp $ x
+
+mainHelpWidget :: B.Widget T.WgtName
+mainHelpWidget =
+    let header = B.txt "Welcome to the Defugger! A BF Debugger!"
+        body   = B.txt mainHelpTxt
+    in  B.viewport T.HelpWgt B.Both $
+        B.withAttr "header" header <=> spacer 1 <=> body
 
 -- =============================================================== --
 -- Large help strings
