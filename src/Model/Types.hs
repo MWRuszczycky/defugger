@@ -178,12 +178,13 @@ data HelpInfo = HelpInfo {
     , usage     :: Text     -- How the command is to be used
     , shortHelp :: Text     -- One-line summary information
     , longHelp  :: Text     -- Detailed help information
-    }
+    } deriving ( Eq )
 
 -- |Class of types that provide a value of HelpInfo
 class HasHelp a where
     getHelp   :: a -> HelpInfo  -- The associated help information
     helpStyle :: a -> AttrName  -- Styling information for display
+    helpFor   :: a -> Text      -- What is this help for
 
 -- =============================================================== --
 -- Debugger commands
@@ -234,6 +235,7 @@ type KeyAction = Mode -> WgtName -> DebuggerCommand
 instance HasHelp KeyBinding where
     getHelp     = keyHelp
     helpStyle _ = "keybinding"
+    helpFor _   = "key-binding"
 
 ---------------------------------------------------------------------
 -- Command bindings (for Command Mode)
@@ -253,6 +255,7 @@ type CommandAction = [Text] -> DebuggerCommand
 instance HasHelp CommandBinding where
     getHelp     = cmdHelp
     helpStyle _ = "command"
+    helpFor _   = "entered command"
 
 ---------------------------------------------------------------------
 -- Settings (for use with <set>/<unset> commands)
@@ -271,6 +274,7 @@ type SettingAction = [Text] -> Either ErrString ( Debugger -> Debugger )
 instance HasHelp Setting where
     getHelp     = settingHelp
     helpStyle _ = "setting"
+    helpFor _   = "debugger setting"
 
 -- =============================================================== --
 -- Model of a computer for running a BF program/script and the

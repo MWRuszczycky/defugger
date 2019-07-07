@@ -52,7 +52,7 @@ commands = [ T.CommandBinding ["help",  "h"] help_action  help_help
 help_help :: T.HelpInfo
 help_help = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "help", "h" ]
-          us = "[COMMAND | KEY]"
+          us = ":help [COMMAND | KEY]"
           sh = "Display help information"
           lh = [ "Details for help"
                ]
@@ -65,7 +65,7 @@ help_action xs = T.PureCmd $ \ db -> db { T.mode = T.HelpMode xs }
 load_help :: T.HelpInfo
 load_help = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "load", "l" ]
-          us = "FILEPATH-BF [FILEPATH-INPUT]"
+          us = ":load FILEPATH-BF [FILEPATH-INPUT]"
           sh = "Load BF script and input file into the Defugger"
           lh = [ "Details for load"
                ]
@@ -82,7 +82,7 @@ load_action (x:_)   = T.SimpleIOCmd $ reloadDebugger ( Just . Tx.unpack $ x )
 reset_help :: T.HelpInfo
 reset_help = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "reset", "r" ]
-          us = Tx.empty
+          us = ":reset"
           sh = "Reset the Defugger to its original state."
           lh = [ "Details for reset"
                ]
@@ -95,7 +95,7 @@ reset_action _ = T.PureCmd $ resetDebugger
 set_help :: T.HelpInfo
 set_help = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "set", "s" ]
-          us = "[SETTING [VALUE..]]"
+          us = ":set [SETTING [VALUE..]]"
           sh = "Sets a property in the Defugger"
           lh = [ "Details for set"
                ]
@@ -108,7 +108,7 @@ set_action = either T.ErrorCmd T.PureCmd . parseSet
 unset_help :: T.HelpInfo
 unset_help = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "unset", "u" ]
-          us = "[SETTING [VALUE..]]"
+          us = ":set [SETTING [VALUE..]]"
           sh = "Unsets a property in the Defugger"
           lh = [ "Details for unset"
                ]
@@ -121,7 +121,7 @@ unset_action = either T.ErrorCmd T.PureCmd . parseUnset
 write_help :: T.HelpInfo
 write_help = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "write", "w" ]
-          us = "[FILEPATH]"
+          us = ":set [FILEPATH]"
           sh = "Write the current BF script to memory"
           lh = [ "Details for write"
                ]
@@ -142,7 +142,7 @@ write_action xs = T.SimpleIOCmd $ \ db -> go db $
 quit_help :: T.HelpInfo
 quit_help = T.HelpInfo ns us sh (Tx.unlines lh)
     where ns = [ "quit", "q" ]
-          us = Tx.empty
+          us = ":quit"
           sh = "Quits the Defugger"
           lh = [ "Details for quit"
                ]

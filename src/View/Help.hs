@@ -63,13 +63,26 @@ summaryListHelp xs header note =
               <=> ( spacer 2 <+> body )
 
 summaryHelp :: T.HasHelp a => a -> B.Widget T.WgtName
-summaryHelp x = names <=> ( spacer 2 <+> summary )
-    where helpInfo = T.getHelp x
-          style    = T.helpStyle x
-          summary  = B.txt . T.shortHelp $ helpInfo
-          names    = B.hBox . intersperse (B.txt " | ")
-                     . map (B.withAttr style . B.txt)
-                     . T.names $ helpInfo
+summaryHelp x =
+    let helpInfo = T.getHelp x
+        style    = T.helpStyle x
+        summary  = B.txt . T.shortHelp $ helpInfo
+        what     = B.txt $ "(" <> T.helpFor x <> ")"
+        usage    = usageWgt helpInfo
+        names    = B.hBox . intersperse (B.txt " | ")
+                   . map (B.withAttr style . B.txt)
+                   . T.names $ helpInfo
+    in  ( names <+> spacer 1 <+> what <+> spacer 1 <+> usage )
+        <=> ( spacer 2 <+> summary )
+
+usageWgt :: T.HelpInfo -> B.Widget T.WgtName
+usageWgt h
+    | Tx.null . T.usage $ h = B.emptyWidget
+    | otherwise             = B.hBox ws
+    where ws = [ B.txt "usage"
+               , spacer 1
+               , B.withAttr "usage:" . B.txt . T.usage $ h
+               ]
 
 detailsHelp :: T.HasHelp a => a -> B.Widget T.WgtName
 detailsHelp x = header <=> spacer 1 <=> ( spacer 2 <+> details )
