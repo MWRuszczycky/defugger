@@ -45,14 +45,15 @@ newDebugger script input = do
                                , T.inputPath  = getTempTestPath <$> input
                                }
 
-checkDebugger :: T.Debugger -> BS.ByteString -> BS.ByteString
-                 -> String -> Int -> IO ()
--- ^Check the computer state of the dubegger against expected values.
-checkDebugger db input output memory position = do
+checkDebugger :: BS.ByteString -> BS.ByteString
+                 -> String -> Int -> T.Debugger -> IO T.Debugger
+-- ^Check the computer state of the debugger against expected values.
+checkDebugger input output memory position db = do
     (T.input . T.computer) db        `shouldBe` input
     (T.output . T.computer) db       `shouldBe` output
     (show. T.memory . T.computer) db `shouldBe` memory
     D.getPosition db                 `shouldBe` position
+    pure db
 
 checkCommandEdit :: [Text] -> T.Debugger -> IO ()
 checkCommandEdit expected db = D.getCommandFromEdit db `shouldBe` expected
