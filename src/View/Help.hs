@@ -19,6 +19,108 @@ import Controller.Settings          ( settings                      )
 import Controller.KeyBindings       ( keyBindings                   )
 
 -- =============================================================== --
+-- The main help-UI widget
+
+-- This still needs a lot work!
+
+helpWidget :: [Text] -> B.Widget T.WgtName
+helpWidget [] = mainHelpUI
+
+helpWidget ("keys":_) =
+    summaryListHelpUI keyBindings
+    "List of key-bindings currently available."
+    Tx.empty
+
+helpWidget ("settings":_) =
+    summaryListHelpUI settings
+    "List of settings currently available"
+    "Settings used as arguments to the set & unset commands"
+
+helpWidget ("commands":_) =
+    summaryListHelpUI commands
+    "List of commands currently available"
+    "For details about a command, :help command-name"
+
+helpWidget xs = detailsListHelpUI xs
+
+-- =============================================================== --
+-- Help UI widget constructors
+
+---------------------------------------------------------------------
+-- Main Help-UI widgets
+
+mainHelpUI :: B.Widget T.WgtName
+mainHelpUI =
+    let header = B.txt "Welcome to the Defugger! A BF Debugger!"
+        body   = B.txt mainHelpTxt
+    in  B.viewport T.HelpWgt B.Both $
+        B.withAttr "header" header <=> spacer 1 <=> body
+
+summaryListHelpUI :: T.HasHelp a => [a] -> Text -> Text -> B.Widget T.WgtName
+summaryListHelpUI xs header note =
+    let body = B.vBox . map summaryHelpWgt . nubBy sameHelp $ xs
+    in  B.viewport T.HelpWgt B.Both
+            $ ( B.withAttr "header" . B.txt $ header )
+              <=> B.txt note
+              <=> spacer 1
+              <=> ( spacer 2 <+> body )
+
+detailsListHelpUI :: [Text] -> B.Widget T.WgtName
+detailsListHelpUI xs =
+    let ws      = nubBy sameHelp . filter matches $ everythingWithHelp
+        matches = not . null . intersect xs . T.names . T.getHelp
+    in  B.viewport T.HelpWgt B.Both
+        $ B.vBox . intersperse (spacer 1 <=> rule)
+          . map detailsHelpWgt $ ws
+
+---------------------------------------------------------------------
+-- Component help widgets
+
+summaryHelpWgt :: T.HasHelp a => a -> B.Widget T.WgtName
+-- ^Display just the summary help information:
+-- Names | What it is | How it is used | What it does
+summaryHelpWgt x =
+    let summary = B.txt . T.shortHelp . T.getHelp $ x
+    in  ( B.hBox . intersperse (spacer 1) $
+            [ namesWgt x
+            , whatForWgt x
+            , usageWgt x ] )
+        <=> ( spacer 2 <+> summary )
+
+detailsHelpWgt :: T.HasHelp a => a -> B.Widget T.WgtName
+-- ^Display detailed help information:
+-- Redisplay the summary help | Display the details.
+detailsHelpWgt x = header <=> detWgt
+    where header = summaryHelpWgt x
+          detTxt = T.longHelp . T.getHelp $ x
+          detWgt = if Tx.null detTxt
+                      then B.emptyWidget
+                      else spacer 1 <=> (spacer 2 <+> B.txt detTxt)
+
+whatForWgt :: T.HasHelp a => a -> B.Widget T.WgtName
+whatForWgt x = B.txt $ "(" <> T.helpFor x <> ")"
+
+namesWgt :: T.HasHelp a => a -> B.Widget T.WgtName
+namesWgt x = let helpInfo = T.getHelp x
+                 style    = T.helpStyle x
+             in  B.hBox . intersperse (B.txt " | ")
+                 . map (B.withAttr style . B.txt)
+                 . T.names $ helpInfo
+
+usageWgt :: T.HasHelp a => a -> B.Widget T.WgtName
+usageWgt x
+    | Tx.null . T.usage $ h = B.emptyWidget
+    | otherwise             = B.hBox ws
+    where h  = T.getHelp x
+          ws = [ B.txt "usage:"
+               , spacer 1
+               , B.withAttr "usage" . B.txt . T.usage $ h
+               ]
+
+-- =============================================================== --
+-- Helpers
+
+---------------------------------------------------------------------
 -- Use an existential data type to generate a list of different data
 -- types that all provide help information.
 
@@ -28,38 +130,8 @@ everythingWithHelp = concat [ map T.HelpExists commands
                             , map T.HelpExists keyBindings
                             ]
 
--- =============================================================== --
--- The main help-UI widget
-
--- This still needs a lot work!
-
-helpWidget :: [Text] -> B.Widget T.WgtName
-helpWidget [] = mainHelpWidget
-
-helpWidget ("keys":_) =
-    summaryListHelp keyBindings
-    "List of key-bindings currently available."
-    Tx.empty
-
-helpWidget ("settings":_) =
-    summaryListHelp settings
-    "List of settings currently available"
-    "Settings used as arguments to the set & unset commands"
-
-helpWidget ("commands":_) =
-    summaryListHelp commands
-    "List of commands currently available"
-    "For details about a command, :help command-name"
-
-helpWidget cs =
-    let ws      = nubBy sameHelp . filter matches $ everythingWithHelp
-        matches = not . null . intersect cs . T.names . T.getHelp
-    in  B.viewport T.HelpWgt B.Both
-        $ B.vBox . intersperse (spacer 1 <=> rule)
-          . map detailsHelp $ ws
-
--- =============================================================== --
--- Widget constructors
+---------------------------------------------------------------------
+-- Common operations for generating help UI widgets
 
 spacer :: Int -> B.Widget T.WgtName
 spacer n = B.txt . Tx.replicate n $ " "
@@ -72,49 +144,6 @@ sameHelp x y = let xHelp = T.getHelp x
                    yHelp = T.getHelp y
                in  T.names xHelp == T.names yHelp
                    && T.helpFor x == T.helpFor y
-
-summaryListHelp :: T.HasHelp a => [a] -> Text -> Text -> B.Widget T.WgtName
-summaryListHelp xs header note =
-    let body = B.vBox . map summaryHelp . nubBy sameHelp $ xs
-    in  B.viewport T.HelpWgt B.Both
-            $ ( B.withAttr "header" . B.txt $ header )
-              <=> B.txt note
-              <=> spacer 1
-              <=> ( spacer 2 <+> body )
-
-summaryHelp :: T.HasHelp a => a -> B.Widget T.WgtName
-summaryHelp x =
-    let helpInfo = T.getHelp x
-        style    = T.helpStyle x
-        summary  = B.txt . T.shortHelp $ helpInfo
-        what     = B.txt $ "(" <> T.helpFor x <> ")"
-        usage    = usageWgt helpInfo
-        names    = B.hBox . intersperse (B.txt " | ")
-                   . map (B.withAttr style . B.txt)
-                   . T.names $ helpInfo
-    in  ( names <+> spacer 1 <+> what <+> spacer 1 <+> usage )
-        <=> ( spacer 2 <+> summary )
-
-usageWgt :: T.HelpInfo -> B.Widget T.WgtName
-usageWgt h
-    | Tx.null . T.usage $ h = B.emptyWidget
-    | otherwise             = B.hBox ws
-    where ws = [ B.txt "usage:"
-               , spacer 1
-               , B.withAttr "usage" . B.txt . T.usage $ h
-               ]
-
-detailsHelp :: T.HasHelp a => a -> B.Widget T.WgtName
-detailsHelp x = header <=> spacer 1 <=> ( spacer 2 <+> details )
-    where header  = summaryHelp x
-          details = B.txt . T.longHelp . T.getHelp $ x
-
-mainHelpWidget :: B.Widget T.WgtName
-mainHelpWidget =
-    let header = B.txt "Welcome to the Defugger! A BF Debugger!"
-        body   = B.txt mainHelpTxt
-    in  B.viewport T.HelpWgt B.Both $
-        B.withAttr "header" header <=> spacer 1 <=> body
 
 -- =============================================================== --
 -- Large help strings

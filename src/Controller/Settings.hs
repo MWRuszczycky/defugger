@@ -50,12 +50,11 @@ settings = [ T.Setting "hex"     set_hex     unset_hex     hex_help
 -- hex --------------------------------------------------------------
 
 hex_help ::T.HelpInfo
-hex_help = T.HelpInfo ns us sh (Tx.unlines lh)
+hex_help = T.HelpInfo ns us sh lh
     where ns = [ "hex" ]
           us = ":set hex"
           sh = "Set byte display format in the current window to hexadecimal"
-          lh = [ "Details for hex setting"
-               ]
+          lh = Tx.empty
 
 set_hex, unset_hex :: T.SettingAction
 set_hex _   = pure $ D.noMessage . D.changeFormat T.Hex
@@ -64,12 +63,11 @@ unset_hex _ = pure D.noMessage
 -- dec --------------------------------------------------------------
 
 dec_help :: T.HelpInfo
-dec_help = T.HelpInfo ns us sh (Tx.unlines lh)
+dec_help = T.HelpInfo ns us sh lh
     where ns = [ "dec" ]
           us = ":set dec"
           sh = "Set the byte display format in the current window to decimal"
-          lh = [ "Details for dec setting"
-               ]
+          lh = Tx.empty
 
 set_dec, unset_dec :: T.SettingAction
 set_dec _   = pure $ D.noMessage . D.changeFormat T.Dec
@@ -78,12 +76,11 @@ unset_dec _ = pure D.noMessage
 -- ascii ------------------------------------------------------------
 
 asc_help :: T.HelpInfo
-asc_help = T.HelpInfo ns us sh (Tx.unlines lh)
+asc_help = T.HelpInfo ns us sh lh
     where ns = [ "ascii" ]
           us = ":set ascii"
           sh = "Set the byte display format in the current window to ascii"
-          lh = [ "Details for asc setting"
-               ]
+          lh = Tx.empty
 
 set_asc, unset_asc :: T.SettingAction
 set_asc _   = pure $ D.noMessage . D.changeFormat T.Asc

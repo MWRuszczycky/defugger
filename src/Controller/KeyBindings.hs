@@ -56,12 +56,11 @@ keyBindings = [ T.KeyBinding V.KEsc         esc_action    esc_help
 -- right ------------------------------------------------------------
 
 right_help :: T.HelpInfo
-right_help = T.HelpInfo ns us sh (Tx.unlines lh)
+right_help = T.HelpInfo ns us sh lh
     where ns = [ "<right>", "l", "t" ]
           us = Tx.empty
           sh = "Advance cursor in Program Window or scroll window"
-          lh = [ "Details for <right>"
-               ]
+          lh = Tx.empty
 
 right_action :: T.KeyAction
 right_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorRight
@@ -73,12 +72,11 @@ right_action _              _            = T.PureCmd id
 -- left -------------------------------------------------------------
 
 left_help :: T.HelpInfo
-left_help = T.HelpInfo ns us sh (Tx.unlines lh)
+left_help = T.HelpInfo ns us sh lh
     where ns = [ "<left>", "h" ]
           us = Tx.empty
           sh = "Move cursor back in Program Window or scroll window"
-          lh = [ "Details for <left>"
-               ]
+          lh = Tx.empty
 
 left_action :: T.KeyAction
 left_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorLeft
@@ -90,12 +88,11 @@ left_action _              _            = T.PureCmd id
 -- up ---------------------------------------------------------------
 
 up_help :: T.HelpInfo
-up_help = T.HelpInfo ns us sh (Tx.unlines lh)
+up_help = T.HelpInfo ns us sh lh
     where ns = [ "<up>", "k" ]
           us = Tx.empty
           sh = "Move cursor to previous row in Program Window or scroll window"
-          lh = [ "Details for <up>"
-               ]
+          lh = Tx.empty
 
 up_action :: T.KeyAction
 up_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorUp
@@ -108,12 +105,11 @@ up_action _              _            = T.PureCmd id
 -- down -------------------------------------------------------------
 
 down_help :: T.HelpInfo
-down_help = T.HelpInfo ns us sh (Tx.unlines lh)
+down_help = T.HelpInfo ns us sh lh
     where ns = [ "<down>", "j" ]
           us = Tx.empty
           sh = "Move cursor to next row in Program Widow or scroll window"
-          lh = [ "Details for <down>"
-               ]
+          lh = Tx.empty
 
 down_action :: T.KeyAction
 down_action T.NormalMode   T.ProgramWgt = T.PureCmd D.moveCursorDown
@@ -126,12 +122,11 @@ down_action _              _            = T.PureCmd id
 -- page-up ----------------------------------------------------------
 
 pgUp_help :: T.HelpInfo
-pgUp_help = T.HelpInfo ns us sh (Tx.unlines lh)
+pgUp_help = T.HelpInfo ns us sh lh
     where ns = [ "<page-up>", "K" ]
           us = Tx.empty
           sh = "Jump execution back to last break point"
-          lh = [ "Details for <page-up>"
-               ]
+          lh = Tx.empty
 
 pgUp_action :: T.KeyAction
 pgUp_action T.NormalMode T.ProgramWgt = T.TandemCmd D.jumpBackward
@@ -140,12 +135,11 @@ pgUp_action _            _            = T.PureCmd id
 -- page-down --------------------------------------------------------
 
 pgDown_help :: T.HelpInfo
-pgDown_help = T.HelpInfo ns us sh (Tx.unlines lh)
+pgDown_help = T.HelpInfo ns us sh lh
     where ns = [ "<page-down>", "J" ]
           us = Tx.empty
           sh = "Jump execution to next break point"
-          lh = [ "Details for <page-down>"
-               ]
+          lh = Tx.empty
 
 pgDown_action :: T.KeyAction
 pgDown_action T.NormalMode T.ProgramWgt = T.TandemCmd D.jumpForward
@@ -154,12 +148,11 @@ pgDown_action _            _            = T.PureCmd id
 -- space ------------------------------------------------------------
 
 space_help :: T.HelpInfo
-space_help = T.HelpInfo ns us sh (Tx.unlines lh)
+space_help = T.HelpInfo ns us sh lh
     where ns = [ "<space>", "L", "T" ]
           us = Tx.empty
           sh = "Advance execution forward by one BF statement"
-          lh = [ "Details for <space>"
-               ]
+          lh = Tx.empty
 
 space_action :: T.KeyAction
 space_action T.NormalMode T.ProgramWgt = T.PureCmd D.stepForward
@@ -168,12 +161,11 @@ space_action _            _            = T.PureCmd id
 -- bs ---------------------------------------------------------------
 
 bs_help :: T.HelpInfo
-bs_help = T.HelpInfo ns us sh (Tx.unlines lh)
+bs_help = T.HelpInfo ns us sh lh
     where ns = [ "<back-space>", "H" ]
           us = Tx.empty
           sh = "Revert program execution back by one BF statement"
-          lh = [ "Details for <back-space>"
-               ]
+          lh = Tx.empty
 
 bs_action :: T.KeyAction
 bs_action T.NormalMode T.ProgramWgt = T.PureCmd D.stepBackward
@@ -182,12 +174,11 @@ bs_action _            _            = T.PureCmd id
 -- tab --------------------------------------------------------------
 
 tab_help :: T.HelpInfo
-tab_help = T.HelpInfo ns us sh (Tx.unlines lh)
+tab_help = T.HelpInfo ns us sh lh
     where ns = [ "<tab>" ]
           us = Tx.empty
           sh = "Cycle between windows in Program Mode"
-          lh = [ "Details for <tab>"
-               ]
+          lh = Tx.empty
 
 tab_action :: T.KeyAction
 tab_action T.NormalMode w = T.PureCmd $ \ db -> db {T.wgtFocus = D.nextWidget w}
@@ -204,7 +195,7 @@ esc_help = T.HelpInfo ns us sh (Tx.unlines lh)
                , "Command Mode: Abort entering the command."
                , "Help Mode: Return to Normal Mode."
                , "When running a lengthy computation, <esc> will abort the"
-               , "computation and retrun the Defugger to Normal Mode."
+               , "  computation and return the Defugger to Normal Mode."
                ]
 
 esc_action :: T.Mode -> T.WgtName -> T.DebuggerCommand
@@ -315,12 +306,11 @@ l_action _              _            = T.PureCmd id
 -- q ----------------------------------------------------------------
 
 q_help :: T.HelpInfo
-q_help = T.HelpInfo ns us sh (Tx.unlines lh)
+q_help = T.HelpInfo ns us sh lh
     where ns = [ "q" ]
           us = Tx.empty
           sh = "Return to Normal Mode from Help Mode"
-          lh = [ "Details for q"
-               ]
+          lh = Tx.empty
 
 q_action :: T.Mode -> T.WgtName -> T.DebuggerCommand
 q_action (T.HelpMode _) _ = T.PureCmd $ \ db -> db { T.mode = T.NormalMode }
@@ -434,12 +424,11 @@ comma_action _            _            = T.PureCmd id
 -- : / <colon> ------------------------------------------------------
 
 colon_help :: T.HelpInfo
-colon_help = T.HelpInfo ns us sh (Tx.unlines lh)
+colon_help = T.HelpInfo ns us sh lh
     where ns = [ ":" ]
           us = Tx.empty
           sh = "Enter a command (i.e., enter Command Mode from Normal Mode)"
-          lh = [ "Details for ."
-               ]
+          lh = Tx.empty
 
 colon_action :: T.KeyAction
 colon_action T.NormalMode _ = T.PureCmd $ \ db -> db { T.mode = T.CommandMode }
