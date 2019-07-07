@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs             #-}
 
 module Model.Types
     ( -- Error and IO types
@@ -18,6 +19,7 @@ module Model.Types
       -- Debugger commands
     , HelpInfo        (..)
     , HasHelp         (..)
+    , HelpExists      (..)
     , CommandBinding  (..)
     , CommandAction
     , DebuggerCommand (..)
@@ -185,6 +187,16 @@ class HasHelp a where
     getHelp   :: a -> HelpInfo  -- The associated help information
     helpStyle :: a -> AttrName  -- Styling information for display
     helpFor   :: a -> Text      -- What is this help for
+
+-- |This allows us to group different things that have help together.
+-- This is used in the View.Help module for searching for help..
+data HelpExists where
+    HelpExists :: HasHelp a => a -> HelpExists
+
+instance HasHelp HelpExists where
+    getHelp (HelpExists x)   = getHelp x
+    helpStyle (HelpExists x) = helpStyle x
+    helpFor (HelpExists x)   = helpFor x
 
 -- =============================================================== --
 -- Debugger commands

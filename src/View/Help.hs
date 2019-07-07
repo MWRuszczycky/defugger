@@ -11,12 +11,22 @@ module View.Help
 import qualified Data.Text   as Tx
 import qualified Brick       as B
 import qualified Model.Types as T
-import Data.Text                    ( Text                   )
-import Data.List                    ( intersperse, intersect )
-import Brick                        ( (<=>), (<+>)           )
-import Controller.CommandBindings   ( commands               )
-import Controller.Settings          ( settings               )
-import Controller.KeyBindings       ( keyBindings            )
+import Data.Text                    ( Text                          )
+import Data.List                    ( intersperse, intersect, nubBy )
+import Brick                        ( (<=>), (<+>)                  )
+import Controller.CommandBindings   ( commands                      )
+import Controller.Settings          ( settings                      )
+import Controller.KeyBindings       ( keyBindings                   )
+
+-- =============================================================== --
+-- Use an existential data type to generate a list of different data
+-- types that all provide help information.
+
+everythingWithHelp :: [T.HelpExists]
+everythingWithHelp = concat [ map T.HelpExists commands
+                            , map T.HelpExists settings
+                            , map T.HelpExists keyBindings
+                            ]
 
 -- =============================================================== --
 -- The main help-UI widget
@@ -41,11 +51,12 @@ helpWidget ("commands":_) =
     "List of commands currently available"
     "For details about a command, :help command-name"
 
-helpWidget cs = let ws      = filter matches commands
-                    matches = not . null . intersect cs . T.cmdNames
-                in  B.viewport T.HelpWgt B.Both
-                    $ B.vBox . intersperse (spacer 1)
-                      . map detailsHelp $ ws
+helpWidget cs =
+    let ws      = nubBy sameHelp . filter matches $ everythingWithHelp
+        matches = not . null . intersect cs . T.names . T.getHelp
+    in  B.viewport T.HelpWgt B.Both
+        $ B.vBox . intersperse (spacer 1 <=> rule)
+          . map detailsHelp $ ws
 
 -- =============================================================== --
 -- Widget constructors
@@ -53,9 +64,18 @@ helpWidget cs = let ws      = filter matches commands
 spacer :: Int -> B.Widget T.WgtName
 spacer n = B.txt . Tx.replicate n $ " "
 
+rule :: B.Widget T.WgtName
+rule = B.txt . Tx.replicate 80 $ "-"
+
+sameHelp :: T.HasHelp a => a -> a -> Bool
+sameHelp x y = let xHelp = T.getHelp x
+                   yHelp = T.getHelp y
+               in  T.names xHelp == T.names yHelp
+                   && T.helpFor x == T.helpFor y
+
 summaryListHelp :: T.HasHelp a => [a] -> Text -> Text -> B.Widget T.WgtName
 summaryListHelp xs header note =
-    let body = B.vBox . map summaryHelp $ xs
+    let body = B.vBox . map summaryHelp . nubBy sameHelp $ xs
     in  B.viewport T.HelpWgt B.Both
             $ ( B.withAttr "header" . B.txt $ header )
               <=> B.txt note
@@ -79,9 +99,9 @@ usageWgt :: T.HelpInfo -> B.Widget T.WgtName
 usageWgt h
     | Tx.null . T.usage $ h = B.emptyWidget
     | otherwise             = B.hBox ws
-    where ws = [ B.txt "usage"
+    where ws = [ B.txt "usage:"
                , spacer 1
-               , B.withAttr "usage:" . B.txt . T.usage $ h
+               , B.withAttr "usage" . B.txt . T.usage $ h
                ]
 
 detailsHelp :: T.HasHelp a => a -> B.Widget T.WgtName
