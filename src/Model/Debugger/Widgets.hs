@@ -8,6 +8,9 @@ module Model.Debugger.Widgets
     , scrollMemView
     , changeFormat
     , noMessage
+      -- Command edit widget management
+    , resetCommandEdit
+    , getCommandFromEdit
       -- Cursor management
     , moveCursorRight
     , moveCursorLeft
@@ -31,6 +34,8 @@ module Model.Debugger.Widgets
 import qualified Model.Types as T
 import qualified Data.Vector as Vec
 import qualified Data.Set    as Set
+import Brick.Widgets.Edit           ( editor
+                                    , getEditContents )
 import Model.Debugger.Query         ( getPositionRow
                                     , getAddress
                                     , getPositionRow
@@ -139,6 +144,16 @@ shiftMemView :: Int -> T.Debugger -> T.Debugger
 -- ^Shift range of lines to be displayed in the memory UI widget.
 shiftMemView row db = db { T.memView = shiftView oldView row }
     where oldView = T.memView db
+
+-- =============================================================== --
+-- Command edit widget management
+
+resetCommandEdit :: T.Debugger -> T.Debugger
+resetCommandEdit db = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
+                         , T.mode        = T.NormalMode}
+
+getCommandFromEdit :: T.Debugger -> [String]
+getCommandFromEdit = words . unlines . getEditContents . T.commandEdit
 
 -- =============================================================== --
 -- Cursor management

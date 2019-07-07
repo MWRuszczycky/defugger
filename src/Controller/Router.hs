@@ -3,6 +3,9 @@
 
 module Controller.Router
     ( routeEvent
+      -- IO functions
+    , runInIO       -- exported for testing purposes
+    , runInTandem   -- exported for testing purposes
     ) where
 
 -- =============================================================== --
@@ -20,9 +23,7 @@ import Control.Monad.Except                     ( runExceptT
                                                 , liftIO            )
 import Controller.CommandBindings               ( parseCommand      )
 import Controller.KeyBindings                   ( parseKey          )
-import Brick.Widgets.Edit                       ( editor
-                                                , getEditContents
-                                                , handleEditorEvent )
+import Brick.Widgets.Edit                       ( handleEditorEvent )
 
 -- =============================================================== --
 -- Local helper type synonyms
@@ -31,16 +32,6 @@ type DebugEventMonad = B.EventM T.WgtName (B.Next T.Debugger)
 type EventHandler    = B.BrickEvent T.WgtName T.DebugEvent -> DebugEventMonad
 
 -- =============================================================== --
--- Event router -- This is the controller entry point.
-
-routeEvent :: T.Debugger -> EventHandler
-routeEvent db ev = case T.mode db of
-                        T.CommandMode      -> routeCommandEvent db ev
-                        T.ProcessingMode c -> routeProcessingEvent c db ev
-                        _                  -> routeGeneral db ev
-
--- =============================================================== --
--- Event Routers
 -- Most events can be handled using key-bindings to map key events to
 -- commands for execution. The general router (routeGeneral) handles
 -- these events as well as resize events. This applies to Normal Mode
@@ -49,94 +40,81 @@ routeEvent db ev = case T.mode db of
 -- widget for command input, so we want to let it deal with most
 -- events before getting the user input and translating this to a
 -- command for execution. Processing Mode is used when a potentially
--- long or non-halting is executing and we need to run it in its own
--- thread so it can be aborted if necessary. In this case most events
--- are simply ignored.
+-- long or non-halting compution is to be run and we need to do so in
+-- a separate thread so it can be aborted if necessary.
 
----------------------------------------------------------------------
--- General event router for Normal and Help Mode
+routeEvent :: T.Debugger -> EventHandler
+routeEvent db ev = case T.mode db of
+                        T.CommandMode      -> routeCommandMode db ev
+                        T.ProcessingMode x -> routeProcessingMode x db ev
+                        _                  -> routeGeneral db ev
+
+-- =============================================================== --
+-- General event router for Normal and Help Modes
 
 routeGeneral :: T.Debugger -> EventHandler
-routeGeneral db (B.VtyEvent (V.EvKey k _))     = keyEvent k db
-routeGeneral db (B.VtyEvent (V.EvResize w h) ) = B.continue . D.resize w h $ db
-routeGeneral db _                              = B.continue db
+routeGeneral db (B.VtyEvent (V.EvKey k _)) =
+    let cmd = parseKey k (T.mode db) (T.wgtFocus db)
+    in  runCommand cmd db
 
----------------------------------------------------------------------
+routeGeneral db (B.VtyEvent (V.EvResize w h) ) =
+    B.continue . D.resize w h $ db
+
+routeGeneral db _ =
+    B.continue db
+
+-- =============================================================== --
 -- Events in Command Mode
 
-routeCommandEvent :: T.Debugger -> EventHandler
+routeCommandMode :: T.Debugger -> EventHandler
 -- |The <esc> key aborts entry of commands and Command Mode.
-routeCommandEvent db (B.VtyEvent (V.EvKey V.KEsc _ )) =
-    B.continue $ db { T.message     = ""
-                    , T.commandEdit = editor T.CommandWgt (Just 1) ""
-                    , T.mode        = T.NormalMode
-                    }
+routeCommandMode db (B.VtyEvent (V.EvKey V.KEsc _ )) =
+    B.continue . D.noMessage . D.resetCommandEdit $ db
 
 -- |Handle resizing of the debugger terminal window.
-routeCommandEvent db (B.VtyEvent (V.EvResize w h) ) =
+routeCommandMode db (B.VtyEvent (V.EvResize w h) ) =
     B.continue . D.resize w h $ db
 
 -- |Handle the command when the user presses the <enter> key. This
 -- returns the debugger to Normal Mode.
-routeCommandEvent db (B.VtyEvent (V.EvKey V.KEnter _ )) =
-    commandEvent db
+routeCommandMode db (B.VtyEvent (V.EvKey V.KEnter _ )) =
+    let cmd = D.getCommandFromEdit db
+    in  runCommand ( parseCommand cmd ) . D.resetCommandEdit $ db
 
 -- |Let the Brick run time system handle entry of text into the
 -- Command Mode edit widget.
-routeCommandEvent db (B.VtyEvent ev) = do
+routeCommandMode db (B.VtyEvent ev) = do
     updatedEditor <- handleEditorEvent ev (T.commandEdit db)
     B.continue $ db { T.commandEdit = updatedEditor }
 
-routeCommandEvent db _ =
+routeCommandMode db _ =
     B.continue db
 
----------------------------------------------------------------------
+-- =============================================================== --
 -- Events in Processing Mode
 
-routeProcessingEvent :: Async T.Debugger -> T.Debugger -> EventHandler
+routeProcessingMode :: Async T.Debugger -> T.Debugger -> EventHandler
 -- |The <esc> key always allows the user to abort processing.
-routeProcessingEvent c db (B.VtyEvent (V.EvKey V.KEsc _ )) = do
-    liftIO $ A.cancel c
+routeProcessingMode asyncDB db (B.VtyEvent (V.EvKey V.KEsc _ )) = do
+    liftIO $ A.cancel asyncDB
     B.continue $ db { T.mode    = T.NormalMode
                     , T.message = "Jump aborted" }
 
 -- |Handle resizing of the debugger terminal window.
-routeProcessingEvent _ db (B.VtyEvent (V.EvResize w h) ) =
+routeProcessingMode _ db (B.VtyEvent (V.EvResize w h) ) =
     B.continue . D.resize w h $ db
 
--- |This handler is called when computation has completed and the
--- Processing Mode should be terminated.
-routeProcessingEvent c _ (B.AppEvent T.ComputationDone) =
-    liftIO ( A.wait c ) >>= B.continue
+-- |This handler is called when a computation has completed and the
+-- Processing Mode should be terminated. The new debugger produced
+-- from the computation is used to replace the current one.
+routeProcessingMode asyncDB _ (B.AppEvent T.ComputationDone) =
+    liftIO ( A.wait asyncDB ) >>= B.continue
 
-routeProcessingEvent _ db _ =
+routeProcessingMode _ db _ =
     B.continue db
 
 -- =============================================================== --
--- Event handlers convert user input such as key-presses or command
--- strings entered in Command Mode into executable commands and then
--- execute them. This basically amounts to mapping the debugger to
--- a new debugger and handing this off to the Brick run time system
--- for rendering.
-
----------------------------------------------------------------------
--- Event to command parsers and handlers
-
-keyEvent :: V.Key -> T.Debugger -> DebugEventMonad
--- ^Translate key events to commands based on the key-bindings and
--- then runs the command.
-keyEvent k db = runCommand ( parseKey k (T.mode db) (T.wgtFocus db) ) db
-
-commandEvent :: T.Debugger -> DebugEventMonad
--- ^Read command string from the Command Mode Edit widget, resets the
--- edit widget, parse the input to an executable command and run it.
-commandEvent db = runCommand ( parseCommand cmd ) db0
-    where cmd = words . unlines . getEditContents . T.commandEdit $ db
-          db0 = db { T.commandEdit = editor T.CommandWgt (Just 1) ""
-                   , T.mode        = T.NormalMode }
-
----------------------------------------------------------------------
--- Central handler for parsed commands
+-- Running commands translated from user input events
 
 runCommand :: T.DebuggerCommand -> T.Debugger -> DebugEventMonad
 -- ^Take a parsed command and execute it on the debugger supplying
@@ -146,7 +124,7 @@ runCommand (T.QuitCmd       ) db = B.halt db
 runCommand (T.ErrorCmd e    ) db = B.continue $ db { T.message = e }
 runCommand (T.SimpleIOCmd f ) db = liftIO ( runInIO f db ) >>= B.continue
 runCommand (T.ComplexIOCmd f) db = B.suspendAndResume $ runInIO f db
-runCommand (T.TandemCmd f   ) db = runInTandem f db
+runCommand (T.TandemCmd f   ) db = liftIO ( runInTandem f db ) >>= B.continue
 runCommand (T.HScrollCmd w n) db = B.hScrollBy (B.viewportScroll w) n
                                    >> B.continue db
 runCommand (T.VScrollCmd w n) db = B.vScrollBy (B.viewportScroll w) n
@@ -160,18 +138,18 @@ runInIO :: (T.Debugger -> T.ErrorIO T.Debugger) -> T.Debugger -> IO T.Debugger
 runInIO f db = runExceptT (f db) >>= pure . either err id
     where err msg = db { T.message = msg }
 
-runInTandem :: (T.Debugger -> T.Debugger) -> T.Debugger -> DebugEventMonad
+runInTandem :: (T.Debugger -> T.Debugger) -> T.Debugger -> IO T.Debugger
 -- ^Prepare a compuation for execution in its own tandem thread and
 -- place the defugger into Processing Mode wrapping the threaded
 -- computation. When the computation completes, it will supply a
 -- T.ComputationDone event to the event queue.
 runInTandem go db = do
     let jumpMessage = "Esc to abort jump..."
-    c <- liftIO . A.async $ do let !db' = go db
-                               writeBChan (T.channel db) T.ComputationDone
-                               if T.message db' == jumpMessage
-                                  then pure . D.noMessage $ db'
-                                  else pure db'
-    B.continue $ db { T.mode    = T.ProcessingMode c
-                    , T.message = jumpMessage
-                    }
+    asyncDB <- A.async $ do let !newDB = go db
+                            writeBChan (T.channel db) T.ComputationDone
+                            if T.message newDB == jumpMessage
+                               then pure . D.noMessage $ newDB
+                               else pure newDB
+    pure $ db { T.mode    = T.ProcessingMode asyncDB
+              , T.message = jumpMessage
+              }
