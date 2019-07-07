@@ -29,23 +29,23 @@ spec = around_ U.manageTempTestDir $ do
 testWriteDefaultPath :: IO ()
 testWriteDefaultPath = do
     -- Set up mocked debugger
-    newDB <- U.newDebugger (Just "tests/files/HelloWorld.bf") Nothing
-    let path   = U.getTempTestPath "HelloWorld-temp.bf"
-        mockDB = Mc.mockCommandEdit "write" $ newDB { T.scriptPath = Just path }
+    newDB <- U.newDebugger (Just "HelloWorld.bf") Nothing
+    let mockDB    = Mc.mockCommandEdit "write" newDB
+        Just path = T.scriptPath newDB
     -- Test execution as SimpleIO
     resultDB <- Mc.routeCommandModeAsSimpleIO mockDB
     -- Check the results
     T.message resultDB `shouldBe` "saved to " ++ path
     U.checkCommandEdit [] resultDB
     resultIO   <- Tx.readFile path
-    expectedIO <- Tx.readFile "tests/files/TestWriteDefaultPath.bf"
+    expectedIO <- Tx.readFile . U.getTestPath $ "TestWriteDefaultPath.bf"
     resultIO `shouldBe` expectedIO
 
 testWriteNewPath :: IO ()
 testWriteNewPath = do
     -- Set up the mocked debugger
-    newDB <- U.newDebugger (Just "tests/files/HelloWorld.bf") Nothing
-    let oldPath = U.getTempTestPath "HelloWorld-old.bf"
+    newDB <- U.newDebugger (Just "HelloWorld.bf") Nothing
+    let Just oldPath = T.scriptPath newDB
         newPath = U.getTempTestPath "HelloWorld-new.bf"
         mockDB  = Mc.mockCommandEdit ( "write " <> Tx.pack newPath ) $
                       newDB { T.scriptPath = Just oldPath }
@@ -55,7 +55,7 @@ testWriteNewPath = do
     T.message resultDB `shouldBe` "saved to " ++ newPath
     U.checkCommandEdit [] resultDB
     resultIO   <- Tx.readFile newPath
-    expectedIO <- Tx.readFile "tests/files/TestWriteDefaultPath.bf"
+    expectedIO <- Tx.readFile . U.getTestPath $ "TestWriteDefaultPath.bf"
     resultIO `shouldBe` expectedIO
     doesPathExist oldPath `shouldReturn` False
 

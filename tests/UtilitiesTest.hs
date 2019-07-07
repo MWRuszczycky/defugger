@@ -2,6 +2,8 @@ module UtilitiesTest
     ( newDebugger
     , checkDebugger
     , checkCommandEdit
+    , testFilesDir
+    , getTestPath
     , tempTestDir
     , getTempTestPath
     , manageTempTestDir
@@ -29,13 +31,19 @@ import System.Directory                           ( createDirectory
 
 newDebugger :: Maybe FilePath -> Maybe FilePath -> IO T.Debugger
 -- ^Generate a new debugger from the given script and input files.
+-- After the debugger is initated, the file paths are all changed to
+-- the temp directory so the original files do not get overwritten.
+-- Arbitrary terminal dimensions of (160, 50) are used.
 newDebugger script input = do
-    let opts = def { T.pathToScript = script, T.pathToInput = input }
+    let opts = def { T.pathToScript = getTestPath <$> script
+                   , T.pathToInput  = getTestPath <$> input  }
     chan <- Br.newBChan 10 :: IO (Br.BChan T.DebugEvent)
     etDB <- runExceptT $ L.initDebugger chan opts (160,50)
     case etDB of
          Left err -> error $ "Cannot load a test debugger: " ++ err
-         Right db -> pure db
+         Right db -> pure $ db { T.scriptPath = getTempTestPath <$> script
+                               , T.inputPath  = getTempTestPath <$> input
+                               }
 
 checkDebugger :: T.Debugger -> BS.ByteString -> BS.ByteString
                  -> String -> Int -> IO ()
@@ -50,7 +58,13 @@ checkCommandEdit :: [Text] -> T.Debugger -> IO ()
 checkCommandEdit expected db = D.getCommandFromEdit db `shouldBe` expected
 
 -- =============================================================== --
--- Utilities for handling a tempory test directory
+-- Utilities for handling test files and temporary files
+
+testFilesDir :: FilePath
+testFilesDir = "tests/files/"
+
+getTestPath :: FilePath -> FilePath
+getTestPath = (++) testFilesDir
 
 tempTestDir :: FilePath
 tempTestDir = "tests/temp/"

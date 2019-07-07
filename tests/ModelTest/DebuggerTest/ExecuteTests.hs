@@ -41,7 +41,7 @@ spec = do
 
 testFull101 :: IO ()
 testFull101 = do
-    db0 <- U.newDebugger (Just "tests/files/HelloWorld.bf") Nothing
+    db0 <- U.newDebugger (Just "HelloWorld.bf") Nothing
     let db1 = DE.jumpForward db0
     U.checkDebugger db1 "" "Hello World!\n" "0 0 72 100 87 33 [10]" 107
     let db2 = DE.jumpBackward db1
@@ -49,8 +49,7 @@ testFull101 = do
 
 testFull102 :: IO ()
 testFull102 = do
-    db0 <- U.newDebugger (Just "tests/files/WriteHelloWorld.bf")
-                          (Just "tests/files/WriteHelloWorld.txt")
+    db0 <- U.newDebugger (Just "WriteHelloWorld.bf") (Just "WriteHelloWorld.txt")
     let db1 = DE.jumpForward db0
     U.checkDebugger db1 "" "Hello World!\n"
                      "72 101 108 108 111 32 87 111 114 108 100 33 [10]" 63
@@ -62,7 +61,7 @@ testFull102 = do
 
 testJumpsAndSteps101 :: IO ()
 testJumpsAndSteps101 = do
-    db0 <- U.newDebugger (Just "tests/files/HelloWorld.bf") Nothing
+    db0 <- U.newDebugger (Just "HelloWorld.bf") Nothing
     -- Set breakpoints at 41 and 61 as the user would have to
     let db1 = D.setBreakPoint $ iterate D.moveCursorRight db0  !! 41
         db2 = D.setBreakPoint $ iterate D.moveCursorRight db1 !! 20
@@ -85,8 +84,8 @@ testJumpsAndSteps101 = do
 
 testJumpsAndSteps102 :: IO ()
 testJumpsAndSteps102 = do
-    db0 <- U.newDebugger (Just "tests/files/WriteHelloWorld.bf")
-                          (Just "tests/files/WriteHelloWorld.txt")
+    db0 <- U.newDebugger (Just "WriteHelloWorld.bf")
+                         (Just "WriteHelloWorld.txt")
     let db1 = D.setBreakPoint $ iterate D.moveCursorRight db0 !! 13
         db2 = D.setBreakPoint $ iterate D.moveCursorRight db1 !! 31
         db3 = DE.jumpForward db2
@@ -112,7 +111,7 @@ testJumpsAndSteps102 = do
 
 testEndPoints101 :: IO ()
 testEndPoints101 = do
-    db0 <- U.newDebugger (Just "tests/files/HelloWorld.bf") Nothing
+    db0 <- U.newDebugger (Just "HelloWorld.bf") Nothing
     let db1 = iterate DE.stepBackward db0 !! 10
     U.checkDebugger db1 "" "" "[0]" 0
     (toList . T.history) db1 `shouldBe` [0]

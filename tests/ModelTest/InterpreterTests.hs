@@ -9,6 +9,7 @@ module ModelTest.InterpreterTests
 
 import qualified Model.Types        as T
 import qualified StartUp            as SU
+import qualified UtilitiesTest      as U
 import Control.Monad.Except                 ( runExceptT )
 import Test.Hspec                           ( Spec
                                             , describe
@@ -19,12 +20,12 @@ spec :: Spec
 spec = do
     describe "Running BF programs with the default dictionary" $ do
         it "Correctly runs HelloWorld.bf" $ do
-            scriptNoInput "tests/files/HelloWorld.bf"
-                          "tests/files/HelloWorld.out"
+            scriptNoInput ( U.getTestPath "HelloWorld.bf"  )
+                          ( U.getTestPath "HelloWorld.out" )
         it "Correctly runs WriteHelloWorld.bf (input test)" $ do
-            scriptWithInput "tests/files/WriteHelloWorld.bf"
-                            "tests/files/WriteHelloWorld.txt"
-                            "tests/files/HelloWorld.out"
+            scriptWithInput ( U.getTestPath "WriteHelloWorld.bf"  )
+                            ( U.getTestPath "WriteHelloWorld.txt" )
+                            ( U.getTestPath "HelloWorld.out"      )
 
 scriptNoInput :: FilePath -> FilePath -> IO ()
 scriptNoInput s t = runExceptT (args >>= SU.parseOptions) >>= either err go
