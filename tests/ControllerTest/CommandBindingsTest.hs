@@ -4,6 +4,7 @@ module ControllerTest.CommandBindingsTest
 
 import qualified Model.Types               as T
 import qualified UtilitiesTest             as U
+import qualified ControllerTest.MockRouter as Mc
 import qualified Data.Text.IO              as Tx
 import System.Directory                          ( doesPathExist              )
 import Test.Hspec                                ( Spec, describe, around_
@@ -27,7 +28,7 @@ testWriteDefaultPath = do
     db0 <- U.newDebugger (Just "tests/files/HelloWorld.bf") Nothing
     let tempPath = U.getTempTestPath "HelloWorld-temp.bf"
         command  = ["write"]
-    db1 <- U.handleAsSimpleIO command db0 { T.scriptPath = Just tempPath }
+    db1 <- Mc.handleAsSimpleIO command db0 { T.scriptPath = Just tempPath }
     T.message db1 `shouldBe` "saved to " ++ tempPath
     result   <- Tx.readFile tempPath
     expected <- Tx.readFile "tests/files/TestWriteDefaultPath.bf"
@@ -39,7 +40,7 @@ testWriteNewPath = do
     let oldTempPath = U.getTempTestPath "HelloWorld-old.bf"
         newTempPath = U.getTempTestPath "HelloWorld-new.bf"
         command     = [ "write " ++ newTempPath ]
-    db1 <- U.handleAsSimpleIO command db0 { T.scriptPath = Just oldTempPath }
+    db1 <- Mc.handleAsSimpleIO command db0 { T.scriptPath = Just oldTempPath }
     T.message db1 `shouldBe` "saved to " ++ newTempPath
     result   <- Tx.readFile newTempPath
     expected <- Tx.readFile "tests/files/TestWriteDefaultPath.bf"
@@ -50,5 +51,5 @@ testWriteNoPath :: IO ()
 testWriteNoPath = do
     db0 <- U.newDebugger Nothing Nothing
     let command = [ "write" ]
-    db1 <- U.handleAsSimpleIO command db0
+    db1 <- Mc.handleAsSimpleIO command db0
     T.message db1 `shouldBe` "Save path required"
