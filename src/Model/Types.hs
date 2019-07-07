@@ -17,6 +17,7 @@ module Model.Types
     , VertViewRange
       -- Debugger commands
     , HelpInfo        (..)
+    , HasHelp         (..)
     , CommandBinding  (..)
     , CommandAction
     , DebuggerCommand (..)
@@ -52,6 +53,7 @@ import Data.Set                         ( Set           )
 import Data.Sequence                    ( Seq           )
 import Brick.Widgets.Edit               ( Editor        )
 import Brick.BChan                      ( BChan         )
+import Brick.AttrMap                    ( AttrName      )
 import Control.Monad.Except             ( ExceptT       )
 import Control.Monad.State.Lazy         ( StateT        )
 import Control.Monad.Reader             ( ReaderT       )
@@ -167,10 +169,7 @@ instance Show WgtName where
 type VertViewRange = (Int, Int)
 
 -- =============================================================== --
--- Debugger commands and help
-
----------------------------------------------------------------------
--- General help type used to document and display help information
+-- Help management
 
 -- |General data type for storing help information for key-bindings
 -- and command bindings.
@@ -181,8 +180,13 @@ data HelpInfo = HelpInfo {
     , longHelp  :: Text     -- Detailed help information
     }
 
----------------------------------------------------------------------
--- Commands
+-- |Class of types that provide a value of HelpInfo
+class HasHelp a where
+    getHelp   :: a -> HelpInfo  -- The associated help information
+    helpStyle :: a -> AttrName  -- Styling information for display
+
+-- =============================================================== --
+-- Debugger commands
 
 -- |Commands that can be executed while running the debugger. Pure
 -- commands have no side effects. Simple IO commands involve IO
@@ -204,6 +208,9 @@ data DebuggerCommand
     | QuitCmd
     | ErrorCmd ErrString
 
+---------------------------------------------------------------------
+-- Key bindings
+
 -- |A KeyBinding associates a key event with a DebuggerCommand that
 -- can be executed. KeyBindings are managed in Controller.KeyBindings.
 data KeyBinding = KeyBinding {
@@ -213,6 +220,13 @@ data KeyBinding = KeyBinding {
     }
 
 type KeyAction = Mode -> WgtName -> DebuggerCommand
+
+instance HasHelp KeyBinding where
+    getHelp     = keyHelp
+    helpStyle _ = "keybinding"
+
+---------------------------------------------------------------------
+-- Command bindings (for Command Mode)
 
 -- |A CommandBinding associates a command that can be entered in
 -- Command Mode with a DebuggerCommand that can be executed.
@@ -226,6 +240,13 @@ data CommandBinding = CommandBinding {
 
 type CommandAction = [String] -> DebuggerCommand
 
+instance HasHelp CommandBinding where
+    getHelp     = cmdHelp
+    helpStyle _ = "command"
+
+---------------------------------------------------------------------
+-- Settings (for use with <set>/<unset> commands)
+
 -- |Subcommands used with the <set> and <unset> commands to modify
 -- the debugger. Settings only map to pure functions on the debugger.
 data Setting = Setting {
@@ -236,6 +257,10 @@ data Setting = Setting {
     }
 
 type SettingAction = [String] -> Either ErrString ( Debugger -> Debugger )
+
+instance HasHelp Setting where
+    getHelp     = settingHelp
+    helpStyle _ = "setting"
 
 -- =============================================================== --
 -- Model of a computer for running a BF program/script and the
