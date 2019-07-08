@@ -52,7 +52,7 @@ commands = [ T.CommandBinding ["help",  "h"] help_action  help_help
 help_help :: T.HelpInfo
 help_help = T.HelpInfo ns us sh lh
     where ns = [ "help", "h" ]
-          us = ":help [COMMAND | KEY]"
+          us = ":help [COMMAND | KEY | SETTING]"
           sh = "Display help information"
           lh = Tx.empty
 
@@ -104,7 +104,7 @@ set_action = either T.ErrorCmd T.PureCmd . parseSet
 unset_help :: T.HelpInfo
 unset_help = T.HelpInfo ns us sh lh
     where ns = [ "unset", "u" ]
-          us = ":set [SETTING [VALUE..]]"
+          us = ":unset [SETTING [VALUE..]]"
           sh = "Unsets a property in the Defugger"
           lh = Tx.empty
 
@@ -116,7 +116,7 @@ unset_action = either T.ErrorCmd T.PureCmd . parseUnset
 write_help :: T.HelpInfo
 write_help = T.HelpInfo ns us sh lh
     where ns = [ "write", "w" ]
-          us = ":set [FILEPATH]"
+          us = ":write [FILEPATH]"
           sh = "Write the current BF script to memory"
           lh = Tx.empty
 
