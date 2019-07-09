@@ -100,16 +100,16 @@ data RunMode
 data Debugger = Debugger {
       -- Core model
       computer     :: {-# UNPACK #-} !Computer    -- The computer
-    , dictionary   :: Dictionary                  -- The BF dictionary
-    , program      :: DBProgram                   -- The BF program
-    , initialInput :: B.ByteString                -- Initial input for resets
+    , dictionary   :: !Dictionary                 -- The BF dictionary
+    , program      :: !DBProgram                  -- The BF program
+    , initialInput :: !B.ByteString               -- Initial input for resets
       -- Interacting with the Brick runtime system
     , channel      :: BChan DebugEvent            -- Event queue
       -- Positioning, running mode and history
     , mode         :: !Mode                       -- Current debug mode
     , wgtFocus     :: !WgtName                    -- Current focused widget
     , cursor       :: !Int                        -- Cursor position in program
-    , history      :: Seq Int                     -- History of statements
+    , history      :: !(Seq Int)                  -- History of statements
     , readBackup   :: ![Word8]                    -- History of reads
       -- Command and status widgets
     , commandEdit  :: Editor Text WgtName         -- Used to enter commands
@@ -120,14 +120,14 @@ data Debugger = Debugger {
     , progView     :: !VertViewRange              -- BF script rows to render
     , memView      :: !VertViewRange              -- Memory rows to render
       -- Settings
-    , breaks       :: Set Int                     -- Break points
-    , histDepth    :: Int                         -- Reversion history depth
+    , breaks       :: !(Set Int)                  -- Break points
+    , histDepth    :: !Int                        -- Reversion history depth
     , progWidth    :: !Int                        -- Characters shown per line
     , inFormat     :: !DataFormat                 -- Display format of input
     , outFormat    :: !DataFormat                 -- Display format of output
     , memFormat    :: !DataFormat                 -- Display format of memory
-    , scriptPath   :: Maybe FilePath              -- Path to the script
-    , inputPath    :: Maybe FilePath              -- Path to the input file
+    , scriptPath   :: !(Maybe FilePath)           -- Path to the script
+    , inputPath    :: !(Maybe FilePath)           -- Path to the input file
     }
 
 -- |Debugger operating modes
