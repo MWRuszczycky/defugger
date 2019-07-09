@@ -126,6 +126,7 @@ data Debugger = Debugger {
     , inFormat     :: !DataFormat                 -- Display format of input
     , outFormat    :: !DataFormat                 -- Display format of output
     , memFormat    :: !DataFormat                 -- Display format of memory
+    , unsafeEdit   :: !Bool                       -- Allow unsafe edits
     , scriptPath   :: !(Maybe FilePath)           -- Path to the script
     , inputPath    :: !(Maybe FilePath)           -- Path to the input file
     }

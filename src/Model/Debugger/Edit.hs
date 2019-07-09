@@ -65,6 +65,7 @@ deleteStatementAtCursor db
     | cur == 0                = db { T.message = startPointDelErr }
     | cur == Vec.length p - 1 = db { T.message = endPointDelErr   }
     | pos >= cur              = db { T.message = evalDelErr       }
+    | T.unsafeEdit db         = deleteStatement cur db
     | inSameWhile cur pos p   = db { T.message = sameWhileDelErr  }
     | otherwise               = deleteStatement cur db
     where pos = getPosition db
@@ -114,6 +115,7 @@ addAtCursor :: T.DebugStatement -> T.Debugger -> T.Debugger
 addAtCursor x db
     | cur == 0 && pos == 0  = addAtCursor x $ db { T.cursor = 1 }
     | pos >= cur            = db { T.message = evalAddErr      }
+    | T.unsafeEdit db       = addStatement cur x db
     | inSameWhile cur pos p = db { T.message = sameWhileAddErr }
     | otherwise             = addStatement cur x db
     where pos = getPosition db

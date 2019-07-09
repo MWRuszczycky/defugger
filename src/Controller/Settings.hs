@@ -41,6 +41,8 @@ settings = [ T.Setting "hex"     set_hex     unset_hex     hex_help
            , T.Setting "ascii"   set_asc     unset_asc     asc_help
            , T.Setting "break"   set_break   unset_break   break_help
            , T.Setting "history" set_history unset_history history_help
+           , T.Setting "safe"    set_safe    unset_safe    safe_help
+           , T.Setting "unsafe"  set_unsafe  unset_unsafe  unsafe_help
            , T.Setting "width"   set_width   unset_width   width_help
            ]
 
@@ -137,6 +139,51 @@ set_history (x:_) = maybe err pure . go . Tx.unpack $ x
 
 unset_history :: T.SettingAction
 unset_history _ = pure D.noMessage
+
+-- safe -------------------------------------------------------------
+
+safe_help :: T.HelpInfo
+safe_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns =[ "safe" ]
+          us = ":set safe | :unset safe"
+          sh = "Forbid edits in a while-loop contianing the point of execution"
+          lh = [ "This setting is just the opposite of <unsafe>. Thus,\n"
+               , "  :set safe   = :unset unsafe"
+               , "  :unset safe = :set unsafe\n"
+               , "For more information, see :help unsafe"]
+
+set_safe, unset_safe :: T.SettingAction
+set_safe _   = pure $ \ db -> db { T.unsafeEdit = False }
+unset_safe _ = pure $ \ db -> db { T.unsafeEdit = True  }
+
+-- unsafe -----------------------------------------------------------
+
+unsafe_help :: T.HelpInfo
+unsafe_help = T.HelpInfo ns us sh (Tx.unlines lh)
+    where ns = [ "unsafe" ]
+          us = ":set unsafe | :unset unsafe"
+          sh = "Allow edits in a while-loop containing the point of execution"
+          lh = [ "When editing a BF program, you cannot add or delete BF"
+               , "statements if they occur before the point of execution in"
+               , "the script or if they are in the same outermost while-loop"
+               , "(i.e., a [...] block) as the point of execution. This"
+               , "ensures that the program state generated so far remains the"
+               , "same after the edit. However, this can be overly restrictive,"
+               , "especially when you know that program execution has not"
+               , "advanced beyond where you want to apply the edit despite"
+               , "being within the same while-loop. Therefore, you can toggle"
+               , "this safety check using the <unsafe> setting making editing"
+               , "of BF scripts easier. However, turing off this setting still"
+               , "requires that the edit position be after the current point of"
+               , "program execution in the script. Furthermore, there are no"
+               , "longer any guarantees that the edits made will not affect the"
+               , "state generated so far. You can also toggle the while-loop"
+               , "safety check using the <safe> setting."
+               ]
+
+set_unsafe, unset_unsafe :: T.SettingAction
+set_unsafe _   = pure $ \ db -> db { T.unsafeEdit = True  }
+unset_unsafe _ = pure $ \ db -> db { T.unsafeEdit = False }
 
 -- width ------------------------------------------------------------
 
