@@ -97,11 +97,14 @@ So, jumps through multiple BF statements in the debugger can be very slow or eve
 
 ### To do
 
-* Write help strings and command documentation. Help data structures may also need to be further refactored.
+* Improve help strings and documentation.
+* Handle help errors better than just a blank screen.
 * Write better command line parsing and initialization at startup.
 * Implement reloading of scripts.
-* Implement running an editor on a script and automatically reloading it.
+* Implement saving and loading debugger state.
+* Implement breaks when running the interpreter and loading the debugger.
 * Allow a wider range of BF formats and command naming dictionaries.
 * Write a better README.
 * Write more tests, especially for the editing transformations.
-* Add some way to help keep track of where you are in the script (e.g., displaying the statement number, etc.).
+* Add some way to help keep track of where you are in the script.
+* Add a command that displays all the current debugger settings.
