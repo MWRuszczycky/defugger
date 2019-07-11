@@ -38,6 +38,7 @@ attributes = B.attrMap V.defAttr
     , ( "setting",       B.on V.blue    V.black  )
     , ( "keybinding",    B.on V.yellow  V.black  )
     , ( "usage",         B.on V.green   V.black  )
+    , ( "error",         B.on V.red     V.black  )
     , ( borderAttr,      B.on V.white   V.black  )
     , ( editAttr,        B.on V.white   V.black  )
     , ( editFocusedAttr, B.on V.white   V.black  )

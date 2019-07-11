@@ -41,7 +41,13 @@ helpWidget "commands" =
     "List of commands currently available"
     "For details about a command, :help command-name"
 
-helpWidget x = detailedHelpUI x
+helpWidget x =
+    let isMatch = elem x . T.names . T.getHelp
+    in  B.viewport T.HelpWgt B.Both $
+            case nubBy sameHelp . filter isMatch $ everythingWithHelp of
+                 [] -> missingHelpWgt x
+                 hs -> B.vBox . intersperse (spacer 1 <=> rule)
+                       . map detailsHelpWgt $ hs
 
 -- =============================================================== --
 -- Help UI widget constructors
@@ -64,15 +70,6 @@ summaryListHelpUI xs header note =
               <=> B.txt note
               <=> spacer 1
               <=> ( spacer 2 <+> body )
-
-detailedHelpUI :: Text -> B.Widget T.WgtName
-detailedHelpUI x =
-    let isMatch = elem x . T.names . T.getHelp
-    in  case nubBy sameHelp . filter isMatch $ everythingWithHelp of
-             [] -> B.txt $ "There is no help information for: " <> x
-             hs -> B.viewport T.HelpWgt B.Both
-                   $ B.vBox . intersperse (spacer 1 <=> rule)
-                     . map detailsHelpWgt $ hs
 
 ---------------------------------------------------------------------
 -- Component help widgets
@@ -97,6 +94,26 @@ detailsHelpWgt x = header <=> detWgt
           detWgt = if Tx.null detTxt
                       then B.emptyWidget
                       else spacer 1 <=> (spacer 2 <+> B.txt detTxt)
+
+missingHelpWgt :: Text -> B.Widget T.WgtName
+missingHelpWgt x = B.vBox $
+    [ B.txt "There is no help available for "
+      <+> (B.withAttr "error" . B.txt) x
+    , B.txt "  For general help information, try just "
+      <+> (B.withAttr "usage" . B.txt) ":help"
+    , B.txt "  For a list of "
+      <+> (B.withAttr "keybinding" . B.txt) "key-bindings"
+      <+> B.txt " with help information, try "
+      <+> (B.withAttr "usage" . B.txt) ":help keys"
+    , B.txt "  For a list of "
+      <+> (B.withAttr "command" . B.txt) "commands"
+      <+> B.txt " with help information, try "
+      <+> (B.withAttr "usage" . B.txt) ":help commands"
+    , B.txt "  For a list of "
+      <+> (B.withAttr "setting" . B.txt) "settings"
+      <+> B.txt " with help information, try "
+      <+> (B.withAttr "usage" . B.txt) ":help settings"
+    ]
 
 whatForWgt :: T.HasHelp a => a -> B.Widget T.WgtName
 whatForWgt x = B.txt $ "(" <> T.helpFor x <> ")"
