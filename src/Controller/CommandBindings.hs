@@ -57,7 +57,8 @@ help_help = T.HelpInfo ns us sh lh
           lh = Tx.empty
 
 help_action :: T.CommandAction
-help_action xs = T.PureCmd $ \ db -> db { T.mode = T.HelpMode xs }
+help_action [] = T.PureCmd $ \ db -> db {T.mode = T.HelpMode Tx.empty}
+help_action xs = T.PureCmd $ \ db -> db {T.mode = T.HelpMode . Tx.unwords $ xs}
 
 -- load -------------------------------------------------------------
 

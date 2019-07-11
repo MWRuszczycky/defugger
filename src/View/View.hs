@@ -42,7 +42,7 @@ drawUI db = case T.mode db of
                  T.NormalMode       -> drawNormalUI db
                  T.CommandMode      -> drawCommandUI db
                  T.ProcessingMode _ -> drawNormalUI db
-                 T.HelpMode cs      -> drawHelpUI cs
+                 T.HelpMode x       -> drawHelpUI x
 
 drawNormalUI :: T.Debugger -> [ B.Widget T.WgtName ]
 -- ^Render the UI under normal mode.
@@ -54,8 +54,8 @@ drawCommandUI :: T.Debugger -> [ B.Widget T.WgtName ]
 drawCommandUI db = [ B.withAttr "background" $
                      mainWidgets db <=> commandUI db ]
 
-drawHelpUI :: [Text] -> [ B.Widget T.WgtName ]
-drawHelpUI cs = [ B.withAttr "background" $ helpWidget cs ]
+drawHelpUI :: Text -> [ B.Widget T.WgtName ]
+drawHelpUI x = [ B.withAttr "background" $ helpWidget x ]
 
 mainWidgets :: T.Debugger -> B.Widget T.WgtName
 -- ^Helper function for assembling the widgets that are rendered the

@@ -135,7 +135,7 @@ data Debugger = Debugger {
 data Mode
     = NormalMode                      -- Normal operation
     | CommandMode                     -- User entering commands
-    | HelpMode [Text]                 -- Display help for the given commands
+    | HelpMode Text                   -- Display help for the given commands
     | ProcessingMode (Async Debugger) -- Computiton running in separate thread
 
 -- |Debugger custom events

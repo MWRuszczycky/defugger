@@ -12,7 +12,7 @@ import qualified Data.Text   as Tx
 import qualified Brick       as B
 import qualified Model.Types as T
 import Data.Text                    ( Text                          )
-import Data.List                    ( intersperse, intersect, nubBy )
+import Data.List                    ( intersperse, nubBy            )
 import Brick                        ( (<=>), (<+>)                  )
 import Controller.CommandBindings   ( commands                      )
 import Controller.Settings          ( settings                      )
@@ -23,25 +23,25 @@ import Controller.KeyBindings       ( keyBindings                   )
 
 -- This still needs a lot work!
 
-helpWidget :: [Text] -> B.Widget T.WgtName
-helpWidget [] = mainHelpUI
+helpWidget :: Text -> B.Widget T.WgtName
+helpWidget "" = mainHelpUI
 
-helpWidget ("keys":_) =
+helpWidget "keys" =
     summaryListHelpUI keyBindings
     "List of key-bindings currently available."
     Tx.empty
 
-helpWidget ("settings":_) =
+helpWidget "settings" =
     summaryListHelpUI settings
     "List of settings currently available"
     "Settings used as arguments to the set & unset commands"
 
-helpWidget ("commands":_) =
+helpWidget "commands" =
     summaryListHelpUI commands
     "List of commands currently available"
     "For details about a command, :help command-name"
 
-helpWidget xs = detailsListHelpUI xs
+helpWidget x = detailedHelpUI x
 
 -- =============================================================== --
 -- Help UI widget constructors
@@ -65,13 +65,14 @@ summaryListHelpUI xs header note =
               <=> spacer 1
               <=> ( spacer 2 <+> body )
 
-detailsListHelpUI :: [Text] -> B.Widget T.WgtName
-detailsListHelpUI xs =
-    let ws      = nubBy sameHelp . filter matches $ everythingWithHelp
-        matches = not . null . intersect xs . T.names . T.getHelp
-    in  B.viewport T.HelpWgt B.Both
-        $ B.vBox . intersperse (spacer 1 <=> rule)
-          . map detailsHelpWgt $ ws
+detailedHelpUI :: Text -> B.Widget T.WgtName
+detailedHelpUI x =
+    let isMatch = elem x . T.names . T.getHelp
+    in  case nubBy sameHelp . filter isMatch $ everythingWithHelp of
+             [] -> B.txt $ "There is no help information for: " <> x
+             hs -> B.viewport T.HelpWgt B.Both
+                   $ B.vBox . intersperse (spacer 1 <=> rule)
+                     . map detailsHelpWgt $ hs
 
 ---------------------------------------------------------------------
 -- Component help widgets
