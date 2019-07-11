@@ -87,7 +87,9 @@ routeCommandMode db (B.VtyEvent (V.EvResize w h) ) =
 -- returns the debugger to Normal Mode.
 routeCommandMode db (B.VtyEvent (V.EvKey V.KEnter _ )) =
     let cmd = D.getCommandFromEdit db
-    in  runCommand ( parseCommand cmd ) . D.resetCommandEdit $ db
+    in  runCommand ( parseCommand cmd )
+        . D.resetCommandEdit
+        . D.noMessage $ db
 
 -- |Let the Brick run time system handle entry of text into the
 -- Command Mode edit widget.
