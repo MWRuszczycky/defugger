@@ -17,13 +17,15 @@ import qualified Graphics.Vty             as V
 import qualified Brick                    as B
 import qualified Model.Types              as T
 import qualified Model.Debugger.Debugger  as D
+import qualified Data.Text                as Tx
 import Control.Concurrent.Async           as A
 import Brick.BChan                              ( writeBChan        )
 import Control.Monad.Except                     ( runExceptT
                                                 , liftIO            )
 import Controller.CommandBindings               ( parseCommand      )
 import Controller.KeyBindings                   ( parseKey          )
-import Brick.Widgets.Edit                       ( handleEditorEvent )
+import Brick.Widgets.Edit                       ( handleEditorEvent
+                                                , getEditContents   )
 
 -- =============================================================== --
 -- Local helper type synonyms
@@ -71,6 +73,12 @@ routeCommandMode :: T.Debugger -> EventHandler
 routeCommandMode db (B.VtyEvent (V.EvKey V.KEsc _ )) =
     B.continue . D.noMessage . D.resetCommandEdit $ db
 
+-- |Exit command mode if user enters backspace with an empty widget.
+routeCommandMode db ev@(B.VtyEvent (V.EvKey V.KBS _ )) =
+    if Tx.null . Tx.concat . getEditContents . T.commandEdit $ db
+       then B.continue . D.noMessage . D.resetCommandEdit $ db
+       else letBrickHandleCommandMode db ev
+
 -- |Handle resizing of the debugger terminal window.
 routeCommandMode db (B.VtyEvent (V.EvResize w h) ) =
     B.continue . D.resize w h $ db
@@ -83,12 +91,13 @@ routeCommandMode db (B.VtyEvent (V.EvKey V.KEnter _ )) =
 
 -- |Let the Brick run time system handle entry of text into the
 -- Command Mode edit widget.
-routeCommandMode db (B.VtyEvent ev) = do
+routeCommandMode db ev = letBrickHandleCommandMode db ev
+
+letBrickHandleCommandMode :: T.Debugger -> EventHandler
+letBrickHandleCommandMode db (B.VtyEvent ev) = do
     updatedEditor <- handleEditorEvent ev (T.commandEdit db)
     B.continue $ db { T.commandEdit = updatedEditor }
-
-routeCommandMode db _ =
-    B.continue db
+letBrickHandleCommandMode db _ = B.continue db
 
 -- =============================================================== --
 -- Events in Processing Mode
