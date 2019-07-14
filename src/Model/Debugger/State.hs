@@ -3,7 +3,9 @@
 module Model.Debugger.State
     ( -- Manipulating file paths
       toDebugPath
-      -- Rendering debugger state
+      -- Rendering debugger state to Text
+    , programToText
+      -- Rendering debugger state to bytestrings
     , debuggerToByteString
       -- Parsing debugger state
     ) where
@@ -17,6 +19,9 @@ import qualified Data.Foldable           as Fld
 import qualified Data.ByteString         as BS
 import qualified Data.ByteString.Lazy    as BSL
 import qualified Data.ByteString.Builder as Bld
+import qualified Data.Text               as Tx
+import Data.Text                                ( Text          )
+import Model.Utilities                          ( chunksOf      )
 import Model.Debugger.Query                     ( getPosition
                                                 , getAddress    )
 
@@ -29,7 +34,16 @@ toDebugPath fp = case reverse . dropWhile (/= '.') . reverse $ fp of
                       xs -> xs ++ "defug"
 
 -- =============================================================== --
--- Rendering debugger state as a bytestring
+-- Rending debugger state to text
+
+programToText :: Int -> T.Debugger -> Text
+-- ^The Int argument specifies where to add line breaks.
+programToText n = Tx.unlines . map Tx.pack . chunksOf n
+                  . init . tail . concatMap show . Fld.toList
+                  . T.program
+
+-- =============================================================== --
+-- Rendering debugger state to bytestrings
 
 debuggerToByteString :: T.Debugger -> BS.ByteString
 debuggerToByteString db =

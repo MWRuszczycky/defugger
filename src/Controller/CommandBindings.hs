@@ -15,10 +15,8 @@ import qualified Model.Debugger.Debugger as D
 import Data.Text                                ( Text           )
 import Control.Applicative                      ( (<|>)          )
 import Data.Maybe                               ( listToMaybe    )
-import Data.Foldable                            ( toList         )
 import Control.Monad.Except                     ( throwError     )
 import Data.List                                ( find           )
-import Model.Utilities                          ( chunksOf       )
 import Model.CoreIO                             ( tryWriteFile
                                                 , tryWriteBytes  )
 import Controller.Settings                      ( parseSet
@@ -165,15 +163,13 @@ write_help = T.HelpInfo ns us sh lh
           lh = Tx.empty
 
 write_action :: T.CommandAction
-write_action xs = T.SimpleIOCmd $ \ db -> go db $
-                      Tx.unpack <$> listToMaybe xs <|> T.scriptPath db
-    where fmt n = unlines . chunksOf n . init . tail . concatMap show . toList
-          go _  Nothing   = throwError "Save path required"
-          go db (Just fp) = do let s = fmt ( T.progWidth db ) . T.program $ db
-                               tryWriteFile fp (Tx.pack s)
-                               pure $ db { T.message    = "saved to " ++ fp
-                                         , T.scriptPath = Just fp
-                                         }
+write_action xs = T.SimpleIOCmd $
+    \ db -> maybe err (go db) $ Tx.unpack <$> listToMaybe xs <|> T.scriptPath db
+    where err      = throwError "Save path required"
+          go db fp = do tryWriteFile fp . D.programToText (T.progWidth db) $ db
+                        pure $ db { T.message    = "saved to " <> fp
+                                  , T.scriptPath = Just fp
+                                  }
 
 -- quit -------------------------------------------------------------
 
