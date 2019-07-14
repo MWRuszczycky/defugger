@@ -27,7 +27,7 @@ spec = around_ U.manageTempTestDir $ do
     describe ":save command" $ do
         it "Saves debugger state correctly as bytestring with default path"
             testSaveDefaultPath
-        it "Saves debugger state correctly with a newly supplied path"
+        it "Saves debugger state correctly as bytestring with a new path"
             testSaveNewPath
         it "Does not save debugger state without a valid path"
             testSaveNoPath
@@ -82,12 +82,18 @@ testWriteNoPath = do
 -- =============================================================== --
 -- Testing the :save command
 
+setupHelloWorld69 :: IO T.Debugger
+-- ^Load the HelloWorld.bf test script, set a break point at BF
+-- statement 69 and jump execution to that break point.
+setupHelloWorld69 = U.newDebugger (Just "HelloWorld.bf") Nothing
+                    >>= U.nextDebugger D.moveCursorRight 69
+                    >>= pure . D.jumpForward . D.setBreakPoint
+
 testSaveDefaultPath :: IO ()
 testSaveDefaultPath = do
-    -- Set up the mock debugger
-    newDB <- U.newDebugger (Just "HelloWorld.bf") Nothing
-    let mockDB    = Mc.mockCommandEdit "save" newDB
-        Just path = D.toDebugPath <$> T.scriptPath newDB
+    -- Setup the mock debugger
+    mockDB <- Mc.mockCommandEdit "save" <$> setupHelloWorld69
+    let Just path = D.toDebugPath <$> T.scriptPath mockDB
     -- Test execution as SimpleIO
     resultDB <- Mc.routeCommandModeAsSimpleIO mockDB
     -- Check the results
@@ -98,7 +104,30 @@ testSaveDefaultPath = do
     resultIO `shouldBe` expectedIO
 
 testSaveNewPath :: IO ()
-testSaveNewPath = pure ()
+testSaveNewPath = do
+    -- Setup the mock debugger
+    newDB <- setupHelloWorld69
+    let path         = U.getTempTestPath "TestSaveNewPath.defug"
+        mockDB       = Mc.mockCommandEdit ("save " <> Tx.pack path) newDB
+        Just badPath = D.toDebugPath <$> T.scriptPath mockDB
+    -- Test execution as SimpleIO
+    resultDB <- Mc.routeCommandModeAsSimpleIO mockDB
+    -- Check the results
+    T.message resultDB `shouldBe` "State saved to " ++ path
+    U.checkCommandEdit [] resultDB
+    resultIO   <- BS.readFile path
+    expectedIO <- BS.readFile . U.getTestPath $ "TestSaveDefaultPath.defug"
+    resultIO `shouldBe` expectedIO
+    doesPathExist badPath `shouldReturn` False
 
 testSaveNoPath :: IO ()
-testSaveNoPath = pure ()
+testSaveNoPath = do
+    -- Set up the mock debugger
+    newDB <- U.newDebugger Nothing Nothing
+    let mockDB = Mc.mockCommandEdit "save" newDB
+    -- Test execution as SimpleIO
+    resultDB <- Mc.routeCommandModeAsSimpleIO mockDB
+    -- Check the results
+    U.checkCommandEdit [] resultDB
+    T.message resultDB `shouldBe` "Save path required"
+
