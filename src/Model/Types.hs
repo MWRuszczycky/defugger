@@ -91,6 +91,7 @@ instance Default DefuggerOptions where
 data RunMode
     = RunInterpreter        -- Read and interpret a BF script
     | RunDebugger           -- Run the debugger on a BF script
+    | RunHelp               -- Display startup help information
       deriving ( Eq, Show )
 
 -- =============================================================== --

@@ -9,6 +9,7 @@ import System.Environment          ( getArgs         )
 import StartUp                     ( parseOptions
                                    , interpreter
                                    , debugger
+                                   , displayHelp
                                    , endInterpreter
                                    , endDebugger     )
 
@@ -16,6 +17,7 @@ main :: IO ()
 main = runExceptT ( liftIO getArgs >>= parseOptions ) >>= either err go
     where err e   = putStrLn $ "Error: " ++ e
           go opts = case T.runMode opts of
+                         T.RunHelp        -> displayHelp
                          T.RunInterpreter -> runExceptT (interpreter opts)
                                              >>= endInterpreter
                          T.RunDebugger    -> runExceptT (debugger opts)

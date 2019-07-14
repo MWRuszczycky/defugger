@@ -1,6 +1,8 @@
 module StartUp
-    ( -- Running the interperter mode
-      interpreter
+    ( -- Running the help mode
+      displayHelp
+      -- Running the interperter mode
+    , interpreter
     , endInterpreter
     , formatOutput
       -- Running the debugger mode
@@ -16,6 +18,7 @@ module StartUp
 -- =============================================================== --
 
 import qualified Graphics.Vty           as V
+import qualified Data.Text.IO           as Tx
 import qualified Data.ByteString        as BS
 import qualified Brick                  as B
 import qualified Model.Types            as T
@@ -33,6 +36,7 @@ import Model.CoreIO                             ( tryReadFile
                                                 , tryReadBytes    )
 import View.View                                ( drawUI          )
 import View.Core                                ( attributes      )
+import View.Help                                ( startHelp       )
 import Controller.Router                        ( routeEvent      )
 import Controller.Loader                        ( initComputer
                                                 , initDebugger    )
@@ -47,6 +51,12 @@ initApp = B.App { B.appDraw         = drawUI
                 , B.appStartEvent   = pure
                 , B.appAttrMap      = const attributes
                 }
+
+-- =============================================================== --
+-- Running help mode: Just print startup help to standard out.
+
+displayHelp :: IO ()
+displayHelp = Tx.putStr . startHelp $ startOptions
 
 -- =============================================================== --
 -- Running the interpreter mode
@@ -106,10 +116,13 @@ configure _       opts = opts
 
 startOptions :: [ Opt.OptDescr (T.DefuggerOptions -> T.DefuggerOptions) ]
 startOptions =
-    [ Opt.Option "r" ["run"]
+    [ Opt.Option "h" ["help"]
+          ( Opt.NoArg ( \ opts -> opts { T.runMode = T.RunHelp } ) )
+          "Display help information for running the Defugger."
+    , Opt.Option "r" ["run"]
           ( Opt.NoArg ( \ opts -> opts { T.runMode = T.RunInterpreter } ) )
-          "Run the interpreter on the script."
+          "Run the BF interpreter on SCRIPT with input INPUT."
     , Opt.Option "t" ["terminal"]
           ( Opt.ReqArg ( \ term opts -> opts { T.terminal = term } ) "TERM" )
-          "Set the TERM terminal-ID."
+          "Set the TERM terminal-ID for the debugger TUI."
     ]

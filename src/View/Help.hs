@@ -2,21 +2,23 @@
 
 module View.Help
     ( helpWidget
+    , startHelp
     ) where
 
 -- =============================================================== --
 -- Rendering the help UI for displaying help and other information --
 -- =============================================================== --
 
-import qualified Data.Text   as Tx
-import qualified Brick       as B
-import qualified Model.Types as T
-import Data.Text                    ( Text                          )
-import Data.List                    ( intersperse, nubBy            )
-import Brick                        ( (<=>), (<+>)                  )
-import Controller.CommandBindings   ( commands                      )
-import Controller.Settings          ( settings                      )
-import Controller.KeyBindings       ( keyBindings                   )
+import qualified Data.Text              as Tx
+import qualified Brick                  as B
+import qualified Model.Types            as T
+import qualified System.Console.GetOpt  as Opt
+import Data.Text                                ( Text               )
+import Data.List                                ( intersperse, nubBy )
+import Brick                                    ( (<=>), (<+>)       )
+import Controller.CommandBindings               ( commands           )
+import Controller.Settings                      ( settings           )
+import Controller.KeyBindings                   ( keyBindings        )
 
 -- =============================================================== --
 -- The main help-UI widget
@@ -215,3 +217,26 @@ mainHelpTxt = Tx.unlines hs
                , "  :quit"
                ]
 
+startHelp :: [Opt.OptDescr a] -> Text
+startHelp opts = Tx.unlines
+    [ "Welcome to the Defugger! A Brain B**k (BF) debugger and interepreter"
+    , "that runs entirely in your terminal!\n"
+    , "-- usage " <> Tx.replicate 71 "-"
+    , "Usage:\n  defugger [OPTION] [SCRIPT] [INPUT]\n"
+    , Tx.pack $ Opt.usageInfo "Options:" opts
+    , "When neither the --run nor --help option is supplied, the Defugger will"
+    , "start in debugger mode after loading the BF script and input files from"
+    , "the supplied SCRIPT and INPUT file path arguments. You can also run the"
+    , "debugger without a SCRIPT argument or load a script file from the"
+    , "debugger TUI using the :load command.\n"
+    , "You can get more information on how to work with the debugger by running"
+    , "the command :help once the debugger TUI has started.\n"
+    , "-- terminal help " <> Tx.replicate 63 "-"
+    , "The Defugger uses xterm-256Color as the default terminal-ID. If this"
+    , "does not work with your terminal, you can change it by using the"
+    , "--terminal=TERM option where TERM is your own specific terminal-ID.\n"
+    , "-- copying " <> Tx.replicate 69 "-"
+    , "The Defugger is free, open-source software maintained with full"
+    , "documentation and licensing information at:"
+    , "  https://github.com/MWRuszczycky/defugger"
+    ]
