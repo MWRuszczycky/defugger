@@ -11,6 +11,7 @@ module Controller.CommandBindings
 
 import qualified Model.Types             as T
 import qualified Data.Text               as Tx
+import qualified Model.Debugger.Debugger as D
 import Data.Text                                ( Text           )
 import Control.Applicative                      ( (<|>)          )
 import Data.Maybe                               ( listToMaybe    )
@@ -18,7 +19,8 @@ import Data.Foldable                            ( toList         )
 import Control.Monad.Except                     ( throwError     )
 import Data.List                                ( find           )
 import Model.Utilities                          ( chunksOf       )
-import Model.CoreIO                             ( tryWriteFile   )
+import Model.CoreIO                             ( tryWriteFile
+                                                , tryWriteBytes  )
 import Controller.Settings                      ( parseSet
                                                 , parseUnset     )
 import Controller.Loader                        ( reloadDebugger
@@ -94,7 +96,6 @@ open_help = T.HelpInfo ns us sh (Tx.unlines lh)
 open_action :: T.CommandAction
 open_action _ = T.ErrorCmd "The :open command is not yet available."
 
-
 -- reset ------------------------------------------------------------
 
 reset_help :: T.HelpInfo
@@ -115,16 +116,20 @@ save_help = T.HelpInfo ns us sh (Tx.unlines lh)
           us = ":save [FILEPATH]"
           sh = "Saves the computer state at the current point of evaluation."
           lh = [ "Use the :save command to save the script, memory, output and"
-               , "input states at current point of BF script evaluation to a"
-               , "human-readable file. The file path to save to can be"
-               , "specified as the FILEPATH argument. If no argument is"
-               , "provided, then the current script path is used with the"
-               , "extension .defug. See also help for the :open and :write"
-               , "commands."
+               , "input states at the current point of script evaluation to a"
+               , "binary file. The file path to save to can be specified as the"
+               , "FILEPATH argument. If no argument is provided, then the"
+               , "current script path is used with the extension .defug. See"
+               , "also help for the :open and :write commands."
                ]
 
 save_action :: T.CommandAction
-save_action _ = T.ErrorCmd "The :save command is not yet available."
+save_action xs = T.SimpleIOCmd $
+    \ db -> maybe err (go db) $ Tx.unpack <$> listToMaybe xs
+                                <|> (D.toDebugPath <$> T.scriptPath db)
+    where err      = throwError "Save path required"
+          go db fp = do tryWriteBytes fp . D.debuggerToByteString $ db
+                        pure $ db { T.message = "State saved to " ++ fp }
 
 -- set --------------------------------------------------------------
 

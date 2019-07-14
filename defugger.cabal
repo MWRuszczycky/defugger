@@ -30,6 +30,7 @@ library defugger-internal
                       , Model.Debugger.Execute
                       , Model.Debugger.Query
                       , Model.Debugger.Widgets
+                      , Model.Debugger.State
                       , Model.CoreIO
                       , Model.Interpreter
                       , Model.Parser

@@ -2,6 +2,7 @@ module Model.CoreIO
     ( tryReadFile
     , tryReadBytes
     , tryWriteFile
+    , tryWriteBytes
     ) where
 
 import qualified Data.ByteString as BS
@@ -25,4 +26,9 @@ tryWriteFile fp t = ExceptT $ catch ( Right <$> Tx.writeFile fp t ) hndlErr
 tryReadBytes :: FilePath -> T.ErrorIO BS.ByteString
 tryReadBytes fp = ExceptT $ catch ( Right <$> BS.readFile fp ) hndlErr
     where hndlErr :: IOException -> IO ( Either T.ErrString BS.ByteString )
+          hndlErr = pure . Left . show
+
+tryWriteBytes :: FilePath -> BS.ByteString -> T.ErrorIO ()
+tryWriteBytes fp bs = ExceptT $ catch ( Right <$> BS.writeFile fp bs ) hndlErr
+    where hndlErr :: IOException -> IO ( Either T.ErrString () )
           hndlErr = pure . Left . show
