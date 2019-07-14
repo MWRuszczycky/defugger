@@ -1,5 +1,6 @@
 module UtilitiesTest
     ( newDebugger
+    , nextDebugger
     , checkDebugger
     , checkCommandEdit
     , testFilesDir
@@ -44,6 +45,10 @@ newDebugger script input = do
          Right db -> pure $ db { T.scriptPath = getTempTestPath <$> script
                                , T.inputPath  = getTempTestPath <$> input
                                }
+
+nextDebugger :: (T.Debugger -> T.Debugger) -> Int -> T.Debugger -> IO T.Debugger
+-- ^Advance a debugger by iterating an operation on it.
+nextDebugger go n db = pure $ iterate go db !! n
 
 checkDebugger :: BS.ByteString -> BS.ByteString
                  -> String -> Int -> T.Debugger -> IO T.Debugger
