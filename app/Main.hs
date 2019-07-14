@@ -15,7 +15,7 @@ import StartUp                     ( parseOptions
 
 main :: IO ()
 main = runExceptT ( liftIO getArgs >>= parseOptions ) >>= either err go
-    where err e   = putStrLn $ "Error: " ++ e
+    where err e   = putStrLn $ "Error: " ++ e ++ "  try: defugger --help"
           go opts = case T.runMode opts of
                          T.RunHelp        -> displayHelp
                          T.RunInterpreter -> runExceptT (interpreter opts)

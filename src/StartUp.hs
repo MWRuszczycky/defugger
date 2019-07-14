@@ -69,7 +69,7 @@ interpreter opts = do
     liftEither $ parse def s >>= runProgram ( initComputer x )
 
 endInterpreter :: Either T.ErrString T.Computer -> IO ()
-endInterpreter (Left e)  = putStrLn $ "Error: " ++ e
+endInterpreter (Left e)  = putStrLn $ "Error: " ++ e ++ "\ntry: defugger --help"
 endInterpreter (Right c) = putStrLn . formatOutput . T.output $ c
 
 formatOutput :: BS.ByteString -> String
@@ -86,7 +86,7 @@ debugger opts = do
     lift . B.customMain (V.mkVty V.defaultConfig) (Just chan) initApp $ st0
 
 endDebugger :: Either T.ErrString T.Debugger -> IO ()
-endDebugger (Left  e) = putStrLn $ "Error: " ++ e
+endDebugger (Left  e) = putStrLn $ "Error: " ++ e ++ "\ntry: defugger --help"
 endDebugger (Right _) = putStrLn "Defugger completed with no errors."
 
 getTerminalDimensions :: IO (Int, Int)
