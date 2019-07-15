@@ -18,7 +18,7 @@ import qualified Model.Types             as T
 import qualified Data.Foldable           as Fld
 import qualified Data.ByteString         as BS
 import qualified Data.ByteString.Lazy    as BSL
-import qualified Data.ByteString.Builder as Bld
+import qualified Data.Binary.Put         as Bin
 import qualified Data.Text               as Tx
 import Data.Text                                ( Text          )
 import Model.Utilities                          ( chunksOf      )
@@ -46,40 +46,40 @@ programToText n = Tx.unlines . map Tx.pack . chunksOf n
 -- Rendering debugger state to bytestrings
 
 debuggerToByteString :: T.Debugger -> BS.ByteString
-debuggerToByteString db =
-    let p = T.program $ db
-        m = T.memory . T.computer $ db
-        o = T.output . T.computer $ db
-        i = T.input  . T.computer $ db
-    in  BS.concat . BSL.toChunks . Bld.toLazyByteString . mconcat $
-            [ Bld.word32BE . fromIntegral . Fld.length $ p
-            , Bld.word32BE . fromIntegral . getPosition $ db
-            , buildScript db
-            , Bld.word32BE . fromIntegral . Fld.length $ m
-            , Bld.word32BE . fromIntegral . getAddress $ db
-            , buildMemory db
-            , Bld.word32BE . fromIntegral . BS.length $ o
-            , Bld.byteString o
-            , Bld.word32BE . fromIntegral . BS.length $ i
-            , Bld.byteString i
-            ]
+debuggerToByteString db = BS.concat . BSL.toChunks . Bin.runPut $ do
+    -- Serialize the script length, position and script
+    Bin.putWord32be . fromIntegral . Fld.length . T.program $ db
+    Bin.putWord32be . fromIntegral . getPosition $ db
+    putScript db
+    -- Serialize the memory length, current address and values
+    Bin.putWord32be . fromIntegral . Fld.length . T.memory . T.computer $ db
+    Bin.putWord32be . fromIntegral . getAddress $ db
+    putMemory db
+    -- Serialize the output length and values
+    let o = T.output . T.computer $ db
+    Bin.putWord32be . fromIntegral . BS.length $ o
+    Bin.putByteString o
+    -- Serialize the input length and values
+    let i = T.input  . T.computer $ db
+    Bin.putWord32be . fromIntegral . BS.length $ i
+    Bin.putByteString i
 
-buildScript :: T.Debugger -> Bld.Builder
-buildScript = mconcat . map go . Fld.toList . T.program
-    where to32BE                 = Bld.word32BE . fromIntegral
-          go (T.DBStart        ) = Bld.char8 '0'
-          go (T.DBEnd          ) = Bld.char8 '0'
-          go (T.DBIncrement    ) = Bld.char8 '+'
-          go (T.DBDecrement    ) = Bld.char8 '-'
-          go (T.DBAdvance      ) = Bld.char8 '>'
-          go (T.DBBackup       ) = Bld.char8 '<'
-          go (T.DBReadIn       ) = Bld.char8 ','
-          go (T.DBWriteOut     ) = Bld.char8 '.'
-          go (T.DBOpenLoop  n  ) = Bld.char8 '[' <> to32BE n
-          go (T.DBCloseLoop n  ) = Bld.char8 ']' <> to32BE n
+putScript :: T.Debugger -> Bin.Put
+putScript = Fld.traverse_ go . T.program
+    where toPut32be            = Bin.putWord32be . fromIntegral
+          go (T.DBStart      ) = Bin.putCharUtf8 '0'
+          go (T.DBEnd        ) = Bin.putCharUtf8 '0'
+          go (T.DBIncrement  ) = Bin.putCharUtf8 '+'
+          go (T.DBDecrement  ) = Bin.putCharUtf8 '-'
+          go (T.DBAdvance    ) = Bin.putCharUtf8 '>'
+          go (T.DBBackup     ) = Bin.putCharUtf8 '<'
+          go (T.DBReadIn     ) = Bin.putCharUtf8 ','
+          go (T.DBWriteOut   ) = Bin.putCharUtf8 '.'
+          go (T.DBOpenLoop  n) = Bin.putCharUtf8 '[' >> toPut32be n
+          go (T.DBCloseLoop n) = Bin.putCharUtf8 ']' >> toPut32be n
 
-buildMemory :: T.Debugger -> Bld.Builder
-buildMemory = mconcat . map Bld.word8 . Fld.toList . T.memory . T.computer
+putMemory :: T.Debugger -> Bin.Put
+putMemory = Fld.traverse_ Bin.putWord8 . T.memory . T.computer
 
 -- =============================================================== --
 -- Parsing debugger state

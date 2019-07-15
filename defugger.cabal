@@ -44,6 +44,7 @@ library defugger-internal
   ghc-options:          -O2 -W
   build-depends:        base >=4.7 && <5
                       , async
+                      , binary
                       , brick
                       , bytestring
                       , containers
