@@ -5,6 +5,7 @@ module ControllerTest.CommandBindingsTest
     ) where
 
 import qualified Model.Types               as T
+import qualified Model.Utilities           as MU
 import qualified UtilitiesTest             as U
 import qualified ControllerTest.MockRouter as Mc
 import qualified Data.Text                 as Tx
@@ -93,7 +94,7 @@ testSaveDefaultPath :: IO ()
 testSaveDefaultPath = do
     -- Setup the mock debugger
     mockDB <- Mc.mockCommandEdit "save" <$> setupHelloWorld69
-    let Just path = D.toDebugPath <$> T.scriptPath mockDB
+    let Just path = MU.toDebugPath <$> T.scriptPath mockDB
     -- Test execution as SimpleIO
     resultDB <- Mc.routeCommandModeAsSimpleIO mockDB
     -- Check the results
@@ -109,7 +110,7 @@ testSaveNewPath = do
     newDB <- setupHelloWorld69
     let path         = U.getTempTestPath "TestSaveNewPath.defug"
         mockDB       = Mc.mockCommandEdit ("save " <> Tx.pack path) newDB
-        Just badPath = D.toDebugPath <$> T.scriptPath mockDB
+        Just badPath = MU.toDebugPath <$> T.scriptPath mockDB
     -- Test execution as SimpleIO
     resultDB <- Mc.routeCommandModeAsSimpleIO mockDB
     -- Check the results

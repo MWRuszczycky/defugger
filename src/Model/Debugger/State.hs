@@ -1,10 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Model.Debugger.State
-    ( -- Manipulating file paths
-      toDebugPath
-      -- Rendering debugger state to Text
-    , programToText
+    ( -- Rendering debugger state to Text
+      programToText
       -- Rendering debugger state to bytestrings
     , debuggerToByteString
       -- Parsing debugger state
@@ -24,14 +22,6 @@ import Data.Text                                ( Text          )
 import Model.Utilities                          ( chunksOf      )
 import Model.Debugger.Query                     ( getPosition
                                                 , getAddress    )
-
--- =============================================================== --
--- Manipulating file paths
-
-toDebugPath :: FilePath -> FilePath
-toDebugPath fp = case reverse . dropWhile (/= '.') . reverse $ fp of
-                      [] -> fp ++ ".defug"
-                      xs -> xs ++ "defug"
 
 -- =============================================================== --
 -- Rending debugger state to text

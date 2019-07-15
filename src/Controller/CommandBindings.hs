@@ -19,6 +19,7 @@ import Control.Monad.Except                     ( throwError     )
 import Data.List                                ( find           )
 import Model.CoreIO                             ( tryWriteFile
                                                 , tryWriteBytes  )
+import Model.Utilities                          ( toDebugPath    )
 import Controller.Settings                      ( parseSet
                                                 , parseUnset     )
 import Controller.Loader                        ( reloadDebugger
@@ -124,7 +125,7 @@ save_help = T.HelpInfo ns us sh (Tx.unlines lh)
 save_action :: T.CommandAction
 save_action xs = T.SimpleIOCmd $
     \ db -> maybe err (go db) $ Tx.unpack <$> listToMaybe xs
-                                <|> (D.toDebugPath <$> T.scriptPath db)
+                                <|> (toDebugPath <$> T.scriptPath db)
     where err      = throwError "Save path required"
           go db fp = do tryWriteBytes fp . D.debuggerToByteString $ db
                         pure $ db { T.message = "State saved to " ++ fp }

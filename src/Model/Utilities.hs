@@ -2,6 +2,8 @@ module Model.Utilities
     ( -- List operations
       chunksOf
     , slice
+      -- File path operations
+    , toDebugPath
       -- Vector operations
     , vecDelete
     , vecInsert
@@ -30,6 +32,14 @@ chunksOf n xs = chunk : chunksOf n rest
 
 slice :: (Int, Int) -> [a] -> [a]
 slice (n0, n1) = take (n1 - n0 + 1) . drop n0
+
+-- =============================================================== --
+-- File path manipulation
+
+toDebugPath :: FilePath -> FilePath
+toDebugPath fp = case reverse . dropWhile (/= '.') . reverse $ fp of
+                      [] -> fp ++ ".defug"
+                      xs -> xs ++ "defug"
 
 -- =============================================================== --
 -- Vector operations
