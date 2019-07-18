@@ -127,7 +127,7 @@ save_action xs = T.SimpleIOCmd $
     \ db -> maybe err (go db) $ Tx.unpack <$> listToMaybe xs
                                 <|> (toDebugPath <$> T.scriptPath db)
     where err      = throwError "Save path required"
-          go db fp = do tryWriteBytes fp . D.debuggerToByteString $ db
+          go db fp = do tryWriteBytes fp . D.encodeComputer $ db
                         pure $ db { T.message = "State saved to " ++ fp }
 
 -- set --------------------------------------------------------------

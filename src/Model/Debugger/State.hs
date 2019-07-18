@@ -4,7 +4,8 @@ module Model.Debugger.State
     ( -- Rendering debugger state to Text
       programToText
       -- Rendering debugger state to bytestrings
-    , debuggerToByteString
+    , encodeComputer
+    , decodeComputer
       -- Parsing debugger state
     ) where
 
@@ -17,7 +18,11 @@ import qualified Data.Foldable           as Fld
 import qualified Data.ByteString         as BS
 import qualified Data.ByteString.Lazy    as BSL
 import qualified Data.Binary.Put         as Bin
+import qualified Data.Binary.Get         as Bin
 import qualified Data.Text               as Tx
+import qualified Data.Vector             as Vec
+import Control.Monad                            ( replicateM    )
+import Data.Word                                ( Word8         )
 import Data.Text                                ( Text          )
 import Model.Utilities                          ( chunksOf      )
 import Model.Debugger.Query                     ( getPosition
@@ -35,8 +40,8 @@ programToText n = Tx.unlines . map Tx.pack . chunksOf n
 -- =============================================================== --
 -- Rendering debugger state to bytestrings
 
-debuggerToByteString :: T.Debugger -> BS.ByteString
-debuggerToByteString db = BS.concat . BSL.toChunks . Bin.runPut $ do
+encodeComputer :: T.Debugger -> BS.ByteString
+encodeComputer db = BSL.toStrict . Bin.runPut $ do
     -- Serialize the script length, position and script
     Bin.putWord32be . fromIntegral . Fld.length . T.program $ db
     Bin.putWord32be . fromIntegral . getPosition $ db
@@ -73,4 +78,54 @@ putMemory = Fld.traverse_ Bin.putWord8 . T.memory . T.computer
 
 -- =============================================================== --
 -- Parsing debugger state
--- Coming soon...
+
+-- This compiles but has not been tested at all yet.
+
+decodeComputer :: BS.ByteString -> Either T.ErrString (T.Computer, T.DBProgram, Int)
+decodeComputer = either err go . Bin.runGetOrFail getComputer . BSL.fromStrict
+    where err _         = Left "Unable to read input defug file."
+          go (bs, _, x) | BSL.null bs = Right x
+                        | otherwise   = Left "Defug file has incorrect format"
+
+getComputer :: Bin.Get (T.Computer, T.DBProgram, Int)
+getComputer = do
+    -- Get the script length, position and script
+    lenScript <- fromIntegral <$> Bin.getWord32be
+    posScript <- fromIntegral <$> Bin.getWord32be
+    script    <- getScript lenScript
+    -- Get the memory length, current address and values
+    lenMemory <- fromIntegral <$> Bin.getWord32be
+    address   <- fromIntegral <$> Bin.getWord32be
+    memory    <- getMemory lenMemory address
+    -- Get the output
+    lenOutput <- fromIntegral <$> Bin.getWord32be
+    output    <- Bin.getByteString lenOutput
+    -- Get the input
+    lenInput  <- fromIntegral <$> Bin.getWord32be
+    input     <- Bin.getByteString lenInput
+    pure ( T.Computer input output memory
+         , script
+         , posScript
+         )
+
+getScript :: Int -> Bin.Get T.DBProgram
+getScript count = Vec.fromList . (T.DBStart:) . tail <$> replicateM count go
+    where go = do next <- toEnum . fromIntegral <$> Bin.getWord8
+                  case next of
+                       '+' -> pure T.DBIncrement
+                       '-' -> pure T.DBDecrement
+                       '>' -> pure T.DBAdvance
+                       '<' -> pure T.DBBackup
+                       '.' -> pure T.DBWriteOut
+                       ',' -> pure T.DBReadIn
+                       '[' -> fromIntegral <$> Bin.getWord32be
+                              >>= pure . T.DBOpenLoop
+                       ']' -> fromIntegral <$> Bin.getWord32be
+                              >>= pure . T.DBCloseLoop
+                       _   -> pure T.DBEnd
+
+getMemory :: Int -> Int -> Bin.Get (T.Tape Word8)
+getMemory len index = go <$> Bin.getByteString len
+    where go bs | null ys   = T.Tape [] 0 []
+                | otherwise = T.Tape (reverse xs) (head ys) (tail ys)
+                where (xs,ys) = splitAt index . BS.unpack $ bs
