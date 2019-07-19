@@ -63,6 +63,7 @@ test-suite model-tests
   ghc-options:          -W
   other-modules:        ModelTest.DebuggerTest.BracketTests
                       , ModelTest.DebuggerTest.ExecuteTests
+                      , ModelTest.DebuggerTest.StateTests
                       , ModelTest.DebuggerTest.Spec
                       , ModelTest.InterpreterTests
                       , ModelTest.ParserTests

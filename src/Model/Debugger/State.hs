@@ -21,7 +21,8 @@ import qualified Data.Binary.Put         as Bin
 import qualified Data.Binary.Get         as Bin
 import qualified Data.Text               as Tx
 import qualified Data.Vector             as Vec
-import Control.Monad                            ( replicateM    )
+import Control.Monad                            ( replicateM
+                                                , guard         )
 import Data.Word                                ( Word8         )
 import Data.Text                                ( Text          )
 import Model.Utilities                          ( chunksOf      )
@@ -58,6 +59,8 @@ encodeComputer db = BSL.toStrict . Bin.runPut $ do
     let i = T.input  . T.computer $ db
     Bin.putWord32be . fromIntegral . BS.length $ i
     Bin.putByteString i
+    -- End with a newline
+    Bin.putWord8 0x0a
 
 putScript :: T.Debugger -> Bin.Put
 putScript = Fld.traverse_ go . T.program
@@ -79,13 +82,10 @@ putMemory = Fld.traverse_ Bin.putWord8 . T.memory . T.computer
 -- =============================================================== --
 -- Parsing debugger state
 
--- This compiles but has not been tested at all yet.
-
 decodeComputer :: BS.ByteString -> Either T.ErrString (T.Computer, T.DBProgram, Int)
 decodeComputer = either err go . Bin.runGetOrFail getComputer . BSL.fromStrict
-    where err _         = Left "Unable to read input defug file."
-          go (bs, _, x) | BSL.null bs = Right x
-                        | otherwise   = Left "Defug file has incorrect format"
+    where err _        = Left "Unable to read input defug file."
+          go (_, _, x) = Right x
 
 getComputer :: Bin.Get (T.Computer, T.DBProgram, Int)
 getComputer = do
@@ -103,6 +103,10 @@ getComputer = do
     -- Get the input
     lenInput  <- fromIntegral <$> Bin.getWord32be
     input     <- Bin.getByteString lenInput
+    -- Read the end-of-line at the end of the file and end of input
+    eof       <- Bin.getWord8
+    done      <- Bin.isEmpty
+    guard $ eof == 0x0a && done
     pure ( T.Computer input output memory
          , script
          , posScript

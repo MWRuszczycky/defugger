@@ -369,6 +369,7 @@ data DebugStatement
     | DBWriteOut
     | DBOpenLoop  Int
     | DBCloseLoop Int
+      deriving ( Eq )
 
 instance Show DebugStatement where
     show DBStart         = "0"

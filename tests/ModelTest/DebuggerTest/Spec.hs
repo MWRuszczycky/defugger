@@ -4,9 +4,11 @@ module ModelTest.DebuggerTest.Spec
 
 import qualified ModelTest.DebuggerTest.BracketTests as BracketTests
 import qualified ModelTest.DebuggerTest.ExecuteTests as ExecuteTests
+import qualified ModelTest.DebuggerTest.StateTests   as StateTests
 import Test.Hspec ( Spec, describe  )
 
 spec :: Spec
 spec = do
     describe "Query: Bracket-finding"                BracketTests.spec
     describe "Execute: jumps & steps forward & back" ExecuteTests.spec
+    describe "State: serializing debuffer state"     StateTests.spec
