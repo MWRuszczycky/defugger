@@ -10,5 +10,5 @@ import Test.Hspec ( Spec, describe  )
 spec :: Spec
 spec = do
     describe "Query: Bracket-finding"                BracketTests.spec
-    describe "Execute: jumps & steps forward & back" ExecuteTests.spec
-    describe "State: serializing debuffer state"     StateTests.spec
+    describe "Execute: Jumps & steps forward & back" ExecuteTests.spec
+    describe "State: Computer/debugger encodings"    StateTests.spec
