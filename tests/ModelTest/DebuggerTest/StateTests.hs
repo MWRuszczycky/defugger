@@ -27,6 +27,8 @@ spec = do
             testDecodeComputer102
         it "Deserializes TestSave103.defug (WriteHelloWorld at stmt 8)"
             testDecodeComputer103
+        it "Correctly fails to deserialize HelloWorld.bf"
+            testDecodeComputer201
 
 -- =============================================================== --
 
@@ -75,3 +77,12 @@ testDecodeComputer103 = do
              (show . T.memory) c `shouldBe`      "72 101 108 108 [0]"
              T.output c          `shouldSatisfy` BS.null
              T.input  c          `shouldBe`      "o World!\n"
+
+testDecodeComputer201 :: IO ()
+-- ^Test for failure to deserialize something which should not.
+testDecodeComputer201 = do
+    let testPath = U.getTestPath $ "HelloWorld.bf"
+    bs <- BS.readFile testPath
+    case D.decodeComputer bs of
+         Left _  -> pure ()
+         Right _ -> error $ "Deserializes HelloWord.bf without error."
