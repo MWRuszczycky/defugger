@@ -104,9 +104,9 @@ getComputer = do
     lenInput  <- fromIntegral <$> Bin.getWord32be
     input     <- Bin.getByteString lenInput
     -- Read the end-of-line at the end of the file and end of input
-    eof       <- Bin.getWord8
-    done      <- Bin.isEmpty
-    guard $ eof == 0x0a && done
+    lastByte  <- Bin.getWord8
+    isEoF     <- Bin.isEmpty
+    guard $ lastByte == 0x0a && isEoF
     pure ( T.Computer input output memory
          , script
          , posScript
