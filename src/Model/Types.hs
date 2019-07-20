@@ -344,6 +344,7 @@ data Statement
     | ReadIn
     | WriteOut
     | WhileLoop Program
+    | Break
     | DoNothing
 
 instance Show Statement where
@@ -355,6 +356,7 @@ instance Show Statement where
     show WriteOut      = "."
     show (WhileLoop p) = "[" ++ concatMap show p ++ "]"
     show DoNothing     = "#\\n"
+    show Break         = "B"
 
 -- |Definition of a BF script with additional information to allow
 -- for debugging operations.
@@ -409,6 +411,7 @@ data Token
     | BFStart       -- Beginning of the BF program/script
     | BFStop        -- End of the BF program/script
     | BFHash        -- Denotes a comment in the program/script
+    | BFBreak       -- Denotes a break point in the program/script
       deriving ( Ord, Eq, Show )
 
 -- |A Dictionary provides a specification for how a BF script can be
@@ -439,4 +442,5 @@ instance Default Dictionary where
                        , ( BFStart, ["["] )
                        , ( BFStop,  ["]"] )
                        , ( BFHash,  ["#"] )
+                       , ( BFBreak, ["B"] )
                        ]

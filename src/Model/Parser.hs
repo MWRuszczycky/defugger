@@ -51,6 +51,7 @@ toDebug :: Program -> DBProgram
 toDebug = V.fromList . (++[DBEnd]) . (DBStart:) . reverse . snd . foldl' go x0
     where x0                      = (1,[])
           go x      (DoNothing  ) = x
+          go x      (Break      ) = x
           go (n,dp) (Increment  ) = (n+1, DBIncrement : dp)
           go (n,dp) (Decrement  ) = (n+1, DBDecrement : dp)
           go (n,dp) (Advance    ) = (n+1, DBAdvance   : dp)
@@ -60,7 +61,7 @@ toDebug = V.fromList . (++[DBEnd]) . (DBStart:) . reverse . snd . foldl' go x0
           go (n,dp) (WhileLoop p) = let (n',dq) = foldl' go (n+1,[]) p
                                         xs      = DBCloseLoop n  : dq
                                         ys      = DBOpenLoop  n' : dp
-                                    in (n'+1, xs ++ ys)
+                                    in  (n'+1, xs ++ ys)
 
 ---------------------------------------------------------------------
 -- BF-Parsers
@@ -92,8 +93,9 @@ statement = do
          _       -> pure . toStatement $ kw
 
 opening :: BFParser Token
-opening = asum . map token $ [ BFGT,  BFLT,    BFPlus,  BFMinus
-                             , BFDot, BFComma, BFStart, BFHash
+opening = asum . map token $ [ BFGT,    BFLT,   BFPlus
+                             , BFMinus, BFDot,  BFComma
+                             , BFStart, BFHash, BFBreak
                              ]
 
 spaces :: BFParser ()
@@ -136,6 +138,7 @@ toStatement BFPlus  = Increment
 toStatement BFMinus = Decrement
 toStatement BFComma = ReadIn
 toStatement BFDot   = WriteOut
+toStatement BFBreak = Break
 toStatement _       = DoNothing
 
 splitNext :: Dictionary -> Text -> (Text, Text)
