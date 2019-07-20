@@ -23,7 +23,9 @@ import Control.Monad                    ( foldM  )
 -- Executing a complete BF program
 
 runProgram :: T.Computer -> T.Program -> Either T.ErrString T.Computer
-runProgram = foldM interpret
+runProgram c p = case [ n | (n,x) <- zip [0..] p, x == T.Break ] of
+                      []     -> foldM interpret c p
+                      (b:bs) -> foldM interpret c . fst . splitAt b $ p
 
 interpret :: T.Computer -> T.Statement -> Either T.ErrString T.Computer
 interpret c (T.Increment  ) = increment c
@@ -33,7 +35,7 @@ interpret c (T.Backup     ) = backup    c
 interpret c (T.ReadIn     ) = readIn    c
 interpret c (T.WriteOut   ) = writeOut  c
 interpret c (T.WhileLoop p) = whileLoop p c
-interpret c (T.DoNothing  ) = pure c
+interpret c _               = pure c
 
 -- =============================================================== --
 -- Individual computations as defined by BF

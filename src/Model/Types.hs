@@ -346,6 +346,7 @@ data Statement
     | WhileLoop Program
     | Break
     | DoNothing
+      deriving ( Eq )
 
 instance Show Statement where
     show Increment     = "+"
