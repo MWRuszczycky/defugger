@@ -22,67 +22,90 @@ spec :: Spec
 spec = do
     describe "Deserializing a bytestring as debugger/computer state" $ do
         it "Deserializes TestSave101.defug (HelloWorld.bf at stmt 59)"
-            testDecodeComputer101
+            testDecodeDebugger101
         it "Deserializes TestSave102.defug (empty program at stmt 0)"
-            testDecodeComputer102
+            testDecodeDebugger102
         it "Deserializes TestSave103.defug (WriteHelloWorld at stmt 8)"
-            testDecodeComputer103
+            testDecodeDebugger103
         it "Correctly fails to deserialize HelloWorld.bf"
-            testDecodeComputer201
+            testDecodeDebugger201
 
 -- =============================================================== --
 
-testDecodeComputer101 :: IO ()
+testDecodeDebugger101 :: IO ()
 -- ^See also ControllerTest.CommandBindingsTest.testSave101
-testDecodeComputer101 = do
+testDecodeDebugger101 = do
     let testPath   = U.getTestPath $ "TestSave101.defug"
         resultPath = U.getTestPath $ "HelloWorld.bf"
-    bs       <- BS.readFile testPath
-    Right hw <- M.parseDebug def <$> Tx.readFile resultPath
-    case D.decodeComputer bs of
-         Left err      -> error $ "decodeComputer fails to decode: " <> err
-         Right (c,p,x) -> do
-             x                   `shouldBe`      69
-             p                   `shouldBe`      hw
-             (show . T.memory) c `shouldBe`      "0 0 72 [111] 88 32 8"
-             T.output c          `shouldBe`      "Hell"
-             T.input  c          `shouldSatisfy` BS.null
+    -- The input files are dummies and the loaded data should be replaced.
+    newDb   <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
+    bs      <- BS.readFile testPath
+    Right p <- M.parseDebug def <$> Tx.readFile resultPath
+    case D.decodeDebugger newDb bs of
+         Left err -> error $ "decodeComputer fails to decode: " <> err
+         Right db -> do
+             let c = T.computer db
+             D.getPosition db       `shouldBe`      69
+             T.program db           `shouldBe`      p
+             (show . T.memory) c    `shouldBe`      "0 0 72 [111] 88 32 8"
+             T.output c             `shouldBe`      "Hell"
+             T.input  c             `shouldSatisfy` BS.null
+             T.initialInput db      `shouldSatisfy` BS.null
+             (toList . T.breaks) db `shouldBe`      [0, 69, 107]
+             T.scriptPath db        `shouldBe`      Nothing
+             T.inputPath  db        `shouldBe`      Nothing
 
-testDecodeComputer102 :: IO ()
+testDecodeDebugger102 :: IO ()
 -- ^Decoding computer state where there is no program.
-testDecodeComputer102 = do
-    let testPath   = U.getTestPath $ "TestSave102.defug"
-    bs <- BS.readFile testPath
-    case D.decodeComputer bs of
-         Left err      -> error $ "decodeComputer fails to decode: " <> err
-         Right (c,p,x) -> do
-             x                   `shouldBe`      0
-             toList p            `shouldBe`      [T.DBStart, T.DBEnd]
-             (show . T.memory) c `shouldBe`      "[0]"
-             T.output c          `shouldSatisfy` BS.null
-             T.input  c          `shouldSatisfy` BS.null
+testDecodeDebugger102 = do
+    let testPath = U.getTestPath $ "TestSave102.defug"
+    -- The input files are dummies and the loaded data should be replaced.
+    newDb <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
+    bs    <- BS.readFile testPath
+    case D.decodeDebugger newDb bs of
+         Left err -> error $ "decodeComputer fails to decode: " <> err
+         Right db -> do
+             let c = T.computer db
+             D.getPosition db        `shouldBe`      0
+             (toList . T.program) db `shouldBe`      [T.DBStart, T.DBEnd]
+             (show . T.memory) c     `shouldBe`      "[0]"
+             T.output c              `shouldSatisfy` BS.null
+             T.input  c              `shouldSatisfy` BS.null
+             T.initialInput db       `shouldSatisfy` BS.null
+             (toList . T.breaks) db  `shouldBe`      [0, 1]
+             T.scriptPath db         `shouldBe`      Nothing
+             T.inputPath  db         `shouldBe`      Nothing
 
-testDecodeComputer103 :: IO ()
+testDecodeDebugger103 :: IO ()
 -- ^Test deserialization with remaining input (WriteHelloWorld, position)
-testDecodeComputer103 = do
+testDecodeDebugger103 = do
     let testPath   = U.getTestPath $ "TestSave103.defug"
         resultPath = U.getTestPath $ "WriteHelloWorld.bf"
-    bs       <- BS.readFile testPath
-    Right hw <- M.parseDebug def <$> Tx.readFile resultPath
-    case D.decodeComputer bs of
-         Left err      -> error $ "decodeComputer fails to decode: " <> err
-         Right (c,p,x) -> do
-             x                   `shouldBe`      8
-             p                   `shouldBe`      hw
-             (show . T.memory) c `shouldBe`      "72 101 108 108 [0]"
-             T.output c          `shouldSatisfy` BS.null
-             T.input  c          `shouldBe`      "o World!\n"
+    -- The input files are dummies and the loaded data should be replaced.
+    newDb   <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
+    bs      <- BS.readFile testPath
+    Right p <- M.parseDebug def <$> Tx.readFile resultPath
+    case D.decodeDebugger newDb bs of
+         Left err -> error $ "decodeComputer fails to decode: " <> err
+         Right db -> do
+             let c = T.computer db
+             D.getPosition db       `shouldBe`      8
+             T.program db           `shouldBe`      p
+             (show . T.memory) c    `shouldBe`      "72 101 108 108 [0]"
+             T.output c             `shouldSatisfy` BS.null
+             T.input  c             `shouldBe`      "o World!\n"
+             T.initialInput db      `shouldBe`      "Hello World!\n"
+             (toList . T.breaks) db `shouldBe`      [0, 8, 63]
+             T.scriptPath db        `shouldBe`      Nothing
+             T.inputPath  db        `shouldBe`      Nothing
 
-testDecodeComputer201 :: IO ()
+testDecodeDebugger201 :: IO ()
 -- ^Test for failure to deserialize something which should not.
-testDecodeComputer201 = do
+testDecodeDebugger201 = do
     let testPath = U.getTestPath $ "HelloWorld.bf"
-    bs <- BS.readFile testPath
-    case D.decodeComputer bs of
+    -- The input files are dummies and the loaded data should be replaced.
+    newDb <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
+    bs    <- BS.readFile testPath
+    case D.decodeDebugger newDb bs of
          Left _  -> pure ()
-         Right _ -> error $ "Deserializes HelloWord.bf without error."
+         Right _ -> error $ "Deserializes HelloWorld.bf without error."
