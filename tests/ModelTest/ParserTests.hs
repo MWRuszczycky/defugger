@@ -26,6 +26,8 @@ spec = do
             testValid bfDict1 testProgV102In testProgV102Out
             testValid bfDict1 testProgV103In testProgV103Out
             testValid bfDict1 testProgV104In testProgV104Out
+            testValid bfDict1 testProgV105In testProgV105Out
+            testValid bfDict1 testProgV106In testProgV106Out
         it "Correctly handles invalid programs with dictionary 1" $ do
             testInvalid bfDict1 testProgI101In testProgI101Out
             testInvalid bfDict1 testProgI102In testProgI102Out
@@ -75,6 +77,14 @@ testProgV103Out = "[++>.,++[[<+>-]-->]>#\\n.<<[#\\n<>--++[+<->+]]->+]"
 testProgV104In, testProgV104Out :: Text
 testProgV104In  = "[++> \t\t. ,++[[<+>-\n]-->]> # ..<>+ \n\n . <<[# xx \n <>- -++[+<->+]]->+]"
 testProgV104Out = "[++>.,++[[<+>-]-->]>#\\n.<<[#\\n<>--++[+<->+]]->+]"
+
+testProgV105In, testProgV105Out :: Text
+testProgV105In  = "++> ++[<+>-B]-->> # a comment \n <<[<>- -++[+<->+]]->+"
+testProgV105Out = "++>++[<+>-B]-->>#\\n<<[<>--++[+<->+]]->+"
+
+testProgV106In, testProgV106Out :: Text
+testProgV106In  = "++> ++[<+>-B]-->> # a comment B\n <<[<B B>- -++[+<->+]]->+"
+testProgV106Out = "++>++[<+>-B]-->>#\\n<<[<BB>--++[+<->+]]->+"
 
 -- Invalid Scripts
 

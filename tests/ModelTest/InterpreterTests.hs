@@ -22,6 +22,8 @@ spec = do
         it "Correctly runs HelloWorld.bf" $ do
             scriptNoInput ( U.getTestPath "HelloWorld.bf"  )
                           ( U.getTestPath "HelloWorld.out" )
+        it "Correctly runs BreakHelloWorld.bf (with break points)" $ do
+            scriptWithBreaks ( U.getTestPath "BreakHelloWorld.bf" )
         it "Correctly runs WriteHelloWorld.bf (input test)" $ do
             scriptWithInput ( U.getTestPath "WriteHelloWorld.bf"  )
                             ( U.getTestPath "WriteHelloWorld.txt" )
@@ -47,9 +49,25 @@ scriptWithInput s i t = runExceptT (args >>= SU.parseOptions) >>= either err go
                                              >>= checkResult t
                          _                -> goError
 
+scriptWithBreaks :: FilePath -> IO ()
+scriptWithBreaks s = runExceptT (args >>= SU.parseOptions) >>= either err go
+    where args    = pure ["--run", s]
+          err e   = error $ "Test failed: Unable to read options: " ++ e
+          goError = error $ "Test failed: RunIntepreter mode expected"
+          go opts = case T.runMode opts of
+                         T.RunInterpreter -> runExceptT (SU.interpreter opts)
+                                             >>= checkSaveResult
+                         _                -> goError
+
 checkResult :: FilePath -> Either T.ErrString T.Computer -> IO ()
 checkResult _ (Left err) = error $ "Test failed: " ++ err
-checkResult t (Right c)  = do
+checkResult t (Right c ) = do
     let output = SU.formatOutput . T.output $ c
     expected <- readFile t
     output `shouldBe` expected
+
+checkSaveResult :: Either T.ErrString T.Computer -> IO ()
+checkSaveResult (Left err) = error $ "Test failed: " ++ err
+checkSaveResult (Right c ) = do
+    let output = SU.formatOutput . T.output $ c
+    output `shouldBe` "Hell"
