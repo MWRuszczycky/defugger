@@ -4,9 +4,9 @@ module Model.Debugger.State
     ( -- Rendering debugger state to Text
       programToText
       -- Rendering debugger state to bytestrings
-    , encodeComputer
-    , decodeComputer
+    , encodeDebugger
       -- Parsing debugger state
+    , decodeDebugger
     ) where
 
 -- =============================================================== --
@@ -21,6 +21,10 @@ import qualified Data.Binary.Put         as Bin
 import qualified Data.Binary.Get         as Bin
 import qualified Data.Text               as Tx
 import qualified Data.Vector             as Vec
+import qualified Data.Set                as Set
+import qualified Data.Sequence           as Seq
+import Data.Sequence                            ( (<|)          )
+import Data.Bifunctor                           ( bimap         )
 import Control.Monad                            ( replicateM
                                                 , guard         )
 import Data.Word                                ( Word8         )
@@ -41,12 +45,15 @@ programToText n = Tx.unlines . map Tx.pack . chunksOf n
 -- =============================================================== --
 -- Rendering debugger state to bytestrings
 
-encodeComputer :: T.Debugger -> BS.ByteString
-encodeComputer db = BSL.toStrict . Bin.runPut $ do
+encodeDebugger :: T.Debugger -> BS.ByteString
+encodeDebugger db = BSL.toStrict . Bin.runPut $ do
     -- Serialize the script length, position and script
     Bin.putWord32be . fromIntegral . Fld.length . T.program $ db
     Bin.putWord32be . fromIntegral . getPosition $ db
     putScript db
+    -- Serialize the break points
+    Bin.putWord32be . fromIntegral . Set.size . T.breaks $ db
+    mapM_ (Bin.putWord32be . fromIntegral) . Set.toList . T.breaks $ db
     -- Serialize the memory length, current address and values
     Bin.putWord32be . fromIntegral . Fld.length . T.memory . T.computer $ db
     Bin.putWord32be . fromIntegral . getAddress $ db
@@ -55,10 +62,14 @@ encodeComputer db = BSL.toStrict . Bin.runPut $ do
     let o = T.output . T.computer $ db
     Bin.putWord32be . fromIntegral . BS.length $ o
     Bin.putByteString o
-    -- Serialize the input length and values
+    -- Serialize the remaining input length and values
     let i = T.input  . T.computer $ db
     Bin.putWord32be . fromIntegral . BS.length $ i
     Bin.putByteString i
+    -- Serialie the initial input length and values
+    let ii = T.initialInput db
+    Bin.putWord32be . fromIntegral . BS.length $ ii
+    Bin.putByteString ii
     -- End with a newline
     Bin.putWord8 0x0a
 
@@ -82,17 +93,34 @@ putMemory = Fld.traverse_ Bin.putWord8 . T.memory . T.computer
 -- =============================================================== --
 -- Parsing debugger state
 
-decodeComputer :: BS.ByteString -> Either T.ErrString (T.Computer, T.DBProgram, Int)
-decodeComputer = either err go . Bin.runGetOrFail getComputer . BSL.fromStrict
-    where err _        = Left "Unable to read input defug file."
-          go (_, _, x) = Right x
+decodeDebugger :: T.Debugger -> BS.ByteString -> Either T.ErrString T.Debugger
+decodeDebugger db bs = do
+    let err _ = "Unable to read input defug file."
+    (_,_,r) <- bimap err id . Bin.runGetOrFail getDebugger . BSL.fromStrict $ bs
+    let (c,p,x,b,ii) = r
+    pure $ db { T.computer     = c
+              , T.program      = p
+              , T.history      = x <| Seq.Empty
+              , T.cursor       = x
+              , T.breaks       = b
+              , T.initialInput = ii
+              , T.scriptPath   = Nothing
+              , T.inputPath    = Nothing
+              }
 
-getComputer :: Bin.Get (T.Computer, T.DBProgram, Int)
-getComputer = do
+getDebugger :: Bin.Get ( T.Computer      -- The decoded computer
+                       , T.DBProgram     -- The decoded program
+                       , Int             -- The program position
+                       , Set.Set Int     -- The break points
+                       , BS.ByteString ) -- The initial input
+getDebugger = do
     -- Get the script length, position and script
     lenScript <- fromIntegral <$> Bin.getWord32be
     posScript <- fromIntegral <$> Bin.getWord32be
     script    <- getScript lenScript
+    -- Get the break points
+    lenBreaks <- fromIntegral <$> Bin.getWord32be
+    breaks    <- map fromIntegral <$> replicateM lenBreaks Bin.getWord32be
     -- Get the memory length, current address and values
     lenMemory <- fromIntegral <$> Bin.getWord32be
     address   <- fromIntegral <$> Bin.getWord32be
@@ -103,6 +131,9 @@ getComputer = do
     -- Get the input
     lenInput  <- fromIntegral <$> Bin.getWord32be
     input     <- Bin.getByteString lenInput
+    -- Get the initial input
+    lenIInput <- fromIntegral <$> Bin.getWord32be
+    iInput    <- Bin.getByteString lenIInput
     -- Read the end-of-line at the end of the file and end of input
     lastByte  <- Bin.getWord8
     isEoF     <- Bin.isEmpty
@@ -110,6 +141,8 @@ getComputer = do
     pure ( T.Computer input output memory
          , script
          , posScript
+         , Set.fromList breaks
+         , iInput
          )
 
 getScript :: Int -> Bin.Get T.DBProgram

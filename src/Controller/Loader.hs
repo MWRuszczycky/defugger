@@ -5,7 +5,6 @@ module Controller.Loader
     , initDebugger
     , reloadDebugger
     , resetDebugger
-    , openDebugger
     ) where
 
 import qualified Data.ByteString         as BS
@@ -104,21 +103,6 @@ resetDebugger db = D.updateViewByPosition $
        , T.history    = 0 <| Seq.Empty
        , T.readBackup = []
        }
-
-openDebugger :: FilePath -> T.Debugger -> T.ErrorIO T.Debugger
--- ^Given a debugger, load computer state from a .defug file. The
--- file paths are all set to Nothing.
-openDebugger fp db = do
-    newDb   <- reloadDebugger Nothing Nothing db
-    bs      <- tryReadBytes fp
-    (c,p,x) <- liftEither . D.decodeComputer $ bs
-    pure . D.noMessage . D.updateViewByPosition $
-        newDb { T.computer = c
-              , T.program  = p
-              , T.history  = x <| Seq.Empty
-              , T.cursor   = x
-              , T.breaks   = Set.fromList [ 0, V.length p - 1 ]
-              }
 
 ---------------------------------------------------------------------
 -- Computer initialization and resetting

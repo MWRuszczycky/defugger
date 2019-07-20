@@ -15,15 +15,16 @@ import qualified Model.Debugger.Debugger as D
 import Data.Text                                ( Text           )
 import Control.Applicative                      ( (<|>)          )
 import Data.Maybe                               ( listToMaybe    )
-import Control.Monad.Except                     ( throwError     )
+import Control.Monad.Except                     ( throwError
+                                                , liftEither     )
 import Data.List                                ( find           )
 import Model.CoreIO                             ( tryWriteFile
+                                                , tryReadBytes
                                                 , tryWriteBytes  )
 import Model.Utilities                          ( toDebugPath    )
 import Controller.Settings                      ( parseSet
                                                 , parseUnset     )
 import Controller.Loader                        ( reloadDebugger
-                                                , openDebugger
                                                 , resetDebugger  )
 
 -- =============================================================== --
@@ -95,7 +96,10 @@ open_help = T.HelpInfo ns us sh (Tx.unlines lh)
 
 open_action :: T.CommandAction
 open_action []    = T.ErrorCmd "A path to a .defug file must be specified."
-open_action (x:_) = T.SimpleIOCmd $ \ db -> openDebugger (Tx.unpack x) db
+open_action (x:_) = T.SimpleIOCmd $ \ db ->
+                        tryReadBytes (Tx.unpack x)
+                        >>= liftEither . D.decodeDebugger db
+                        >>= pure . D.noMessage . D.updateViewByPosition
 
 -- reset ------------------------------------------------------------
 
@@ -129,7 +133,7 @@ save_action xs = T.SimpleIOCmd $
     \ db -> maybe err (go db) $ Tx.unpack <$> listToMaybe xs
                                 <|> (toDebugPath <$> T.scriptPath db)
     where err      = throwError "Save path required"
-          go db fp = do tryWriteBytes fp . D.encodeComputer $ db
+          go db fp = do tryWriteBytes fp . D.encodeDebugger $ db
                         pure $ db { T.message = "State saved to " ++ fp }
 
 -- set --------------------------------------------------------------
