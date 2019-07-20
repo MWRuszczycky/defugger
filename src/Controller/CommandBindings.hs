@@ -23,6 +23,7 @@ import Model.Utilities                          ( toDebugPath    )
 import Controller.Settings                      ( parseSet
                                                 , parseUnset     )
 import Controller.Loader                        ( reloadDebugger
+                                                , openDebugger
                                                 , resetDebugger  )
 
 -- =============================================================== --
@@ -93,7 +94,8 @@ open_help = T.HelpInfo ns us sh (Tx.unlines lh)
                ]
 
 open_action :: T.CommandAction
-open_action _ = T.ErrorCmd "The :open command is not yet available."
+open_action []    = T.ErrorCmd "A path to a .defug file must be specified."
+open_action (x:_) = T.SimpleIOCmd $ \ db -> openDebugger (Tx.unpack x) db
 
 -- reset ------------------------------------------------------------
 

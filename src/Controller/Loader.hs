@@ -5,24 +5,24 @@ module Controller.Loader
     , initDebugger
     , reloadDebugger
     , resetDebugger
+    , openDebugger
     ) where
 
-import qualified Data.ByteString as BS
-import qualified Model.Types     as T
-import qualified Data.Vector     as V
-import qualified Data.Set        as Set
-import qualified Data.Text       as Tx
-import qualified Data.Sequence   as Seq
-import Model.Debugger.Debugger          ( updateViewByPosition
-                                        , noMessage             )
-import Data.Sequence                    ( (<|)                  )
-import Data.Default                     ( def                   )
-import Brick.Widgets.Edit               ( editor                )
-import Brick.BChan                      ( BChan                 )
-import Control.Monad.Except             ( liftEither            )
-import Model.Parser                     ( parseDebug            )
-import Model.CoreIO                     ( tryReadFile
-                                        , tryReadBytes          )
+import qualified Data.ByteString         as BS
+import qualified Model.Types             as T
+import qualified Data.Vector             as V
+import qualified Data.Set                as Set
+import qualified Data.Text               as Tx
+import qualified Data.Sequence           as Seq
+import qualified Model.Debugger.Debugger as D
+import Data.Sequence                            ( (<|)         )
+import Data.Default                             ( def          )
+import Brick.Widgets.Edit                       ( editor       )
+import Brick.BChan                              ( BChan        )
+import Control.Monad.Except                     ( liftEither   )
+import Model.Parser                             ( parseDebug   )
+import Model.CoreIO                             ( tryReadFile
+                                                , tryReadBytes )
 
 ---------------------------------------------------------------------
 -- Debuggeer initialization and resetting
@@ -80,7 +80,7 @@ reloadDebugger scriptPath inputPath db = do
     s <- maybe (pure Tx.empty) tryReadFile  scriptPath
     x <- maybe (pure BS.empty) tryReadBytes inputPath
     p <- liftEither . parseDebug (T.dictionary db) $ s
-    pure . noMessage . updateViewByPosition $
+    pure . D.noMessage . D.updateViewByPosition $
         db { -- Core model
              T.computer     = initComputer x
            , T.program      = p
@@ -98,12 +98,27 @@ reloadDebugger scriptPath inputPath db = do
 resetDebugger :: T.Debugger -> T.Debugger
 -- ^Return the debugger to its initial state with the current script
 -- and input keeping all settings the same.
-resetDebugger db = updateViewByPosition $
+resetDebugger db = D.updateViewByPosition $
     db { T.computer   = initComputer $ T.initialInput  db
        , T.cursor     = 0
        , T.history    = 0 <| Seq.Empty
        , T.readBackup = []
        }
+
+openDebugger :: FilePath -> T.Debugger -> T.ErrorIO T.Debugger
+-- ^Given a debugger, load computer state from a .defug file. The
+-- file paths are all set to Nothing.
+openDebugger fp db = do
+    newDb   <- reloadDebugger Nothing Nothing db
+    bs      <- tryReadBytes fp
+    (c,p,x) <- liftEither . D.decodeComputer $ bs
+    pure . D.noMessage . D.updateViewByPosition $
+        newDb { T.computer = c
+              , T.program  = p
+              , T.history  = x <| Seq.Empty
+              , T.cursor   = x
+              , T.breaks   = Set.fromList [ 0, V.length p - 1 ]
+              }
 
 ---------------------------------------------------------------------
 -- Computer initialization and resetting
