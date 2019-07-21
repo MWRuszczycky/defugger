@@ -36,7 +36,7 @@ so that the examples below match.
 
 ### BF format<a name="format"></a>
 
-The Defugger recognizes standard, single-character BF commands (i.e., `<`, `>`, `+`, etc.) and ignores white space. Any other characters need to be commented out using a `#`. All white space and comments are stripped when the script is opened in the debugger. I actually plan to change many of these format requirements in the future.
+The Defugger recognizes standard, single-character BF commands (i.e., `<`, `>`, `+`, etc.) and ignores white space. The `B` character can be used to set a break point within the script. Any other characters need to be commented out using a `#`. All white space and comments are stripped when the script is opened in the debugger. Break points are ignored by the interpreter and only recognized by the debugger, but this will be changed in the future. I also plan to change many of these format requirements in the future.
 
 ### Interpreter mode<a name="interpreter"></a>
 
