@@ -9,8 +9,6 @@ module Controller.Loader
 
 import qualified Data.ByteString         as BS
 import qualified Model.Types             as T
-import qualified Data.Vector             as V
-import qualified Data.Set                as Set
 import qualified Data.Text               as Tx
 import qualified Data.Sequence           as Seq
 import qualified Model.Debugger.Debugger as D

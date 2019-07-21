@@ -27,8 +27,7 @@ module Model.Types
     , SettingAction
     , KeyAction
     , KeyBinding      (..)
-      -- Computer/Computation model
-    , Computation
+      -- Computer model
     , Computer        (..)
     , Tape            (..)
       -- BF scripts and programs
@@ -293,9 +292,6 @@ instance HasHelp Setting where
 -- =============================================================== --
 -- Model of a computer for running a BF program/script and the
 -- associated computations
-
--- |A Computation converts a computer between states and can fail.
-type Computation = Computer -> Either ErrString Computer
 
 -- |Memory tape of a simple computer that can run a BF program.
 data Tape a = Tape {

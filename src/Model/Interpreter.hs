@@ -20,6 +20,11 @@ import qualified Model.Types     as T
 import Control.Monad                    ( foldM  )
 
 -- =============================================================== --
+-- Local helper types
+
+type Computation = T.Computer -> Either T.ErrString T.Computer
+
+-- =============================================================== --
 -- Executing a complete BF program
 
 runProgram :: T.Computer -> T.Program -> Either T.ErrString T.Computer
@@ -38,26 +43,26 @@ interpret c _               = pure c
 -- =============================================================== --
 -- Individual computations as defined by BF
 
-advance :: T.Computation
+advance :: Computation
 advance c = case T.memory c of
                  T.Tape xs u []     -> Right c { T.memory = T.Tape (u:xs) 0 [] }
                  T.Tape xs u (y:ys) -> Right c { T.memory = T.Tape (u:xs) y ys }
 
-backup :: T.Computation
+backup :: Computation
 backup c = case T.memory c of
                 T.Tape []     _ _  -> Left "Invalid access ahead of start"
                 T.Tape (x:xs) 0 [] -> Right c { T.memory = T.Tape xs x []     }
                 T.Tape (x:xs) u ys -> Right c { T.memory = T.Tape xs x (u:ys) }
 
-increment :: T.Computation
+increment :: Computation
 increment c = let (T.Tape xs u ys) = T.memory c
               in  Right c { T.memory = T.Tape xs (u + 1) ys }
 
-decrement :: T.Computation
+decrement :: Computation
 decrement c = let (T.Tape xs u ys) = T.memory c
               in  Right c { T.memory = T.Tape xs (u - 1) ys }
 
-readIn :: T.Computation
+readIn :: Computation
 readIn c = let (T.Tape xs _ ys) = T.memory c
            in  case BS.uncons . T.input $ c of
                     Nothing      -> Left "Attempt to read past end of input"
@@ -65,11 +70,11 @@ readIn c = let (T.Tape xs _ ys) = T.memory c
                                             , T.input  = bs
                                             }
 
-writeOut :: T.Computation
+writeOut :: Computation
 writeOut c = let (T.Tape _ u _) = T.memory c
              in  Right c { T.output = BS.snoc ( T.output c ) u }
 
-whileLoop :: T.Program -> T.Computation
+whileLoop :: T.Program -> Computation
 whileLoop p c = case T.memory c of
                      T.Tape _ 0 _ -> pure c
                      _            -> runProgram c p >>= whileLoop p
