@@ -34,9 +34,9 @@ initDebugger :: BChan T.DebugEvent -> T.DefuggerOptions -> (Int, Int)
                 -> T.ErrorIO T.Debugger
 initDebugger chan opts (width,height) = do
     let dictionary  = def
-    s  <- maybe (pure Tx.empty) tryReadFile . T.pathToScript $ opts
-    x  <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
-    p  <- liftEither . parseDebug dictionary $ s
+    s      <- maybe (pure Tx.empty) tryReadFile . T.pathToScript $ opts
+    x      <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
+    (bs,p) <- liftEither . parseDebug dictionary $ s
     pure T.Debugger { -- Core model
                       T.computer     = initComputer x
                     , T.dictionary   = dictionary
@@ -58,7 +58,7 @@ initDebugger chan opts (width,height) = do
                     , T.progView     = (0, height - 5)
                     , T.memView      = (0, height - 5)
                       -- Settings
-                    , T.breaks       = Set.fromList [ 0, V.length p - 1 ]
+                    , T.breaks       = bs
                     , T.histDepth    = 1001
                     , T.progWidth    = 30
                     , T.inFormat     = T.Asc
@@ -76,9 +76,9 @@ reloadDebugger :: Maybe FilePath -> Maybe FilePath -> T.Debugger
 -- Because the input and program may have changed or be brand new,
 -- the break points and history also need to be reset.
 reloadDebugger scriptPath inputPath db = do
-    s <- maybe (pure Tx.empty) tryReadFile  scriptPath
-    x <- maybe (pure BS.empty) tryReadBytes inputPath
-    p <- liftEither . parseDebug (T.dictionary db) $ s
+    s      <- maybe (pure Tx.empty) tryReadFile  scriptPath
+    x      <- maybe (pure BS.empty) tryReadBytes inputPath
+    (bs,p) <- liftEither . parseDebug (T.dictionary db) $ s
     pure . D.noMessage . D.updateViewByPosition $
         db { -- Core model
              T.computer     = initComputer x
@@ -89,7 +89,7 @@ reloadDebugger scriptPath inputPath db = do
            , T.history      = 0 <| Seq.Empty
            , T.readBackup   = []
              -- Settings
-           , T.breaks       = Set.fromList [ 0, V.length p - 1 ]
+           , T.breaks       = bs
            , T.scriptPath   = scriptPath
            , T.inputPath    = inputPath
            }

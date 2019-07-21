@@ -38,9 +38,9 @@ testDecodeDebugger101 = do
     let testPath   = U.getTestPath $ "TestSave101.defug"
         resultPath = U.getTestPath $ "HelloWorld.bf"
     -- The input files are dummies and the loaded data should be replaced.
-    newDb   <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
-    bs      <- BS.readFile testPath
-    Right p <- M.parseDebug def <$> Tx.readFile resultPath
+    newDb       <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
+    bs          <- BS.readFile testPath
+    Right (_,p) <- M.parseDebug def <$> Tx.readFile resultPath
     case D.decodeDebugger newDb bs of
          Left err -> error $ "decodeComputer fails to decode: " <> err
          Right db -> do
@@ -82,9 +82,9 @@ testDecodeDebugger103 = do
     let testPath   = U.getTestPath $ "TestSave103.defug"
         resultPath = U.getTestPath $ "WriteHelloWorld.bf"
     -- The input files are dummies and the loaded data should be replaced.
-    newDb   <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
-    bs      <- BS.readFile testPath
-    Right p <- M.parseDebug def <$> Tx.readFile resultPath
+    newDb       <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
+    bs          <- BS.readFile testPath
+    Right (_,p) <- M.parseDebug def <$> Tx.readFile resultPath
     case D.decodeDebugger newDb bs of
          Left err -> error $ "decodeComputer fails to decode: " <> err
          Right db -> do

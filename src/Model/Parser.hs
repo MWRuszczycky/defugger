@@ -9,6 +9,7 @@ module Model.Parser
 import qualified Data.Text   as Tx
 import qualified Data.Char   as C
 import qualified Data.Vector as V
+import qualified Data.Set    as Set
 import Data.List                    ( find, foldl'        )
 import Data.Text                    ( Text, unpack        )
 import Data.Foldable                ( asum                )
@@ -34,8 +35,11 @@ import Model.Types                  ( Dictionary (..)
 parse :: Dictionary -> Text -> Either ErrString Program
 parse d = evalStateT ( runReaderT program d )
 
-parseDebug :: Dictionary -> Text -> Either ErrString DBProgram
-parseDebug d t = toDebug <$> parse d t
+parseDebug :: Dictionary -> Text -> Either ErrString (Set.Set Int, DBProgram)
+parseDebug d t = do
+    (b,p) <- toDebug <$> parse d t
+    let endPoints = Set.fromList [0, V.length p - 1 ]
+    pure (Set.union b endPoints, p)
 
 parseFail :: Text -> Text -> Dictionary -> BFParser a
 parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
@@ -47,21 +51,21 @@ parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
           go (Just BFStop) = lineNo ++ ": Unpaired close-brace for while-loop"
           go _             = lineNo ++ ": Cannot parse while-loop"
 
-toDebug :: Program -> DBProgram
-toDebug = V.fromList . (++[DBEnd]) . (DBStart:) . reverse . snd . foldl' go x0
-    where x0                      = (1,[])
-          go x      (DoNothing  ) = x
-          go x      (Break      ) = x
-          go (n,dp) (Increment  ) = (n+1, DBIncrement : dp)
-          go (n,dp) (Decrement  ) = (n+1, DBDecrement : dp)
-          go (n,dp) (Advance    ) = (n+1, DBAdvance   : dp)
-          go (n,dp) (Backup     ) = (n+1, DBBackup    : dp)
-          go (n,dp) (ReadIn     ) = (n+1, DBReadIn    : dp)
-          go (n,dp) (WriteOut   ) = (n+1, DBWriteOut  : dp)
-          go (n,dp) (WhileLoop p) = let (n',dq) = foldl' go (n+1,[]) p
-                                        xs      = DBCloseLoop n  : dq
-                                        ys      = DBOpenLoop  n' : dp
-                                    in  (n'+1, xs ++ ys)
+toDebug :: Program -> (Set.Set Int, DBProgram)
+toDebug p0 = ( bf, V.fromList . (DBStart:) . reverse . (DBEnd:) $ pf )
+    where ( _, bf, pf )            = foldl' go (1, Set.empty, []) p0
+          go x       (DoNothing  ) = x
+          go (n,b,p) (Break      ) = (n, Set.insert (n-1) b, p)
+          go (n,b,p) (Increment  ) = (n+1, b, DBIncrement :  p)
+          go (n,b,p) (Decrement  ) = (n+1, b, DBDecrement :  p)
+          go (n,b,p) (Advance    ) = (n+1, b, DBAdvance   :  p)
+          go (n,b,p) (Backup     ) = (n+1, b, DBBackup    :  p)
+          go (n,b,p) (ReadIn     ) = (n+1, b, DBReadIn    :  p)
+          go (n,b,p) (WriteOut   ) = (n+1, b, DBWriteOut  :  p)
+          go (n,b,p) (WhileLoop q) = let (n',b',dq) = foldl' go (n+1,b,[]) q
+                                         xs         = DBCloseLoop n  : dq
+                                         ys         = DBOpenLoop  n' : p
+                                     in  (n'+1, b', xs ++ ys)
 
 ---------------------------------------------------------------------
 -- BF-Parsers

@@ -178,7 +178,7 @@ bracketFinding201 = do
 -- Helpers
 
 getTestProgram :: Text -> T.DBProgram
-getTestProgram = either err id . P.parseDebug def
+getTestProgram = either err snd . P.parseDebug def
     where err e = error $ "Test failed: " ++ e
 
 ---------------------------------------------------------------------
