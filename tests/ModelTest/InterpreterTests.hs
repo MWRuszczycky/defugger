@@ -10,11 +10,15 @@ module ModelTest.InterpreterTests
 import qualified Model.Types        as T
 import qualified StartUp            as SU
 import qualified UtilitiesTest      as U
+import qualified Data.Set           as Set
+import qualified Data.ByteString    as BS
 import Control.Monad.Except                 ( runExceptT )
 import Test.Hspec                           ( Spec
                                             , describe
                                             , it
                                             , shouldBe   )
+
+type Result = (T.Computer, T.DBProgram, Set.Set Int, BS.ByteString)
 
 spec :: Spec
 spec = do
@@ -47,9 +51,10 @@ scriptWithInput s i t = runExceptT (args >>= SU.parseOptions) >>= either err go
                                              >>= checkResult t
                          _                -> goError
 
-checkResult :: FilePath -> Either T.ErrString T.Computer -> IO ()
-checkResult _ (Left err) = error $ "Test failed: " ++ err
-checkResult t (Right c ) = do
+-- !!! Need to update this !!!
+checkResult :: FilePath -> Either T.ErrString Result -> IO ()
+checkResult _ (Left err        ) = error $ "Test failed: " ++ err
+checkResult t (Right (c,_,_,_) ) = do
     let output = SU.formatOutput . T.output $ c
     expected <- readFile t
     output `shouldBe` expected

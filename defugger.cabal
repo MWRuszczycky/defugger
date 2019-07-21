@@ -71,6 +71,7 @@ test-suite model-tests
   build-depends:        base >=4.7 && <5
                       , brick
                       , bytestring
+                      , containers
                       , defugger-internal
                       , data-default
                       , directory
