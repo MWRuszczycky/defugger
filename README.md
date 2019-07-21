@@ -36,7 +36,7 @@ so that the examples below match.
 
 ### BF format<a name="format"></a>
 
-The Defugger recognizes standard, single-character BF commands (i.e., `<`, `>`, `+`, etc.) and ignores white space. The `B` character can be used to set a break point within the script. Any other characters need to be commented out using a `#`. All white space and comments are stripped when the script is opened in the debugger. Break points are ignored by the interpreter and only recognized by the debugger, but this will be changed in the future. I also plan to change many of these format requirements in the future.
+The Defugger recognizes standard, single-character BF commands (i.e., `<`, `>`, `+`, etc.) and ignores white space. The `B` character can be used to set a break point within the script. Any other characters need to be commented out using a `#`. All white space and comments are stripped when the script is opened in the debugger. I also plan to change many of these format requirements in the future.
 
 ### Interpreter mode<a name="interpreter"></a>
 
@@ -89,7 +89,7 @@ The `<tab>` key is used to cycle focus between the Program, Memory, Output and I
 
 The Defugger interpreter and debugger execute commands using different algorithms. Therefore, they have different performance characteristics.
 
-The Defugger will correctly execute the [Mandelbrot](https://github.com/pablojorge/brainfuck/blob/master/programs/mandelbrot.bf) script in interpreter mode in about 5 minutes on a Dell Inspiron Core i5 laptop. Not super fast, but at least it doesn't crash or have any space leaks that I can find. In debugger mode, the Mandelbrot script takes much longer (almost three hours on the same computer) to jump to the end; however, it does not crash the computer and does not appear to leak space, though I need to check more carefully. That being said, the Defugger appears to perform just fine with less computationally intensive programs. For example, it quickly (< 1 s) jumps to the end of the reasonably large [99 Bottles of Beer script](https://sange.fi/esoteric/brainfuck/bf-source/prog/BOTTLES.BF) with no problem.
+The Defugger will correctly execute the [Mandelbrot](https://github.com/pablojorge/brainfuck/blob/master/programs/mandelbrot.bf) script in interpreter mode in about 7 minutes on a Dell Inspiron Core i5 laptop. Not super fast, but at least it doesn't crash or have any space leaks that I can find. I previously had this running in about 5.5 minutes, but it did not allow for break points. In debugger mode, the Mandelbrot script takes much longer (almost three hours on the same computer) to jump to the end; however, it does not crash the computer and does not appear to leak space, though I need to check more carefully. That being said, the Defugger appears to perform just fine with less computationally intensive programs. For example, it quickly (< 1 s) jumps to the end of the reasonably large [99 Bottles of Beer script](https://sange.fi/esoteric/brainfuck/bf-source/prog/BOTTLES.BF) with no problem.
 
 So, jumps through multiple BF statements in the debugger can be very slow or even nonhalting (e.g., `+[]`). However, the debugger runs such jumps in an isolated thread, so you can abort them at any time while the jump is processing by pressing `<esc>`.
 
