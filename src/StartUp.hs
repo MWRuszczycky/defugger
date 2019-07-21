@@ -122,7 +122,15 @@ startOptions =
     , Opt.Option "r" ["run"]
           ( Opt.NoArg ( \ opts -> opts { T.runMode = T.RunInterpreter } ) )
           "Run the BF interpreter on SCRIPT with input INPUT."
+    , Opt.Option "s" ["save"]
+          ( Opt.ReqArg ( \ path opts -> opts { T.runMode  = T.RunInterpreter
+                                             , T.savePath = Just path } )
+                       "PATH" )
+          ( "Same as --run, but save the computer state to PATH.\n"
+            <> "This file can then be opened in debugger mode using\n"
+            <> "the :open command." )
     , Opt.Option "t" ["terminal"]
-          ( Opt.ReqArg ( \ term opts -> opts { T.terminal = term } ) "TERM" )
+          ( Opt.ReqArg ( \ term opts -> opts { T.terminal = term } )
+                       "TERM" )
           "Set the TERM terminal-ID for the debugger TUI."
     ]

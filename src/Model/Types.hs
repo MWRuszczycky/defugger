@@ -77,6 +77,7 @@ data DefuggerOptions = DefuggerOptions {
     , pathToScript :: Maybe FilePath -- File path to BF program script
     , pathToInput  :: Maybe FilePath -- File path to BF program input
     , terminal     :: String         -- Terminal settings used to update env
+    , savePath     :: Maybe FilePath -- Path to save state to after a run.
     }
 
 instance Default DefuggerOptions where
@@ -84,6 +85,7 @@ instance Default DefuggerOptions where
                           , pathToScript = Nothing
                           , pathToInput  = Nothing
                           , terminal     = "xterm-256color"
+                          , savePath     = Nothing
                           }
 
 -- |What the program is to do based on command line arguments
