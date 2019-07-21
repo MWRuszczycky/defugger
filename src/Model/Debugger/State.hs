@@ -30,8 +30,7 @@ import Control.Monad                            ( replicateM
 import Data.Word                                ( Word8         )
 import Data.Text                                ( Text          )
 import Model.Utilities                          ( chunksOf      )
-import Model.Debugger.Query                     ( getPosition
-                                                , getAddress    )
+import Model.Debugger.Query                     ( getPosition   )
 
 -- =============================================================== --
 -- Rending debugger state to text
@@ -47,48 +46,58 @@ programToText n = Tx.unlines . map Tx.pack . chunksOf n
 
 encodeDebugger :: T.Debugger -> BS.ByteString
 encodeDebugger db = BSL.toStrict . Bin.runPut $ do
-    -- Serialize the script length, position and script
-    Bin.putWord32be . fromIntegral . Fld.length . T.program $ db
-    Bin.putWord32be . fromIntegral . getPosition $ db
-    putScript db
-    -- Serialize the break points
-    Bin.putWord32be . fromIntegral . Set.size . T.breaks $ db
-    mapM_ (Bin.putWord32be . fromIntegral) . Set.toList . T.breaks $ db
-    -- Serialize the memory length, current address and values
-    Bin.putWord32be . fromIntegral . Fld.length . T.memory . T.computer $ db
-    Bin.putWord32be . fromIntegral . getAddress $ db
-    putMemory db
-    -- Serialize the output length and values
-    let o = T.output . T.computer $ db
-    Bin.putWord32be . fromIntegral . BS.length $ o
-    Bin.putByteString o
-    -- Serialize the remaining input length and values
-    let i = T.input  . T.computer $ db
-    Bin.putWord32be . fromIntegral . BS.length $ i
-    Bin.putByteString i
-    -- Serialie the initial input length and values
-    let ii = T.initialInput db
-    Bin.putWord32be . fromIntegral . BS.length $ ii
-    Bin.putByteString ii
-    -- End with a newline
+    putScript (T.program db) (getPosition db)
+    putBreaks . T.breaks $ db
+    putComputer . T.computer $ db
+    putBytes . T.initialInput $ db
     Bin.putWord8 0x0a
 
-putScript :: T.Debugger -> Bin.Put
-putScript = Fld.traverse_ go . T.program
-    where toPut32be            = Bin.putWord32be . fromIntegral
-          go (T.DBStart      ) = Bin.putCharUtf8 '0'
-          go (T.DBEnd        ) = Bin.putCharUtf8 '0'
-          go (T.DBIncrement  ) = Bin.putCharUtf8 '+'
-          go (T.DBDecrement  ) = Bin.putCharUtf8 '-'
-          go (T.DBAdvance    ) = Bin.putCharUtf8 '>'
-          go (T.DBBackup     ) = Bin.putCharUtf8 '<'
-          go (T.DBReadIn     ) = Bin.putCharUtf8 ','
-          go (T.DBWriteOut   ) = Bin.putCharUtf8 '.'
-          go (T.DBOpenLoop  n) = Bin.putCharUtf8 '[' >> toPut32be n
-          go (T.DBCloseLoop n) = Bin.putCharUtf8 ']' >> toPut32be n
+---------------------------------------------------------------------
+-- Helpers for the Bin.Put monad
 
-putMemory :: T.Debugger -> Bin.Put
-putMemory = Fld.traverse_ Bin.putWord8 . T.memory . T.computer
+putIntAsWord32be :: Int -> Bin.Put
+putIntAsWord32be = Bin.putWord32be . fromIntegral
+
+putBytes :: BS.ByteString -> Bin.Put
+putBytes bs = do
+    putIntAsWord32be . BS.length $ bs
+    Bin.putByteString bs
+
+putComputer :: T.Computer -> Bin.Put
+putComputer c =  do
+    -- Memory size
+    putIntAsWord32be . Fld.length . T.memory $ c
+    -- Address of the head
+    putIntAsWord32be . length . T.front . T.memory $ c
+    -- Serialize the memory
+    Fld.traverse_ Bin.putWord8 . T.memory $ c
+    -- Serialize the output length and values
+    putBytes . T.output $ c
+    -- Serialize the remaining input length and values
+    putBytes . T.input $ c
+
+putBreaks :: Set.Set Int -> Bin.Put
+putBreaks bs = do
+    putIntAsWord32be . Set.size $ bs
+    mapM_ putIntAsWord32be bs
+
+putScript :: T.DBProgram -> Int -> Bin.Put
+putScript p n = do
+    putIntAsWord32be . Fld.length $ p
+    putIntAsWord32be n
+    Fld.traverse_ putStatement p
+
+putStatement :: T.DebugStatement -> Bin.Put
+putStatement (T.DBStart      ) = Bin.putCharUtf8 '0'
+putStatement (T.DBEnd        ) = Bin.putCharUtf8 '0'
+putStatement (T.DBIncrement  ) = Bin.putCharUtf8 '+'
+putStatement (T.DBDecrement  ) = Bin.putCharUtf8 '-'
+putStatement (T.DBAdvance    ) = Bin.putCharUtf8 '>'
+putStatement (T.DBBackup     ) = Bin.putCharUtf8 '<'
+putStatement (T.DBReadIn     ) = Bin.putCharUtf8 ','
+putStatement (T.DBWriteOut   ) = Bin.putCharUtf8 '.'
+putStatement (T.DBOpenLoop  n) = Bin.putCharUtf8 '[' >> putIntAsWord32be n
+putStatement (T.DBCloseLoop n) = Bin.putCharUtf8 ']' >> putIntAsWord32be n
 
 -- =============================================================== --
 -- Parsing debugger state
