@@ -36,10 +36,12 @@ parse :: Dictionary -> Text -> Either ErrString Program
 parse d = evalStateT ( runReaderT program d )
 
 parseDebug :: Dictionary -> Text -> Either ErrString (Set.Set Int, DBProgram)
-parseDebug d t = do
-    (b,p) <- toDebug <$> parse d t
-    let endPoints = Set.fromList [0, V.length p - 1 ]
-    pure (Set.union b endPoints, p)
+parseDebug d t = toDebug <$> parse d t
+
+toDebug :: Program -> (Set.Set Int, DBProgram)
+toDebug p = let (rawBreaks, dbProg) = toDebugRaw p
+                endPoints           = Set.fromList [0, V.length dbProg - 1]
+            in  (Set.union rawBreaks endPoints, dbProg)
 
 parseFail :: Text -> Text -> Dictionary -> BFParser a
 parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
@@ -51,8 +53,8 @@ parseFail t0 t1 d = lift . lift . Left . go . findToken tk $ d
           go (Just BFStop) = lineNo ++ ": Unpaired close-brace for while-loop"
           go _             = lineNo ++ ": Cannot parse while-loop"
 
-toDebug :: Program -> (Set.Set Int, DBProgram)
-toDebug p0 = ( bf, V.fromList . (DBStart:) . reverse . (DBEnd:) $ pf )
+toDebugRaw :: Program -> (Set.Set Int, DBProgram)
+toDebugRaw p0 = ( bf, V.fromList . (DBStart:) . reverse . (DBEnd:) $ pf )
     where ( _, bf, pf )            = foldl' go (1, Set.empty, []) p0
           go x       (DoNothing  ) = x
           go (n,b,p) (Break      ) = (n, Set.insert (n-1) b, p)

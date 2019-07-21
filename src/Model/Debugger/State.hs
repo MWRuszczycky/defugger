@@ -5,6 +5,7 @@ module Model.Debugger.State
       programToText
       -- Rendering debugger state to bytestrings
     , encodeDebugger
+    , encodeResult
       -- Parsing debugger state
     , decodeDebugger
     ) where
@@ -50,6 +51,18 @@ encodeDebugger db = BSL.toStrict . Bin.runPut $ do
     putBreaks . T.breaks $ db
     putComputer . T.computer $ db
     putBytes . T.initialInput $ db
+    Bin.putWord8 0x0a
+
+encodeResult :: (T.Computer, T.DBProgram, Set.Set Int, BS.ByteString)
+                -> BS.ByteString
+encodeResult (c,p,bs,i) = BSL.toStrict . Bin.runPut $ do
+    -- There are always at least two break points: the start and the
+    -- and. The program position after a run is always the second.
+    let position = Set.toList bs !! 1
+    putScript p position
+    putBreaks bs
+    putComputer c
+    putBytes i
     Bin.putWord8 0x0a
 
 ---------------------------------------------------------------------

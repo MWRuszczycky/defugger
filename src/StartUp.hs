@@ -17,22 +17,26 @@ module StartUp
 -- to do once it starts up.                                        --
 -- =============================================================== --
 
-import qualified Graphics.Vty           as V
-import qualified Data.Text.IO           as Tx
-import qualified Data.ByteString        as BS
-import qualified Brick                  as B
-import qualified Model.Types            as T
-import qualified System.Console.GetOpt  as Opt
+import qualified Graphics.Vty            as V
+import qualified Data.Text.IO            as Tx
+import qualified Data.ByteString         as BS
+import qualified Brick                   as B
+import qualified Model.Types             as T
+import qualified System.Console.GetOpt   as Opt
+import qualified Data.Set                as Set
+import qualified Model.Debugger.Debugger as D
 import Data.List                                ( foldl'          )
 import Brick.BChan                              ( BChan, newBChan )
 import Data.Default                             ( def             )
 import System.Posix.Env                         ( putEnv          )
 import Control.Monad.Except                     ( liftEither
                                                 , lift
+                                                , runExceptT
                                                 , throwError      )
 import Model.Interpreter                        ( runProgram      )
-import Model.Parser                             ( parse           )
+import Model.Parser                             ( parse, toDebug  )
 import Model.CoreIO                             ( tryReadFile
+                                                , tryWriteBytes
                                                 , tryReadBytes    )
 import View.View                                ( drawUI          )
 import View.Core                                ( attributes      )
@@ -61,16 +65,30 @@ displayHelp = Tx.putStr . startHelp $ startOptions
 -- =============================================================== --
 -- Running the interpreter mode
 
-interpreter :: T.DefuggerOptions -> T.ErrorIO T.Computer
+type Result = (T.Computer, T.DBProgram, Set.Set Int, BS.ByteString)
+
+interpreter :: T.DefuggerOptions -> T.ErrorIO Result
 interpreter opts = do
     let missingErr = "BF script file required."
-    s  <- maybe (throwError missingErr) tryReadFile . T.pathToScript $ opts
-    x  <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
-    liftEither $ parse def s >>= runProgram ( initComputer x )
+    s <- maybe (throwError missingErr) tryReadFile . T.pathToScript $ opts
+    i <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
+    p <- liftEither . parse def $ s
+    let (breaks, dbProg) = toDebug p
+    c <- liftEither . runProgram ( initComputer i ) $ p
+    pure (c, dbProg, breaks, i)
 
-endInterpreter :: Either T.ErrString T.Computer -> IO ()
-endInterpreter (Left e)  = putStrLn $ "Error: " ++ e ++ "\ntry: defugger --help"
-endInterpreter (Right c) = putStrLn . formatOutput . T.output $ c
+endInterpreter :: T.DefuggerOptions -> Either T.ErrString Result -> IO ()
+endInterpreter _    (Left  e          ) = putStrLn errMsg
+    where errMsg = "Error: " ++ e ++ "\ntry: defugger --help"
+endInterpreter opts (Right r@(c,_,_,_)) = do
+    putStrLn . formatOutput . T.output $ c
+    case T.savePath opts of
+         Nothing -> pure ()
+         Just fp -> do et <- runExceptT . tryWriteBytes fp . D.encodeResult $ r
+                       case et of
+                            Right _ -> putStrLn $ "\nResult saved to " ++ fp
+                            Left e  -> putStrLn $ "\nCannot save to "
+                                                 ++ fp ++ ": " ++ e
 
 formatOutput :: BS.ByteString -> String
 formatOutput = map ( toEnum . fromIntegral ) . BS.unpack

@@ -19,6 +19,6 @@ main = runExceptT ( liftIO getArgs >>= parseOptions ) >>= either err go
           go opts = case T.runMode opts of
                          T.RunHelp        -> displayHelp
                          T.RunInterpreter -> runExceptT (interpreter opts)
-                                             >>= endInterpreter
+                                             >>= endInterpreter opts
                          T.RunDebugger    -> runExceptT (debugger opts)
                                              >>= endDebugger
