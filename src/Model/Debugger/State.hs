@@ -81,7 +81,7 @@ putComputer c =  do
     -- Memory size
     putIntAsWord32be . Fld.length . T.memory $ c
     -- Address of the head
-    putIntAsWord32be . length . T.front . T.memory $ c
+    putIntAsWord32be . length . T.back . T.memory $ c
     -- Serialize the memory
     Fld.traverse_ Bin.putWord8 . T.memory $ c
     -- Serialize the output length and values
