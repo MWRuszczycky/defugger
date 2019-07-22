@@ -27,9 +27,12 @@ spec = do
         it "Correctly runs HelloWorld.bf" $ do
             scriptNoInput ( U.getTestPath "HelloWorld.bf"     )
                           ( U.getTestPath "TestSave104.defug" )
-        it "Correctly runs HelloWorldBreak.bf" $ do
+        it "Correctly runs BreakHelloWorld.bf" $ do
             scriptNoInput ( U.getTestPath "BreakHelloWorld.bf" )
                           ( U.getTestPath "TestSave101.defug"  )
+        it "Correctly runs BreakWhileHelloWorld.bf" $ do
+            scriptNoInput ( U.getTestPath "BreakWhileHelloWorld.bf" )
+                          ( U.getTestPath "TestSave106.defug"       )
         it "Correctly runs WriteHelloWorld.bf (input test)" $ do
             scriptWithInput ( U.getTestPath "WriteHelloWorld.bf"  )
                             ( U.getTestPath "WriteHelloWorld.txt" )

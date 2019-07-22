@@ -33,8 +33,8 @@ import Control.Monad.Cont               ( Cont, callCC
 -- Either T.ErrString monad to just handle errors and not breaks.
 -- This was actually pretty fast completing the Mandelbrot.bf script
 -- in about 5.5 min. Using the Cont r monad appears to add some
--- additional overhead so that the Mandelbrot.bf script takes about
--- 7.0 min. So, about 20% slower---not too terrible and there do not
+-- additional overhead so that the Mandelbrot.bf script takes almost
+-- 8.0 min. So, about 45% slower---not too terrible and there do not
 -- appear to be any space leaks. There may be a better, faster
 -- implementation using a monad transformer stack that takes
 -- advantage of the Either T.ErrString monad as well as the Cont r
@@ -68,9 +68,20 @@ interpret _   (Right c) (T.Advance    ) = pure . advance     $ c
 interpret _   (Right c) (T.Backup     ) = pure . backup      $ c
 interpret _   (Right c) (T.ReadIn     ) = pure . readIn      $ c
 interpret _   (Right c) (T.WriteOut   ) = pure . writeOut    $ c
-interpret _   (Right c) (T.WhileLoop p) = pure . whileLoop p $ c
-interpret esc c         (T.Break      ) = esc c >> pure c
-interpret _   c         _               = pure c
+interpret esc etComp    (T.WhileLoop p) = whileLoopCont esc p etComp
+interpret esc etComp    (T.Break      ) = esc etComp >> pure etComp
+interpret _   etComp    _               = pure etComp
+
+whileLoopCont :: Escape r b -> T.Program -> ComputationResult -> Computation r
+-- ^Need a separet while-loop evaluator for the continuation monad so
+-- that the escape continuation is passed into the subprograms.
+-- Without this, the program hangs on break points in while-loops.
+whileLoopCont esc _ (Left  c) = esc ( Left c ) >> pure ( Left c )
+whileLoopCont esc p (Right c) =
+    case T.memory c of
+         T.Tape _ 0 _ -> pure . Right $ c
+         _            -> foldM (interpret esc) (Right c) p
+                         >>= whileLoopCont esc p
 
 -- =============================================================== --
 -- Generating Compuation Results according to BF statements.
