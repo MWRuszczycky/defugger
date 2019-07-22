@@ -72,10 +72,10 @@ interpret esc etComp    (T.Break      ) = esc etComp >> pure etComp
 interpret _   etComp    _               = pure etComp
 
 whileLoopCont :: Escape r b -> T.Program -> ComputationResult -> Computation r
--- ^Need a separet while-loop evaluator for the continuation monad so
--- that the escape continuation is passed into the subprograms.
+-- ^Need a separate while-loop evaluator for the continuation monad
+-- so that the escape continuation is passed into the subprograms.
 -- Without this, the program hangs on break points in while-loops.
-whileLoopCont esc _ (Left  c) = esc ( Left c ) >> pure ( Left c )
+whileLoopCont esc _ (Left  e) = esc ( Left e ) >> pure ( Left e )
 whileLoopCont esc p (Right c) =
     case T.memory c of
          T.Tape _ 0 _ -> pure . Right $ c
@@ -100,7 +100,7 @@ interpretFast c (T.WhileLoop p) = whileLoop p c
 interpretFast c _               = pure c
 
 -- =============================================================== --
--- Generating Compuation Results according to BF statements.
+-- Generating Computation Results according to BF statements.
 -- Note that these functions are defined entirely in the
 -- Either T.ErrorString monad so that they can be used elsewhere
 -- without having to deal with continuations.
