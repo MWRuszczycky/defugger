@@ -33,7 +33,8 @@ import Control.Monad.Except                     ( liftEither
                                                 , lift
                                                 , runExceptT
                                                 , throwError      )
-import Model.Interpreter                        ( runProgram      )
+import Model.Interpreter                        ( runProgram
+                                                , runProgramFast  )
 import Model.Parser                             ( parse, toDebug  )
 import Model.CoreIO                             ( tryReadFile
                                                 , tryWriteBytes
@@ -73,9 +74,10 @@ interpreter opts = do
     s <- maybe (throwError missingErr) tryReadFile . T.pathToScript $ opts
     i <- maybe (pure BS.empty) tryReadBytes . T.pathToInput $ opts
     p <- liftEither . parse def $ s
-    let (breaks, dbProg) = toDebug p
-    c <- liftEither . runProgram ( initComputer i ) $ p
-    pure (c, dbProg, breaks, i)
+    let (brks, dbProg) = toDebug p
+        run            = if T.runFast opts then runProgramFast else runProgram
+    c <- liftEither . run ( initComputer i ) $ p
+    pure (c, dbProg, brks, i)
 
 endInterpreter :: T.DefuggerOptions -> Either T.ErrString Result -> IO ()
 endInterpreter _    (Left  e          ) = putStrLn errMsg
@@ -137,6 +139,9 @@ startOptions =
     [ Opt.Option "h" ["help"]
           ( Opt.NoArg ( \ opts -> opts { T.runMode = T.RunHelp } ) )
           "Display help information for running the Defugger."
+    , Opt.Option "f" ["fast"]
+          ( Opt.NoArg ( \ opts -> opts { T.runFast = True      } ) )
+          "Use the faster interpreter, but ignore break points."
     , Opt.Option "r" ["run"]
           ( Opt.NoArg ( \ opts -> opts { T.runMode = T.RunInterpreter } ) )
           "Run the BF interpreter on SCRIPT with input INPUT."

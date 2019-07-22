@@ -1,6 +1,7 @@
 module Model.Interpreter
     ( -- Executing a complete BF program
       runProgram
+    , runProgramFast
       -- Individual computations defined by BF
     , advance
     , backup
@@ -21,24 +22,18 @@ import Control.Monad.Cont               ( Cont, callCC
                                         , runCont, foldM )
 
 -- =============================================================== --
--- The interpreter runs in a continuation monad so that it can break
--- in two different ways:
---   1. Error occurs (e.g., attempting to read unavailable memory.)
---      This yields a Left T.ErrString result.
---   2. A user-inserted break point is encountered.
---      This yields a Right T.Computer result, just as if the script
---      had run to the end.
--- Getting breaks is why we need the Cont r monad instead of just the
--- Either T.ErrString monad. The previous implementation did use the
--- Either T.ErrString monad to just handle errors and not breaks.
--- This was actually pretty fast completing the Mandelbrot.bf script
--- in about 5.5 min. Using the Cont r monad appears to add some
--- additional overhead so that the Mandelbrot.bf script takes almost
--- 8.0 min. So, about 45% slower---not too terrible and there do not
--- appear to be any space leaks. There may be a better, faster
--- implementation using a monad transformer stack that takes
--- advantage of the Either T.ErrString monad as well as the Cont r
--- monad, but this works reasonably well for now.
+-- There are two versions of the interpreter:
+-- 1. runProgram
+--      Uses a Cont r monad and can catch errors as well as break
+--      points in the program. Using the Cont r monad adds additional
+--      overhead, so that this interpreter runs about 50% slower than
+--      runProgramFast but is still much faster than the debugger.
+--      This should complete the mandlebrot.bf script in about 8 min.
+-- 2. runProgramFast
+--      Uses only the Either T.ErrString monad, so it runs faster
+--      than runProgram. This should complete the mandelbrot.bf
+--      script in about 5.5 min. This is also the basis for all the
+--      exported computation functions.
 
 -- |A ComputationResult is the result of executing a BF statement.
 type ComputationResult = Either T.ErrString T.Computer
@@ -54,7 +49,11 @@ type Escape r b = ComputationResult -> Cont r b
 -- =============================================================== --
 -- Executing a complete BF program
 
+---------------------------------------------------------------------
+-- Somewhat slower versions using continuations that allow breaks
+
 runProgram :: T.Computer -> T.Program -> ComputationResult
+-- ^Slower version of the interpreter that can catch breaks.
 runProgram c p = runCont (compute c p) id
 
 compute :: T.Computer -> T.Program -> Computation r
@@ -82,6 +81,23 @@ whileLoopCont esc p (Right c) =
          T.Tape _ 0 _ -> pure . Right $ c
          _            -> foldM (interpret esc) (Right c) p
                          >>= whileLoopCont esc p
+
+---------------------------------------------------------------------
+-- Faster version that ignores breaks but catches errors
+
+runProgramFast :: T.Computer -> T.Program -> ComputationResult
+-- ^Faster version of the interpreter that cannot catch breaks.
+runProgramFast = foldM interpretFast
+
+interpretFast :: T.Computer -> T.Statement -> ComputationResult
+interpretFast c (T.Increment  ) = increment c
+interpretFast c (T.Decrement  ) = decrement c
+interpretFast c (T.Advance    ) = advance   c
+interpretFast c (T.Backup     ) = backup    c
+interpretFast c (T.ReadIn     ) = readIn    c
+interpretFast c (T.WriteOut   ) = writeOut  c
+interpretFast c (T.WhileLoop p) = whileLoop p c
+interpretFast c _               = pure c
 
 -- =============================================================== --
 -- Generating Compuation Results according to BF statements.
@@ -123,4 +139,5 @@ writeOut c = let (T.Tape _ u _) = T.memory c
 whileLoop :: T.Program -> T.Computer -> ComputationResult
 whileLoop p c = case T.memory c of
                      T.Tape _ 0 _ -> pure c
-                     _            -> runProgram c p >>= whileLoop p
+                     _            -> runProgramFast c p
+                                     >>= whileLoop p

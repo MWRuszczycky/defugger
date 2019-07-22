@@ -78,6 +78,7 @@ data DefuggerOptions = DefuggerOptions {
     , pathToInput  :: Maybe FilePath -- File path to BF program input
     , terminal     :: String         -- Terminal settings used to update env
     , savePath     :: Maybe FilePath -- Path to save state to after a run.
+    , runFast      :: Bool           -- Use the faster interpreter.
     }
 
 instance Default DefuggerOptions where
@@ -86,6 +87,7 @@ instance Default DefuggerOptions where
                           , pathToInput  = Nothing
                           , terminal     = "xterm-256color"
                           , savePath     = Nothing
+                          , runFast      = False
                           }
 
 -- |What the program is to do based on command line arguments
