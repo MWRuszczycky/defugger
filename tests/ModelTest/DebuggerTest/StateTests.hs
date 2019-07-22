@@ -27,6 +27,8 @@ spec = do
             testDecodeDebugger102
         it "Deserializes TestSave103.defug (WriteHelloWorld at stmt 8)"
             testDecodeDebugger103
+        it "Deserializes TestSave104.defug (HelloWorld.bf fully evaluated)"
+            testDecodeDebugger104
         it "Correctly fails to deserialize HelloWorld.bf"
             testDecodeDebugger201
 
@@ -96,6 +98,29 @@ testDecodeDebugger103 = do
              T.input  c             `shouldBe`      "o World!\n"
              T.initialInput db      `shouldBe`      "Hello World!\n"
              (toList . T.breaks) db `shouldBe`      [0, 8, 63]
+             T.scriptPath db        `shouldBe`      Nothing
+             T.inputPath  db        `shouldBe`      Nothing
+
+testDecodeDebugger104 :: IO ()
+-- ^Test deserialization with fully evaluated HelloWorld.
+testDecodeDebugger104 = do
+    let testPath   = U.getTestPath $ "TestSave104.defug"
+        resultPath = U.getTestPath $ "HelloWorld.bf"
+    -- The input files are dummies and the loaded data should be replaced.
+    newDb       <- U.newDebugger (Just "HelloWorld.bf") (Just "HelloWorld.out")
+    bs          <- BS.readFile testPath
+    Right (_,p) <- M.parseDebug def <$> Tx.readFile resultPath
+    case D.decodeDebugger newDb bs of
+         Left err -> error $ "decodeComputer fails to decode: " <> err
+         Right db -> do
+             let c = T.computer db
+             D.getPosition db       `shouldBe`      107
+             T.program db           `shouldBe`      p
+             (show . T.memory) c    `shouldBe`      "0 0 72 100 87 33 [10]"
+             T.output c             `shouldBe`      "Hello World!\n"
+             T.input  c             `shouldSatisfy` BS.null
+             T.initialInput db      `shouldSatisfy` BS.null
+             (toList . T.breaks) db `shouldBe`      [0, 107]
              T.scriptPath db        `shouldBe`      Nothing
              T.inputPath  db        `shouldBe`      Nothing
 
