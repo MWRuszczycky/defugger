@@ -30,7 +30,11 @@ or you can set an alias,
 ```sh
 $ alias defugger='stack exec defugger --'
 ```
-so that the examples below match.
+so that the examples below match. Finally, you can compile and install a local installation with
+```sh
+$ stack install
+```
+*Stack* will tell you were the executable was installed in case you want to get rid of it. The Defugger currently does not install any other files.
 
 ## How it works<a name="operation"></a>
 
@@ -103,8 +107,6 @@ Since the dubugger is very slow, the Defugger gives you the ability to first pro
 
 * Improve help strings and documentation.
 * Implement reloading of scripts.
-* Implement saving and loading debugger state.
-* Implement breaks when running the interpreter and loading the debugger.
 * Allow a wider range of BF formats and command naming dictionaries.
 * Write a better README.
 * Write more tests, especially for the editing transformations.
